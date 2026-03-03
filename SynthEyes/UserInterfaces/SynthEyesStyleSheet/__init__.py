@@ -2,7 +2,7 @@ import os
 
 
 def load_stylesheet():
-    sFile = os.path.dirname(__file__) + "/Blender2.8.qss"
+    sFile = os.path.dirname(__file__) + "/SynthEyes.qss"
     if not os.path.exists(sFile):
         return ""
 
