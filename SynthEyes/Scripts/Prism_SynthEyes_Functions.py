@@ -56,7 +56,6 @@ import operator
 import tempfile
 import math
 
-import bpy
 
 from qtpy.QtCore import *
 from qtpy.QtGui import *
@@ -68,7 +67,7 @@ if eval(os.getenv("PRISM_DEBUG", "False")):
     except:
         pass
 
-import widget_import_scenedata
+# import widget_import_scenedata
 from PrismUtils.Decorators import err_catcher as err_catcher
 
 logger = logging.getLogger(__name__)
@@ -116,39 +115,36 @@ class Prism_SynthEyes_Functions(object):
         #     ".blend": {"exportFunction": self.exportBlend},
         # }
 
-    # @err_catcher(name=__name__)
-    # def startup(self, origin):
-    #     if platform.system() == "Linux":
-    #         origin.timer.stop()
+    @err_catcher(name=__name__)
+    def startup(self, origin):
+        if platform.system() == "Linux":
+            origin.timer.stop()
 
-    #         if "prism_project" in os.environ and os.path.exists(
-    #             os.environ["prism_project"]
-    #         ):
-    #             curPrj = os.environ["prism_project"]
-    #         else:
-    #             curPrj = self.core.getConfig("globals", "current project")
+            if "prism_project" in os.environ and os.path.exists(
+                os.environ["prism_project"]
+            ):
+                curPrj = os.environ["prism_project"]
+            else:
+                curPrj = self.core.getConfig("globals", "current project")
 
-    #         if curPrj != "":
-    #             self.core.changeProject(curPrj)
-    #         return False
+            if curPrj != "":
+                self.core.changeProject(curPrj)
+            return False
 
-    #     try:
-    #         bpy.data.filepath
-    #     except:
-    #         return False
 
-    #     self.core.setActiveStyleSheet("synthEyes")
-    #     appIcon = QIcon(
-    #         os.path.join(self.core.prismRoot, "Scripts", "UserInterfacesPrism", "p_tray.png")
-    #     )
-    #     qapp = QApplication.instance()
-    #     qapp.setWindowIcon(appIcon)
 
-    #     origin.timer.stop()
-    #     origin.startAutosaveTimer()
+        self.core.setActiveStyleSheet("synthEyes")
+        appIcon = QIcon(
+            os.path.join(self.core.prismRoot, "Scripts", "UserInterfacesPrism", "p_tray.png")
+        )
+        qapp = QApplication.instance()
+        qapp.setWindowIcon(appIcon)
 
-    #     if not hasattr(bpy.types, "TOPBAR_MT_prism"):
-    #         self.registerPrismMenu()
+        origin.timer.stop()
+        origin.startAutosaveTimer()
+
+
+
 
     # @err_catcher(name=__name__)
     # def autosaveEnabled(self, origin):
@@ -162,14 +158,16 @@ class Prism_SynthEyes_Functions(object):
     #     if self.core.shouldAutosaveTimerRun():
     #         origin.startAutosaveTimer()
 
-    # @err_catcher(name=__name__)
-    # def getCurrentFileName(self, origin, path=True):
-    #     currentFileName = bpy.data.filepath
+    @err_catcher(name=__name__)
+    def getCurrentFileName(self, origin, path=True):
+        
+        # currentFileName = bpy.data.filepath
 
-    #     if not path:
-    #         currentFileName = os.path.basename(currentFileName)
+        # if not path:
+        #     currentFileName = os.path.basename(currentFileName)
 
-    #     return currentFileName
+        currentFileName = ""
+        return currentFileName
 
     # @err_catcher(name=__name__)
     # def getSceneExtension(self, origin):
