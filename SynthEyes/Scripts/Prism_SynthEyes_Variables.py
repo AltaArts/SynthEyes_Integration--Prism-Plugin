@@ -30,6 +30,18 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with Prism.  If not, see <https://www.gnu.org/licenses/>.
+###########################################################################
+#
+#                    SynthEyes Integration for Prism2
+#
+#       https://github.com/AltaArts/SynthEyes_Integration--Prism-Plugin
+#
+#
+#                           Joshua Breckeen
+#                              Alta Arts
+#                          josh@alta-arts.com
+#
+###########################################################################
 
 
 import os
@@ -40,7 +52,7 @@ class Prism_SynthEyes_Variables(object):
         self.version = "v0.1"
         self.pluginName = "SynthEyes"
         self.pluginType = "App"
-        self.appShortName = "synth"
+        self.appShortName = "syntheyes"
         self.appType = "3d"
         self.hasQtParent = False
         self.sceneFormats = [".sni"]
