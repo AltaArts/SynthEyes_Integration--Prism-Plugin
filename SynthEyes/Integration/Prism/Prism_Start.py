@@ -47,17 +47,12 @@
 
 import os
 import sys
-import platform
 
 
 if "PRISM_ROOT" in os.environ:
     PRISMROOT = os.environ["PRISM_ROOT"]
-    
-#   Gets set during Integration installation
 else:
-    # print("PRISM_ROOT is not set")
     PRISMROOT = r@PRISMROOTREPLACE@
-
 
 PLUGINROOT = r@PLUGINROOTREPLACE@
 
@@ -74,51 +69,50 @@ from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 
 
-import SyPy3
-
-
-# hlev = SyPy.SyLevel()
-# hlev.OpenExisting()
-
-
 
 class PrismToolsWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
 
         self.core = None
+        self.synthFuncts = None
 
         self.parent_pid = os.getppid()
 
         self.getPrismCore()
-        self.setup_ui()
-        self.load_stylesheet()
+        self.getSynthFuncts()
+        self.setupUI()
+        self.loadStylesheet()
         self.connections()
-        self.start_parent_monitor()
+        self.startSyntheyesMonitor()
 
 
-    #   Creates Prism instance
+    #   Creates Prism Instance
     def getPrismCore(self):
-        self.core = PrismCore.create(app="SynthEyes", prismArgs=["noProjectBrowser"])
-
-        if not platform.system() == "Darwin":
-            curPrj = self.core.getConfig("globals", "current project")
+        self.core = PrismCore.create(app="SynthEyes", prismArgs=["noProjectBrowser", "splash"])
 
 
-    #   UI Setup
-    def setup_ui(self):
+    #   Assigns the Plugin Functions Object
+    def getSynthFuncts(self):
+        self.synthFuncts = self.core.getPlugin("SynthEyes")
+
+
+    #   Prism Tools UI Setup
+    def setupUI(self):
+        #   Main Tools Window
         self.setObjectName("MainWindow")
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.setWindowTitle("Prism Tools")
         self.setGeometry(100, 100, 250, 250)
         self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
 
-        central = QWidget()
-        self.setCentralWidget(central)
+        #   Buttons Widget
+        w_central = QWidget()
+        self.setCentralWidget(w_central)
+        lo_buttons = QVBoxLayout(w_central)
 
-        self.layout = QVBoxLayout(central)
-
-        self.buttons = {
+        #   Buttons Listing
+        self.buttonDict = {
             "saveVersion": "Save Version",
             "saveComment": "Save Version with Comment",
             "openProjectBrowser": "Project Browser",
@@ -126,23 +120,21 @@ class PrismToolsWindow(QMainWindow):
             "openPrismSettings": "Prism Settings",
         }
 
-        for key, label in self.buttons.items():
-
+        #   Itterate Over Buttons and Create Objects
+        for key, label in self.buttonDict.items():
             btn = QPushButton(label)
             btn.setObjectName(f"b_{key}")
             btn.setFixedHeight(40)
 
-            # Create attribute like self.b_saveVersion
+            #   Add Button to Class Self
             setattr(self, f"b_{key}", btn)
 
-            # Connect to a dispatcher
-            # btn.clicked.connect(lambda checked, k=key: self.handle_button(k))
-
-            self.layout.addWidget(btn)
+            lo_buttons.addWidget(btn)
 
 
-    #   Styling
-    def load_stylesheet(self):
+    #   Style Sheet
+    def loadStylesheet(self):
+        #   Get SynthEyes Stylesheet from Plugin Dir
         qss_path = os.path.join(
             PLUGINROOT,
             "UserInterfaces",
@@ -150,11 +142,12 @@ class PrismToolsWindow(QMainWindow):
             "SynthEyes.qss"
         )
 
+        #   Read Stylesheet
         if os.path.exists(qss_path):
             with open(qss_path, "r") as f:
                 qss = f.read()
 
-            # Fix relative image paths if needed
+            #   Fix Relative Image Paths if needed
             style_dir = os.path.dirname(qss_path)
             qss = qss.replace("url(images/", f"url({style_dir}/images/")
 
@@ -170,41 +163,39 @@ class PrismToolsWindow(QMainWindow):
 
 
 
-    # Parent Process Monitoring
-    def start_parent_monitor(self):
+    #   Periodically Checks if SynthEyes is Still Running
+    def startSyntheyesMonitor(self):
         self.timer = QTimer(self)
-        self.timer.timeout.connect(self.check_parent)
+        self.timer.timeout.connect(self.checkSyntheyesRunning)
         self.timer.start(1000)
 
-    def check_parent(self):
+
+    #   Checks if SynthEyes is Still Running and Quit Prism if Not
+    def checkSyntheyesRunning(self):
         try:
             parent = psutil.Process(self.parent_pid)
             if not parent.is_running():
                 self.close()
+
         except psutil.NoSuchProcess:
             self.close()
 
 
-
+    #   Calls from Prism Tools Buttons
     def saveVersion(self):
-        self.core.popup("PRISM POPUP: SAVE VERSION")
-
+        self.synthFuncts.saveVersion()
 
     def saveComment(self):
-        self.core.popup("PRISM POPUP: SAVE COMMENT")
-
+        self.synthFuncts.saveComment()
 
     def open_ProjectBrowser(self):
-        self.core.projectBrowser()
-
+        self.synthFuncts.open_ProjectBrowser()
 
     def open_StateManager(self):
-        self.core.stateManager()
-
+        self.synthFuncts.open_StateManager()
 
     def open_PrismSettings(self):
-        self.core.prismSettings()
-
+        self.synthFuncts.open_PrismSettings()
 
 
 #   Entry Point

@@ -46,15 +46,29 @@
 
 import os
 import sys
-import threading
 import platform
-import traceback
-import time
-import shutil
 import logging
+import random
+import string
+import ctypes
+from ctypes import wintypes
+
+
+import threading
+import traceback
+import time                                             #   TODO - CLEANUP
+import shutil
 import operator
 import tempfile
 import math
+
+
+PLUGINROOT = os.path.dirname(os.path.dirname(__file__))
+PYTHONLIBS = os.path.join(PLUGINROOT, "PythonLibs", "Python313")
+
+sys.path.append(PYTHONLIBS)
+
+import mss
 
 
 from qtpy.QtCore import *
@@ -67,20 +81,18 @@ if eval(os.getenv("PRISM_DEBUG", "False")):
     except:
         pass
 
-# import widget_import_scenedata
 from PrismUtils.Decorators import err_catcher as err_catcher
 
 logger = logging.getLogger(__name__)
 
-
-def renderFinished_handler(dummy):
-    bpy.context.scene["PrismIsRendering"] = False
 
 
 class Prism_SynthEyes_Functions(object):
     def __init__(self, core, plugin):
         self.core = core
         self.plugin = plugin
+
+        self.importSyPy3()
         # self.core.registerCallback(
         #     "onUserSettingsOpen", self.onUserSettingsOpen, plugin=self.plugin
         # )
@@ -131,12 +143,8 @@ class Prism_SynthEyes_Functions(object):
                 self.core.changeProject(curPrj)
             return False
 
-
-
         self.core.setActiveStyleSheet("synthEyes")
-        appIcon = QIcon(
-            os.path.join(self.core.prismRoot, "Scripts", "UserInterfacesPrism", "p_tray.png")
-        )
+        appIcon = QIcon(os.path.join(self.core.prismRoot, "Scripts", "UserInterfacesPrism", "p_tray.png"))
         qapp = QApplication.instance()
         qapp.setWindowIcon(appIcon)
 
@@ -144,6 +152,37 @@ class Prism_SynthEyes_Functions(object):
         origin.startAutosaveTimer()
 
 
+    # # Generate a Random port (49152 - 65535)                  #   NOT SEEMILY NEEDED
+    # def getRandomPort(self):
+    #     port = random.randint(49152, 65535)
+    #     return port
+
+
+    # # Generate a Random 12-character Alphanumeric String      #   NOT SEEMILY NEEDED
+    # def getRandomPin(self):
+    #     chars = string.ascii_letters + string.digits
+    #     pin = ''.join(random.choices(chars, k=12))
+    #     return pin
+
+
+    #   Parses the Integration Path and Imports SyPy3
+    @err_catcher(name=__name__)
+    def importSyPy3(self):
+        integrations = self.core.integration.getIntegrations()
+        synthPath = integrations["SynthEyes"][0]
+        sys.path.append(synthPath)
+
+        import SyPy3
+
+        self.synthEyes = SyPy3.SyLevel()
+
+        # self.synth_port = self.getRandomPort()
+        # self.synth_pin = self.getRandomPin()
+        # self.synthEyes.OpenExisting(self.synth_port, self.synth_pin)
+
+        self.synthEyes.OpenExisting()
+
+        logger.debug("Imported SynthEyes SyPy3")
 
 
     # @err_catcher(name=__name__)
@@ -158,29 +197,153 @@ class Prism_SynthEyes_Functions(object):
     #     if self.core.shouldAutosaveTimerRun():
     #         origin.startAutosaveTimer()
 
+
+
+    ####    Called From SynthEyes Prism Tools   ####
+    
     @err_catcher(name=__name__)
-    def getCurrentFileName(self, origin, path=True):
-        
-        # currentFileName = bpy.data.filepath
+    def saveVersion(self):
+        self.core.saveScene()
 
-        # if not path:
-        #     currentFileName = os.path.basename(currentFileName)
+    @err_catcher(name=__name__)
+    def saveComment(self):
+        self.core.saveWithComment()
 
-        currentFileName = ""
+    @err_catcher(name=__name__)
+    def open_ProjectBrowser(self):
+        self.core.projectBrowser()
+
+    @err_catcher(name=__name__)
+    def open_StateManager(self):
+        self.core.stateManager()
+
+    @err_catcher(name=__name__)
+    def open_PrismSettings(self):
+        self.core.prismSettings()
+
+
+    #   Returns SynthEyes Version
+    @err_catcher(name=__name__)
+    def getAppVersion(self, origin):
+        return self.synthEyes.Version()
+
+
+    #   Returns Current SynthEyes File Name/Path
+    @err_catcher(name=__name__)
+    def getCurrentFileName(self, origin=None, path=True):
+        currentFileName = self.synthEyes.SNIFileName()
+
+        if not path:
+            currentFileName = os.path.basename(currentFileName)
+
         return currentFileName
+    
 
-    # @err_catcher(name=__name__)
-    # def getSceneExtension(self, origin):
-    #     return self.sceneFormats[0]
+    @err_catcher(name=__name__)
+    def getSceneExtension(self, origin):
+        return self.sceneFormats[0]
 
-    # @err_catcher(name=__name__)
-    # def saveScene(self, origin, filepath, details={}):
-    #     filepath = os.path.normpath(filepath)
-    #     if bpy.app.version < (4, 0, 0):
-    #         return bpy.ops.wm.save_as_mainfile(self.getOverrideContext(origin), filepath=filepath)
-    #     else:
-    #         with bpy.context.temp_override(**self.getOverrideContext(origin)):
-    #             return bpy.ops.wm.save_as_mainfile(filepath=filepath)
+
+    @err_catcher(name=__name__)
+    def openScene(self, origin, filepath, force=False):
+        if not filepath.endswith(".sni"):
+            return False
+        
+        filepath = os.path.normpath(filepath)
+
+        try:
+            self.synthEyes.OpenSNI(filepath)
+            logger.debug(f"Opened Scene: {filepath}")
+            return True
+        
+        except Exception as e:
+            logger.warning(f"ERROR:  Unable to open Scenefile: {filepath}\n{e}")
+            return False
+            
+
+
+    #   Saves .SNI to New Passed Filepath
+    @err_catcher(name=__name__)
+    def saveScene(self, origin, filepath, details={}):
+        try:
+            filepath = os.path.normpath(filepath)
+
+            #   Set Filename to Scene
+            self.synthEyes.SetSNIFileName(filepath)
+
+            #   Find Save Menu Object
+            self.synthEyes.InitMenu()
+            fileMenu = self.synthEyes.TopMenu("File")
+            menu_idx = fileMenu.PosByName("Save")
+            menu_id = fileMenu.IDByPos(menu_idx)
+
+            #   Execute Save Action
+            self.synthEyes.PerformActionByIDAndContinue(menu_id)
+
+            return True
+        
+        except:
+            return False
+        
+
+    #   Finds Opsn SynthEyes Window and Captures Screenshot
+    @err_catcher(name=__name__)
+    def captureViewportThumbnail(self):
+        #   Get Current Open Windows
+        user32 = ctypes.windll.user32
+        EnumWindows = user32.EnumWindows
+        EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+        GetWindowText = user32.GetWindowTextW
+        GetWindowTextLength = user32.GetWindowTextLengthW
+        IsWindowVisible = user32.IsWindowVisible
+
+        #   Builds the Window Title Prefix from Scene Name
+        sceneName = self.getCurrentFileName(path=False)
+        sceneName = os.path.splitext(sceneName)[0]
+        winPrefix = f"{sceneName} - SynthEyes"
+
+        target_hwnd = None
+
+        #   Helper to Search Window Names
+        def foreach_window(hwnd, lParam):
+            if IsWindowVisible(hwnd):
+                length = GetWindowTextLength(hwnd)
+                if length > 0:
+                    buff = ctypes.create_unicode_buffer(length + 1)
+                    GetWindowText(hwnd, buff, length + 1)
+                    title = buff.value
+                    if title.startswith(winPrefix):
+                        nonlocal target_hwnd
+                        target_hwnd = hwnd
+                        return False
+            return True
+
+        EnumWindows(EnumWindowsProc(foreach_window), 0)
+
+
+        if not target_hwnd:
+            logger.warning("ERROR: Thumbnail generation failed.  Could not find SynthEyes Window")
+            return None
+
+        rect = wintypes.RECT()
+        user32.GetWindowRect(target_hwnd, ctypes.byref(rect))
+        left, top = rect.left, rect.top
+        width = rect.right - rect.left
+        height = rect.bottom - rect.top
+
+        with mss.mss() as sct:
+            monitor = {"left": left, "top": top, "width": width, "height": height}
+            sct_img = sct.grab(monitor)
+
+            # mss returns BGRA
+            img = QImage(sct_img.rgb, sct_img.width, sct_img.height, QImage.Format_RGB888).copy()
+            pixmap = QPixmap.fromImage(img)
+
+        return pixmap
+    
+
+
+
 
     # @err_catcher(name=__name__)
     # def getImportPaths(self, origin):
@@ -189,17 +352,20 @@ class Prism_SynthEyes_Functions(object):
     #     else:
     #         return bpy.context.scene["PrismImports"]
 
-    # @err_catcher(name=__name__)
-    # def getFrameRange(self, origin):
-    #     startframe = bpy.context.scene.frame_start
-    #     endframe = bpy.context.scene.frame_end
 
-    #     return [startframe, endframe]
+    @err_catcher(name=__name__)
+    def getFrameRange(self, origin):
+        # startframe = bpy.context.scene.frame_start
+        # endframe = bpy.context.scene.frame_end
+        # return [startframe, endframe]
+        return[None, None]
+    
 
     # @err_catcher(name=__name__)
     # def getCurrentFrame(self):
     #     currentFrame = bpy.context.scene.frame_current
     #     return currentFrame
+
 
     # @err_catcher(name=__name__)
     # def setFrameRange(self, origin, startFrame, endFrame):
@@ -220,11 +386,13 @@ class Prism_SynthEyes_Functions(object):
     #     except:
     #         pass  # if no timeline is visible
 
+
     # @err_catcher(name=__name__)
     # def getFPS(self, origin):
     #     intFps = bpy.context.scene.render.fps
     #     baseFps = bpy.context.scene.render.fps_base
     #     return round(intFps / baseFps, 2)
+
 
     # @err_catcher(name=__name__)
     # def setFPS(self, origin, fps):
@@ -235,11 +403,13 @@ class Prism_SynthEyes_Functions(object):
     #         bpy.context.scene.render.fps = intFps
     #         bpy.context.scene.render.fps_base = intFps/fps
 
+
     # @err_catcher(name=__name__)
     # def getResolution(self):
     #     width = bpy.context.scene.render.resolution_x
     #     height = bpy.context.scene.render.resolution_y
     #     return [width, height]
+
 
     # @err_catcher(name=__name__)
     # def setResolution(self, width=None, height=None):
@@ -248,36 +418,17 @@ class Prism_SynthEyes_Functions(object):
     #     if height:
     #         bpy.context.scene.render.resolution_y = height
 
-    # @err_catcher(name=__name__)
-    # def getAppVersion(self, origin):
-    #     return bpy.app.version_string.split()[0]
+
+
+    
 
     # @err_catcher(name=__name__)
     # def onProjectBrowserStartup(self, origin):
     #     if bpy.app.version < (2, 80, 0):
     #         origin.publicColor = QColor(50, 100, 170)
 
-    # @err_catcher(name=__name__)
-    # def openScene(self, origin, filepath, force=False):
-    #     if not filepath.endswith(".blend"):
-    #         return False
 
-    #     ctx = self.getOverrideContext(dftContext=False)
-    #     filepath = os.path.normpath(filepath)
-    #     try:
-    #         if bpy.app.version < (4, 0, 0):
-    #             bpy.ops.wm.open_mainfile(ctx, "INVOKE_DEFAULT", filepath=filepath, display_file_selector=False)
-    #         else:
-    #             with bpy.context.temp_override(**ctx):
-    #                 bpy.ops.wm.open_mainfile("INVOKE_DEFAULT", filepath=filepath, display_file_selector=False)
-    #     except Exception as e:
-    #         if "File written by newer synthEyes binary" in str(e):
-    #             msg = "Warning occurred while opening file:\n\n%s" % str(e)
-    #             self.core.popup(msg)
-    #         else:
-    #             raise
 
-    #     return True
 
     # @err_catcher(name=__name__)
     # def onUserSettingsOpen(self, origin):
@@ -853,30 +1004,7 @@ class Prism_SynthEyes_Functions(object):
 
     #     return ctx
 
-    # @err_catcher(name=__name__)
-    # def registerPrismMenu(self):
-    #     options = []
 
-    #     op = {"name": "save", "label": "Save Version", "code": "import PrismInit\nif platform.system() == \"Linux\":\n    PrismInit.pcore.saveScene()\n    for i in QApplication.topLevelWidgets():\n        if i.isVisible():\n            qApp.exec_()\n            break\nelse:\n    PrismInit.pcore.saveScene()"}
-    #     options.append(op)
-
-    #     op = {"name": "savecomment", "label": "Save with Comment", "code": "import PrismInit\nif platform.system() == \"Linux\":\n    PrismInit.pcore.saveWithComment()\n    for i in QApplication.topLevelWidgets():\n        if i.isVisible():\n            qApp.exec_()\n            break\nelse:\n    PrismInit.pcore.saveWithComment()"}
-    #     options.append(op)
-
-    #     op = {"name": "browser", "label": "Project Browser", "code": "import PrismInit\nif platform.system() == \"Linux\":\n    PrismInit.pcore.projectBrowser()\n    qApp.exec_()\nelse:\n    PrismInit.pcore.projectBrowser()"}
-    #     options.append(op)
-
-    #     op = {"name": "manager", "label": "State Manager", "code": "import PrismInit\nif platform.system() == \"Linux\":\n    PrismInit.pcore.stateManager()\n    qApp.exec_()\nelse:\n    PrismInit.pcore.stateManager()"}
-    #     options.append(op)
-
-    #     op = {"name": "settings", "label": "Settings", "code": "import PrismInit\nif platform.system() == \"Linux\":\n    PrismInit.pcore.prismSettings()\n    qApp.exec_()\nelse:\n    PrismInit.pcore.prismSettings()"}
-    #     options.append(op)
-
-    #     self.addMenuToMainMenuBar(
-    #         "prism",
-    #         "Prism",
-    #         options
-    #     )
 
     # @err_catcher(name=__name__)
     # def registerOperator(self, name, label, code):
