@@ -52,6 +52,7 @@ import random
 import string
 import ctypes
 from ctypes import wintypes
+import json
 
 
 import threading
@@ -91,6 +92,8 @@ class Prism_SynthEyes_Functions(object):
     def __init__(self, core, plugin):
         self.core = core
         self.plugin = plugin
+
+        self.synthEyes = None
 
         self.importSyPy3()
         # self.core.registerCallback(
@@ -168,21 +171,22 @@ class Prism_SynthEyes_Functions(object):
     #   Parses the Integration Path and Imports SyPy3
     @err_catcher(name=__name__)
     def importSyPy3(self):
-        integrations = self.core.integration.getIntegrations()
-        synthPath = integrations["SynthEyes"][0]
-        sys.path.append(synthPath)
+        if not self.synthEyes:
+            integrations = self.core.integration.getIntegrations()
+            synthPath = integrations["SynthEyes"][0]
+            sys.path.append(synthPath)
 
-        import SyPy3
+            import SyPy3
 
-        self.synthEyes = SyPy3.SyLevel()
+            self.synthEyes = SyPy3.SyLevel()
 
-        # self.synth_port = self.getRandomPort()
-        # self.synth_pin = self.getRandomPin()
-        # self.synthEyes.OpenExisting(self.synth_port, self.synth_pin)
+            # self.synth_port = self.getRandomPort()
+            # self.synth_pin = self.getRandomPin()
+            # self.synthEyes.OpenExisting(self.synth_port, self.synth_pin)
 
-        self.synthEyes.OpenExisting()
+            self.synthEyes.OpenExisting()
 
-        logger.debug("Imported SynthEyes SyPy3")
+            logger.debug("Imported SynthEyes SyPy3")
 
 
     # @err_catcher(name=__name__)
@@ -196,6 +200,17 @@ class Prism_SynthEyes_Functions(object):
     # def sceneOpen(self, origin):
     #     if self.core.shouldAutosaveTimerRun():
     #         origin.startAutosaveTimer()
+
+
+    # @err_catcher(name=__name__)
+    # def onProjectBrowserStartup(self, origin):
+    #     if bpy.app.version < (2, 80, 0):
+    #         origin.publicColor = QColor(50, 100, 170)
+
+
+    # @err_catcher(name=__name__)
+    # def onUserSettingsOpen(self, origin):
+    #     origin.resize(origin.width(), origin.height() + 60)
 
 
 
@@ -220,6 +235,151 @@ class Prism_SynthEyes_Functions(object):
     @err_catcher(name=__name__)
     def open_PrismSettings(self):
         self.core.prismSettings()
+
+    @err_catcher(name=__name__)
+    def exportScene(self):
+        self.handle_exportScene()
+
+
+    @err_catcher(name=__name__)
+    def testOne(self):
+        self.core.popup("IN TEST ONE")							#	TESTING
+
+        # self.prismMenuTesting()
+
+
+
+    @err_catcher(name=__name__)
+    def testTwo(self):
+        self.core.popup("IN TEST TWO")							#	TESTING
+
+
+
+
+
+    @err_catcher(name=__name__)
+    def prismMenuTesting(self):
+
+        self.synthEyes.InitMenu()
+
+        mainMenu = self.synthEyes.MainMenu()
+        prismMenu = mainMenu.SubMenuByName("Prism Menu")
+
+        if not prismMenu.Exists():
+            prismMenu = mainMenu.AddSubMenu(9, "Prism Menu")
+
+            prismMenu.AddMenuItem(1, "Save Next Version", 1)
+            prismMenu.AddMenuItem(2, "Save Version with Comment", 2)
+            prismMenu.AddMenuItem(3, "Project Browser", 3)
+            prismMenu.AddMenuItem(4, "State Manager", 4)
+            prismMenu.AddMenuItem(5, "Prism Settings", 5)
+            prismMenu.AddMenuItem(6, "Export Scene", 6)
+
+            # self.synthEyes.ReloadAll()
+            self.synthEyes.Redraw()
+
+
+        last_id = self.synthEyes.core.Run("MENULAST1")
+        print(f"***  last_id:  {last_id}")								#	TESTING
+
+
+        # count = prismMenu.Count()
+
+        # for i in range(1, count+1):
+        #     name = prismMenu.NameByPos(i)
+        #     mid  = prismMenu.IDByPos(i)
+
+        #     print(i, name, mid)
+
+
+        
+        # # print(f"dir prismMenu:  {dir(prismMenu)}")							#	TESTING
+
+
+        # act_projectB = prismMenu.SubMenuByName("Project Browser")
+        # print(f"dir act_projectB:  {dir(act_projectB)}")								#	TESTING
+
+        # print(f"***  act_projectB runcmd:  {act_projectB.runcmd}")								#	TESTING
+
+        # act_save =mainMenu.SubMenuByName("Save")
+        # print(f"dir act_save:  {dir(act_save)}")								#	TESTING
+
+        # print(f"***  act_save runcmd:  {act_save.runcmd}")								#	TESTING
+
+
+        # project_browser_id = prismMenu.IDByName("Project Browser")
+        # save_next_id = prismMenu.IDByName("Save Next Version")
+
+
+        # last_id = self.synthEyes.core.Run("MENULAST1")
+
+        # print(f"***  last_id:  {last_id}")								#	TESTING
+
+
+        # import time
+
+        # print("Polling for menu selection (Ctrl+C to stop)...")
+
+
+        # try:
+        #     while True:
+        #         last_id = self.synthEyes.core.Run("MENULAST1")  # last clicked menu ID
+        #         if last_id == project_browser_id:
+        #             print("Project Browser menu clicked!")
+        #             self.open_ProjectBrowser()
+        #         elif last_id == save_next_id:
+        #             print("Save Next Version clicked!")
+        #             self.saveNextVersion()
+
+        #         time.sleep(0.2)  # poll every 0.2 seconds
+        # except KeyboardInterrupt:
+        #     print("Polling stopped by user.")
+
+        
+
+
+        # print(f"act_projectB.runcmd:  {act_projectB.runcmd}")
+
+        # help(act_projectB.runcmd)
+
+        # print(f"act_projectB.runcmd.__doc__: {act_projectB.runcmd.__doc__}")
+
+        # print(f"type: {type(act_projectB)}")
+
+        # print(f"class: {act_projectB.__class__}")
+
+        # print(f"prismMenu.IDByPos(1): {prismMenu.IDByPos(1)}")
+
+        # print(f"prismMenu.NameByID(1): {prismMenu.NameByID(1)}")
+
+        # print(f"dir core: {dir(self.synthEyes.core)}")
+
+
+        # self.synthEyes.core.Run(act_projectB.runcmd)
+
+
+
+        # actionName = "PRISM.OpenProjectBrowser"
+        # self.synthEyes.core.Run(f'REGISTERACTION {actionName}')
+
+
+
+        # act_projectB.runcmd = lambda: self.open_ProjectBrowser()
+
+        # print(f"runcmd:  {act_projectB.runcmd}")							#	TESTING
+
+        # Actions = self.synthEyes.Actions()
+
+        # for action in Actions:
+        #     print(action)
+
+
+
+
+
+
+
+
 
 
     #   Returns SynthEyes Version
@@ -264,12 +424,13 @@ class Prism_SynthEyes_Functions(object):
 
     #   Saves .SNI to New Passed Filepath
     @err_catcher(name=__name__)
-    def saveScene(self, origin, filepath, details={}):
+    def saveScene(self, origin=None, filepath=None, details={}):
         try:
-            filepath = os.path.normpath(filepath)
+            if filepath:
+                filepath = os.path.normpath(filepath)
 
-            #   Set Filename to Scene
-            self.synthEyes.SetSNIFileName(filepath)
+                #   Set Filename to Scene
+                self.synthEyes.SetSNIFileName(filepath)
 
             #   Find Save Menu Object
             self.synthEyes.InitMenu()
@@ -284,6 +445,16 @@ class Prism_SynthEyes_Functions(object):
         
         except:
             return False
+
+
+    @err_catcher(name=__name__)
+    def copySceneFile(self, core, origFile, targetFile, mode=None):
+
+        self.core.popup(f"copy\n\n"
+                        f"core: {core}"
+                        f"origFile: {origFile}"
+                        f"targetFile: {targetFile}"
+                        f"mode: {mode}")							#	TESTING
         
 
     #   Finds Opsn SynthEyes Window and Captures Screenshot
@@ -353,38 +524,40 @@ class Prism_SynthEyes_Functions(object):
     #         return bpy.context.scene["PrismImports"]
 
 
-    @err_catcher(name=__name__)
+    @err_catcher(name=__name__)                                           ##   TODO - DISABLED FOR TESTING - RE-ENABLE WHEN DONE
     def getFrameRange(self, origin):
-        # startframe = bpy.context.scene.frame_start
-        # endframe = bpy.context.scene.frame_end
-        # return [startframe, endframe]
-        return[None, None]
+        # try:
+        #     start = (self.synthEyes.AnimStart() + 1)
+        #     end = (self.synthEyes.AnimEnd() +1)
+        #     return[start, end]
+        
+        # except Exception as e:
+        #     logger.warning(f"ERROR: Unable to Get Framerange from SynthEyes: {e}")
+        #     return [None, None]
+
+        return [None, None]
+        
     
 
-    # @err_catcher(name=__name__)
-    # def getCurrentFrame(self):
-    #     currentFrame = bpy.context.scene.frame_current
-    #     return currentFrame
+    @err_catcher(name=__name__)
+    def getCurrentFrame(self):
+        try:
+            currentFrame = self.synthEyes.Frame()
+            return currentFrame
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Get Current Frame from SynthEyes: {e}")
+            return None
 
 
-    # @err_catcher(name=__name__)
-    # def setFrameRange(self, origin, startFrame, endFrame):
-    #     bpy.context.scene.frame_start = int(startFrame)
-    #     bpy.context.scene.frame_end = int(endFrame)
-    #     bpy.context.scene.frame_current = int(startFrame)
-    #     try:
-    #         if bpy.app.version < (4, 0, 0):
-    #             try:
-    #                 bpy.ops.action.view_all(
-    #                     self.getOverrideContext(origin, context="DOPESHEET_EDITOR")
-    #                 )
-    #             except:
-    #                 pass
-    #         else:
-    #             with bpy.context.temp_override(**self.getOverrideContext(context="DOPESHEET_EDITOR")):
-    #                 bpy.ops.action.view_all()
-    #     except:
-    #         pass  # if no timeline is visible
+    @err_catcher(name=__name__)
+    def setFrameRange(self, origin, startFrame, endFrame):
+        try:
+            self.synthEyes.SetAnimStart(startFrame)
+            self.synthEyes.SetAnimEnd(endFrame)
+            logger.debug("Updated Framerange in SynthEyes")
+
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Set Framerange in SynthEyes: {e}")
 
 
     # @err_catcher(name=__name__)
@@ -418,21 +591,227 @@ class Prism_SynthEyes_Functions(object):
     #     if height:
     #         bpy.context.scene.render.resolution_y = height
 
+    @err_catcher(name=__name__)
+    def handle_exportScene(self):
 
+
+        self.exportUSDA(self, filepath=None)
+
+
+
+
+    @err_catcher(name=__name__)
+    def exportUSDA(self, origin=None, filepath=None, details={}):
+        exportData = self.getOutputName()
+        exportPath = exportData[0]
+
+        if not os.path.exists(exportData[1]):
+            os.makedirs(exportData[1])
+
+
+        self.core.popup(f"exportData:  {exportData}")							#	TESTING
+        try:
+            exportPath = os.path.normpath(exportPath)
+            self.synthEyes.Export("USD ASCII Scene", exportPath)
+            # self.synthEyes.ConfigureExport("USD ASCII Scene", exportPath)
+
+            self.core.popup(f"WORKED")							#	TESTING
+            return True
+        
+        except:
+            self.core.popup(f"NOT")							#	TESTING
+            return False
 
     
 
+    @err_catcher(name=__name__)
+    def getOutputName(self, useVersion="next"):
+        context = self.getCurrentContext()
+        # location = self.cb_outPath.currentText()
+        location = "global"
+        version = useVersion if useVersion != "next" else None
+        if "type" not in context:
+            return
+
+        product = self.getProductname()
+        if not product:
+            return
+
+        # if self.getOutputType() == "ShotCam":
+        #     context["entityType"] = "shot"
+        #     context["type"] = "shot"
+        #     if "asset_path" in context:
+        #         del context["asset_path"]
+
+        #     if "asset" in context:
+        #         del context["asset"]
+
+        #     extension = ""
+        #     framePadding = None
+        # else:
+
+        # rangeType = self.cb_rangeType.currentText()
+        # extension = self.getOutputType()
+        extension = ".usda"
+
+        # if rangeType == "Single Frame" or extension != ".obj":
+        #     framePadding = ""
+        # else:
+            # framePadding = "#" * self.core.framePadding
+
+        # framePadding = "#" * self.core.framePadding
+        framePadding = ""#" * self.core.framePadding"
+
+        outputPathData = self.core.products.generateProductPath(
+            entity=context,
+            task=product,
+            extension=extension,
+            framePadding=framePadding,
+            # comment=self.getComment(),
+            comment="",
+            version=version,
+            location=location,
+            returnDetails=True,
+        )
+
+        outputFolder = os.path.dirname(outputPathData["path"])
+        hVersion = outputPathData["version"]
+
+        return outputPathData["path"], outputFolder, hVersion
+
+
+    @err_catcher(name=__name__)
+    def getCurrentContext(self):
+        context = {}
+        # if self.allowCustomContext:
+        #     ctype = self.getContextType()
+        #     if ctype == "Custom":
+        #         context = self.customContext
+
+        if not context:
+            # if self.getOutputType() == "ShotCam":
+            #     if self.shotCamsInitialized:
+            #         context = self.cb_sCamShot.currentData()
+            #     else:
+            #         fileName = self.core.getCurrentFileName()
+            #         context = self.core.getScenefileData(fileName)
+
+            #     if context and self.core.getConfig("globals", "productTasks", config="project"):
+            #         context["department"] = os.getenv("PRISM_SHOTCAM_DEPARTMENT", "Layout")
+            #         context["task"] = os.getenv("PRISM_SHOTCAM_TASK", "Cameras")
+
+            # else:
+            fileName = self.core.getCurrentFileName()
+            context = self.core.getScenefileData(fileName)
+
+        if context and "username" in context:
+            del context["username"]
+
+        if context and "user" in context:
+            del context["user"]
+
+        return context or {}
+
+
+    @err_catcher(name=__name__)
+    def getProductname(self):
+        # if self.getOutputType() == "ShotCam":
+        #     productName = "_ShotCam"
+        # else:
+        # productName = self.l_taskName.text()
+        productName = "SynthTest"
+
+        return productName
+
+
+ 
     # @err_catcher(name=__name__)
-    # def onProjectBrowserStartup(self, origin):
-    #     if bpy.app.version < (2, 80, 0):
-    #         origin.publicColor = QColor(50, 100, 170)
+    # def sm_saveImports(self, origin, importPaths):
+    #     try:
+    #         bpy.context.scene["PrismImports"] = importPaths.replace("\\\\", "\\")
+    #     except Exception as e:
+    #         logger.debug("failed to save imports: %s" % str(e))
 
 
 
+    @err_catcher(name=__name__)
+    def sm_readStates(self, origin=None):
+        statesNote = self.getStatesNote()
 
-    # @err_catcher(name=__name__)
-    # def onUserSettingsOpen(self, origin):
-    #     origin.resize(origin.width(), origin.height() + 60)
+        if statesNote:
+            return statesNote.text
+        else:
+            self.createStatesNote()
+            return self.getDefaultState()
+        
+
+    @err_catcher(name=__name__)
+    def sm_saveStates(self, origin=None, buf=None):
+        statesNote = self.getStatesNote()
+
+        if not statesNote:
+            statesNote = self.createStatesNote()
+
+        self.synthEyes.Begin()
+        statesNote.text = buf
+        self.synthEyes.Accept("Written State to Note")
+
+
+    @err_catcher(name=__name__)
+    def getDefaultState(self):
+        defaultState = """{
+        "states": [
+            {
+                "statename": "publish",
+                "comment": "",
+                "description": ""
+            }
+        ]
+    }
+    """
+        return defaultState
+    
+
+    @err_catcher(name=__name__)
+    def getStatesNote(self):
+        statesNote = None
+
+        for note in self.synthEyes.Notes():
+            if note.number == 999:
+                statesNote = note
+
+        return statesNote
+    
+
+    @err_catcher(name=__name__)
+    def createStatesNote(self):
+        self.synthEyes.Begin()
+
+        noteObj = self.synthEyes.CreateNew("NOTE")
+
+        noteObj.SetName("PRISM_STATES")
+        noteObj.number = 999
+        noteObj.shotID = 0
+        noteObj.show = 0.0
+        noteObj.text = self.getDefaultState()
+
+        self.synthEyes.Accept("Create State Note")
+    
+
+    @err_catcher(name=__name__)
+    def sm_deleteStates(self, origin=None):
+        stateNote = self.getStatesNote()
+
+        if not stateNote:
+            stateNote = self.createStatesNote()
+
+        self.synthEyes.Begin()
+
+        stateNote.text = self.getDefaultState()
+
+        self.synthEyes.Accept("Cleared State Note")
+
+
 
     # @err_catcher(name=__name__)
     # def getGroups(self):
@@ -2232,29 +2611,7 @@ class Prism_SynthEyes_Functions(object):
     #     origin.b_preview.setMinimumWidth(35 * self.core.uiScaleFactor)
     #     origin.b_preview.setMaximumWidth(35 * self.core.uiScaleFactor)
 
-    # @err_catcher(name=__name__)
-    # def sm_saveStates(self, origin, buf):
-    #     try:
-    #         bpy.context.scene["PrismStates"] = buf
-    #     except Exception as e:
-    #         logger.debug("failed to save states: %s" % str(e))
 
-    # @err_catcher(name=__name__)
-    # def sm_saveImports(self, origin, importPaths):
-    #     try:
-    #         bpy.context.scene["PrismImports"] = importPaths.replace("\\\\", "\\")
-    #     except Exception as e:
-    #         logger.debug("failed to save imports: %s" % str(e))
-
-    # @err_catcher(name=__name__)
-    # def sm_readStates(self, origin):
-    #     if "PrismStates" in bpy.context.scene:
-    #         return bpy.context.scene["PrismStates"]
-
-    # @err_catcher(name=__name__)
-    # def sm_deleteStates(self, origin):
-    #     if "PrismStates" in bpy.context.scene:
-    #         del bpy.context.scene["PrismStates"]
 
     # @err_catcher(name=__name__)
     # def sm_getExternalFiles(self, origin):
