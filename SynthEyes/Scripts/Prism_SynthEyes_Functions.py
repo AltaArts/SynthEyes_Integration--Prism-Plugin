@@ -787,15 +787,17 @@ class Prism_SynthEyes_Functions(object):
     def createStatesNote(self):
         self.synthEyes.Begin()
 
-        noteObj = self.synthEyes.CreateNew("NOTE")
+        statesNote = self.synthEyes.CreateNew("NOTE")
 
-        noteObj.SetName("PRISM_STATES")
-        noteObj.number = 999
-        noteObj.shotID = 0
-        noteObj.show = 0.0
-        noteObj.text = self.getDefaultState()
+        statesNote.SetName("PRISM_STATES")
+        statesNote.number = 999
+        statesNote.shotID = 0
+        statesNote.show = 0.0
+        statesNote.text = self.getDefaultState()
 
         self.synthEyes.Accept("Create State Note")
+
+        return statesNote
     
 
     @err_catcher(name=__name__)
