@@ -53,6 +53,8 @@ import string
 import ctypes
 from ctypes import wintypes
 import json
+import zlib
+import base64
 
 
 import threading
@@ -102,9 +104,7 @@ class Prism_SynthEyes_Functions(object):
         # self.core.registerCallback(
         #     "onProjectBrowserStartup", self.onProjectBrowserStartup, plugin=self.plugin
         # )
-        # self.core.registerCallback(
-        #     "onStateManagerOpen", self.onStateManagerOpen, plugin=self.plugin
-        # )
+        self.core.registerCallback("onStateManagerOpen", self.onStateManagerOpen, plugin=self.plugin, priority=20)
         # self.core.registerCallback(
         #     "onStateCreated", self.onStateCreated, plugin=self.plugin
         # )
@@ -202,6 +202,12 @@ class Prism_SynthEyes_Functions(object):
     #         origin.startAutosaveTimer()
 
 
+
+    #######################################
+    ##             CALLBACKS             ##   
+    #######################################
+
+
     # @err_catcher(name=__name__)
     # def onProjectBrowserStartup(self, origin):
     #     if bpy.app.version < (2, 80, 0):
@@ -211,6 +217,100 @@ class Prism_SynthEyes_Functions(object):
     # @err_catcher(name=__name__)
     # def onUserSettingsOpen(self, origin):
     #     origin.resize(origin.width(), origin.height() + 60)
+
+
+
+    @err_catcher(name=__name__)
+    def onStateManagerOpen(self, origin):
+        # origin.setWindowIcon(QIcon(self.prismAppIcon))                        #   TODO
+
+        #	Remove Import buttons
+        origin.b_createImport.deleteLater()
+
+        #	Remove Export and Playblast buttons
+        origin.b_createExport.deleteLater()
+        origin.b_createPlayblast.deleteLater()
+
+        #	Create Import Image buton
+        origin.b_importImage = QPushButton(origin.w_CreateImports)
+        origin.b_importImage.setObjectName("b_importImage")
+        origin.b_importImage.setText("Import Image")
+        #	Add to the beginning of the layout
+        origin.horizontalLayout_3.insertWidget(0, origin.b_importImage)
+        #	Add connection to button
+        origin.b_importImage.clicked.connect(lambda: self.addImportState(origin, "Import2d"))
+
+        # #	Create Import 3d buton
+        # origin.b_import3d = QPushButton(origin.w_CreateImports)
+        # origin.b_import3d.setObjectName("b_import3d")
+        # origin.b_import3d.setText("Import 3d")
+        # #	Add to the 2nd position of the layout
+        # origin.horizontalLayout_3.insertWidget(1, origin.b_import3d)
+        # #	Add connection to button
+        # origin.b_import3d.clicked.connect(lambda: self.addImportState(origin, "Import3d"))
+
+        # Create a new button for RenderGroup
+        origin.b_exportScene = QPushButton(origin.w_CreateExports)
+        origin.b_exportScene.setObjectName("b_exportScene")
+        origin.b_exportScene.setText("Export Scene")
+
+        # Set the size policy to expanding to make it wider
+        origin.b_exportScene.setMaximumSize(QSize(150, 16777215))
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        origin.b_exportScene.setSizePolicy(sizePolicy)
+
+        # Insert the new button before b_showExportStates
+        index = origin.horizontalLayout_4.indexOf(origin.b_showExportStates)
+        # origin.horizontalLayout_4.insertWidget(index - 1, origin.b_exportScene)
+        origin.horizontalLayout_4.insertWidget(0, origin.b_exportScene)
+
+        origin.b_exportScene.clicked.connect(lambda: origin.createState("Synth_SceneExport"))
+
+        # origin.createState(appStates["stateType"], parent=parent, setActive=True, **appStates.get("kwargs", {}))
+
+        #   Remove Unused States
+        keepStates = ["Folder", "Synth_SceneExport", "Synth_AddShot"]
+
+        for state in list(origin.stateTypes.keys()):
+            if state not in keepStates:
+                try:
+                    del origin.stateTypes[state]
+                except Exception:
+                    logger.debug(f"Unable to remove default state: {state}")
+
+
+
+        
+        # # Add MenuItems
+        # origin.actionSortImageLoaders = QAction(origin)
+        # origin.actionSortImageLoaders.setObjectName(u"actionSortImageLoaders")
+        # origin.actionSortImageLoaders.setText(QCoreApplication.translate("mw_StateManager", u"Sort Image Loaders", None))
+        # origin.actionSortImageLoaders.triggered.connect(lambda: self.sortLoaders(comp, getfeedback=True))
+        # #.
+        # origin.actionSelectImageLoaders = QAction(origin)
+        # origin.actionSelectImageLoaders.setObjectName(u"actionSelectImageLoaders")
+        # origin.actionSelectImageLoaders.setText(QCoreApplication.translate("mw_StateManager", u"Select Image Loaders", None))
+        # origin.actionSelectImageLoaders.triggered.connect(self.selectAllStateLoaders)
+        # #.
+        # origin.menuAbout.addSeparator()
+        # origin.menuAbout.addAction(origin.actionSortImageLoaders)
+        # origin.menuAbout.addAction(origin.actionSelectImageLoaders)
+        # origin.menuAbout.addSeparator()
+        # ##
+
+        # try:
+        #     self.core.plugins.monkeyPatch(origin.rclTree, self.rclTree, self, force=True)
+        #     self.core.plugins.monkeyPatch(self.core.mediaProducts.getVersionStackContextFromPath,
+        #                                     self.getVersionStackContextFromPath,
+        #                                     self,
+        #                                     force=True)
+        #     self.core.plugins.monkeyPatch(origin.importShotCam, self.importShotCam, self, force=True)
+        #     self.core.plugins.monkeyPatch(origin.showStateMenu, self.showStateMenu, self, force=True)
+        #     self.core.plugins.monkeyPatch(origin.pasteStates, self.pasteStates, self, force=True)
+        # except Exception as e:
+        #     logger.warning(f"ERROR: Failed to load patched functions:\n{e}")
+
+        # #origin.gb_import.setStyleSheet("margin-top: 20px;")
 
 
 
@@ -243,15 +343,28 @@ class Prism_SynthEyes_Functions(object):
 
     @err_catcher(name=__name__)
     def testOne(self):
-        self.core.popup("IN TEST ONE")							#	TESTING
+        # self.core.popup("IN TEST ONE")							#	TESTING
 
-        # self.prismMenuTesting()
+        self.prismMenuTesting()
 
 
 
     @err_catcher(name=__name__)
     def testTwo(self):
-        self.core.popup("IN TEST TWO")							#	TESTING
+        # self.core.popup("IN TEST TWO")							#	TESTING
+
+        curr_filePath = self.synthEyes.SNIFileName()
+
+        self.core.popup(f"curr_filePath:  {curr_filePath}")							#	TESTING
+
+        testFilepath = r"D:\Prism\Aero Local\Prism Tests - Aero\01_Production\Shots\SynthEyesTests\SynthTests\Renders\external\BgPlate-HERO-Rec70924_2997\v001\rgb\310_360Cam-030_WitnessTest2_BgPlate-HERO-Rec70924_2997_v001_0001.exr"
+
+
+        self.core.popup("BEFORE ADD SHOT")							#	TESTING
+
+        self.synthEyes.NewSceneAndShot(testFilepath, asp = 0.0)
+
+        self.synthEyes.SetSNIFileName(curr_filePath)
 
 
 
@@ -263,10 +376,10 @@ class Prism_SynthEyes_Functions(object):
         self.synthEyes.InitMenu()
 
         mainMenu = self.synthEyes.MainMenu()
-        prismMenu = mainMenu.SubMenuByName("Prism Menu")
+        prismMenu = mainMenu.SubMenuByName("Prism")
 
         if not prismMenu.Exists():
-            prismMenu = mainMenu.AddSubMenu(9, "Prism Menu")
+            prismMenu = mainMenu.AddSubMenu(9, "Prism")
 
             prismMenu.AddMenuItem(1, "Save Next Version", 1)
             prismMenu.AddMenuItem(2, "Save Version with Comment", 2)
@@ -279,8 +392,8 @@ class Prism_SynthEyes_Functions(object):
             self.synthEyes.Redraw()
 
 
-        last_id = self.synthEyes.core.Run("MENULAST1")
-        print(f"***  last_id:  {last_id}")								#	TESTING
+        # last_id = self.synthEyes.core.Run("MENULAST1")
+        # print(f"***  last_id:  {last_id}")								#	TESTING
 
 
         # count = prismMenu.Count()
@@ -376,12 +489,6 @@ class Prism_SynthEyes_Functions(object):
 
 
 
-
-
-
-
-
-
     #   Returns SynthEyes Version
     @err_catcher(name=__name__)
     def getAppVersion(self, origin):
@@ -420,7 +527,6 @@ class Prism_SynthEyes_Functions(object):
             logger.warning(f"ERROR:  Unable to open Scenefile: {filepath}\n{e}")
             return False
             
-
 
     #   Saves .SNI to New Passed Filepath
     @err_catcher(name=__name__)
@@ -524,18 +630,18 @@ class Prism_SynthEyes_Functions(object):
     #         return bpy.context.scene["PrismImports"]
 
 
-    @err_catcher(name=__name__)                                           ##   TODO - DISABLED FOR TESTING - RE-ENABLE WHEN DONE
+    @err_catcher(name=__name__)
     def getFrameRange(self, origin):
-        # try:
-        #     start = (self.synthEyes.AnimStart() + 1)
-        #     end = (self.synthEyes.AnimEnd() +1)
-        #     return[start, end]
+        try:
+            start = (self.synthEyes.AnimStart() + 1)
+            end = (self.synthEyes.AnimEnd() +1)
+            return[start, end]
         
-        # except Exception as e:
-        #     logger.warning(f"ERROR: Unable to Get Framerange from SynthEyes: {e}")
-        #     return [None, None]
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Get Framerange from SynthEyes: {e}")
+            return [None, None]
 
-        return [None, None]
+        # return [None, None]                                           ##   TODO - DISABLED FOR TESTING - RE-ENABLE WHEN DONE
         
     
 
@@ -591,394 +697,30 @@ class Prism_SynthEyes_Functions(object):
     #     if height:
     #         bpy.context.scene.render.resolution_y = height
 
-    @err_catcher(name=__name__)
-    def handle_exportScene(self):
-
-
-        self.exportUSDA(self, filepath=None)
-
-
-
 
     @err_catcher(name=__name__)
-    def exportUSDA(self, origin=None, filepath=None, details={}):
-        exportData = self.getOutputName()
-        exportPath = exportData[0]
+    def sm_sceneExport(self, origin, outputType, outputName, startFrame=None, endFrame=None, details=None):
 
-        if not os.path.exists(exportData[1]):
-            os.makedirs(exportData[1])
+        # self.core.popup(f"outputType:  {outputType}")							#	TESTING
+        # self.core.popup(f"outputName:  {outputName}")							#	TESTING
+        # self.core.popup(f"details:  {details}")							#	TESTING
 
 
-        self.core.popup(f"exportData:  {exportData}")							#	TESTING
-        try:
-            exportPath = os.path.normpath(exportPath)
-            self.synthEyes.Export("USD ASCII Scene", exportPath)
-            # self.synthEyes.ConfigureExport("USD ASCII Scene", exportPath)
+        result = False
 
-            self.core.popup(f"WORKED")							#	TESTING
-            return True
+        match outputType:
+            case ".usda":
+                result = self.exportUSDA(outputName)
+
+            case ".blend":
+                result = self.exportBLEND(outputName)
+
         
-        except:
-            self.core.popup(f"NOT")							#	TESTING
-            return False
+        if result:
+            return outputName
 
-    
 
-    @err_catcher(name=__name__)
-    def getOutputName(self, useVersion="next"):
-        context = self.getCurrentContext()
-        # location = self.cb_outPath.currentText()
-        location = "global"
-        version = useVersion if useVersion != "next" else None
-        if "type" not in context:
-            return
 
-        product = self.getProductname()
-        if not product:
-            return
-
-        # if self.getOutputType() == "ShotCam":
-        #     context["entityType"] = "shot"
-        #     context["type"] = "shot"
-        #     if "asset_path" in context:
-        #         del context["asset_path"]
-
-        #     if "asset" in context:
-        #         del context["asset"]
-
-        #     extension = ""
-        #     framePadding = None
-        # else:
-
-        # rangeType = self.cb_rangeType.currentText()
-        # extension = self.getOutputType()
-        extension = ".usda"
-
-        # if rangeType == "Single Frame" or extension != ".obj":
-        #     framePadding = ""
-        # else:
-            # framePadding = "#" * self.core.framePadding
-
-        # framePadding = "#" * self.core.framePadding
-        framePadding = ""#" * self.core.framePadding"
-
-        outputPathData = self.core.products.generateProductPath(
-            entity=context,
-            task=product,
-            extension=extension,
-            framePadding=framePadding,
-            # comment=self.getComment(),
-            comment="",
-            version=version,
-            location=location,
-            returnDetails=True,
-        )
-
-        outputFolder = os.path.dirname(outputPathData["path"])
-        hVersion = outputPathData["version"]
-
-        return outputPathData["path"], outputFolder, hVersion
-
-
-    @err_catcher(name=__name__)
-    def getCurrentContext(self):
-        context = {}
-        # if self.allowCustomContext:
-        #     ctype = self.getContextType()
-        #     if ctype == "Custom":
-        #         context = self.customContext
-
-        if not context:
-            # if self.getOutputType() == "ShotCam":
-            #     if self.shotCamsInitialized:
-            #         context = self.cb_sCamShot.currentData()
-            #     else:
-            #         fileName = self.core.getCurrentFileName()
-            #         context = self.core.getScenefileData(fileName)
-
-            #     if context and self.core.getConfig("globals", "productTasks", config="project"):
-            #         context["department"] = os.getenv("PRISM_SHOTCAM_DEPARTMENT", "Layout")
-            #         context["task"] = os.getenv("PRISM_SHOTCAM_TASK", "Cameras")
-
-            # else:
-            fileName = self.core.getCurrentFileName()
-            context = self.core.getScenefileData(fileName)
-
-        if context and "username" in context:
-            del context["username"]
-
-        if context and "user" in context:
-            del context["user"]
-
-        return context or {}
-
-
-    @err_catcher(name=__name__)
-    def getProductname(self):
-        # if self.getOutputType() == "ShotCam":
-        #     productName = "_ShotCam"
-        # else:
-        # productName = self.l_taskName.text()
-        productName = "SynthTest"
-
-        return productName
-
-
- 
-    # @err_catcher(name=__name__)
-    # def sm_saveImports(self, origin, importPaths):
-    #     try:
-    #         bpy.context.scene["PrismImports"] = importPaths.replace("\\\\", "\\")
-    #     except Exception as e:
-    #         logger.debug("failed to save imports: %s" % str(e))
-
-
-
-    @err_catcher(name=__name__)
-    def sm_readStates(self, origin=None):
-        statesNote = self.getStatesNote()
-
-        if statesNote:
-            return statesNote.text
-        else:
-            self.createStatesNote()
-            return self.getDefaultState()
-        
-
-    @err_catcher(name=__name__)
-    def sm_saveStates(self, origin=None, buf=None):
-        statesNote = self.getStatesNote()
-
-        if not statesNote:
-            statesNote = self.createStatesNote()
-
-        self.synthEyes.Begin()
-        statesNote.text = buf
-        self.synthEyes.Accept("Written State to Note")
-
-
-    @err_catcher(name=__name__)
-    def getDefaultState(self):
-        defaultState = """{
-        "states": [
-            {
-                "statename": "publish",
-                "comment": "",
-                "description": ""
-            }
-        ]
-    }
-    """
-        return defaultState
-    
-
-    @err_catcher(name=__name__)
-    def getStatesNote(self):
-        statesNote = None
-
-        for note in self.synthEyes.Notes():
-            if note.number == 999:
-                statesNote = note
-
-        return statesNote
-    
-
-    @err_catcher(name=__name__)
-    def createStatesNote(self):
-        self.synthEyes.Begin()
-
-        statesNote = self.synthEyes.CreateNew("NOTE")
-
-        statesNote.SetName("PRISM_STATES")
-        statesNote.number = 999
-        statesNote.shotID = 0
-        statesNote.show = 0.0
-        statesNote.text = self.getDefaultState()
-
-        self.synthEyes.Accept("Create State Note")
-
-        return statesNote
-    
-
-    @err_catcher(name=__name__)
-    def sm_deleteStates(self, origin=None):
-        stateNote = self.getStatesNote()
-
-        if not stateNote:
-            stateNote = self.createStatesNote()
-
-        self.synthEyes.Begin()
-
-        stateNote.text = self.getDefaultState()
-
-        self.synthEyes.Accept("Cleared State Note")
-
-
-
-    # @err_catcher(name=__name__)
-    # def getGroups(self):
-    #     if bpy.app.version < (2, 80, 0):
-    #         return bpy.data.groups
-    #     else:
-    #         return bpy.data.collections
-
-    # @err_catcher(name=__name__)
-    # def createGroups(self, name):
-    #     if bpy.app.version < (2, 80, 0):
-    #         return bpy.ops.group.create(self.getOverrideContext(), name=name)
-    #     else:
-    #         if bpy.app.version < (4, 0, 0):
-    #             if bpy.ops.collection.create.poll(self.getOverrideContext()):
-    #                 return bpy.ops.collection.create(self.getOverrideContext(), name=name)
-    #         else:
-    #             ctx = self.getOverrideContext()
-    #             ctx.pop("region")
-    #             with bpy.context.temp_override(**ctx):
-    #                 if bpy.ops.collection.create.poll():
-    #                     return bpy.ops.collection.create(name=name)
-
-    # @err_catcher(name=__name__)
-    # def getSelectObject(self, obj):
-    #     if bpy.app.version < (2, 80, 0):
-    #         return obj.select
-    #     else:
-    #         return obj.select_get()
-
-    # @err_catcher(name=__name__)
-    # def selectObjects(self, objs, select=True, quiet=False):
-    #     for obj in objs:
-    #         self.selectObject(obj, select=select, quiet=quiet)
-
-    # @err_catcher(name=__name__)
-    # def deselectObjects(self):
-    #     if bpy.app.version < (4, 0, 0):
-    #         bpy.ops.object.select_all(
-    #             self.getOverrideContext(), action="DESELECT"
-    #         )
-    #     else:
-    #         with bpy.context.temp_override(**self.getOverrideContext()):
-    #             bpy.ops.object.select_all(action="DESELECT")
-
-    # @err_catcher(name=__name__)
-    # def selectObject(self, obj, select=True, quiet=False):
-    #     if bpy.app.version < (2, 80, 0):
-    #         obj.select = select
-    #         bpy.context.scene.objects.active = obj
-    #     else:
-    #         curlayer = bpy.context.window_manager.windows[0].view_layer
-    #         if obj.bl_rna.identifier.upper() == "COLLECTION":
-    #             self.selectObjects(obj.all_objects, quiet=quiet)
-    #         else:
-    #             if obj not in list(curlayer.objects):
-    #                 obj_layer = None
-    #                 for vlayer in list(bpy.context.scene.view_layers):
-    #                     if obj in list(vlayer.objects):
-    #                         obj_layer = vlayer
-    #                         break
-
-    #                 if obj_layer:
-    #                     if quiet:
-    #                         action = 1
-    #                     else:
-    #                         msgText = (
-    #                             "The object '%s' is not on the current viewlayer, but it's on viewlayer '%s'.\nOnly objects on the current viewlayer can be selected, which is necessary to process this object.\n\nHow do you want to coninue?"
-    #                             % (obj.name, obj_layer.name)
-    #                         )
-    #                         msg = QMessageBox(QMessageBox.Question, "Prism", msgText)
-    #                         msg.addButton(
-    #                             "Set viewlayer '%s' active" % obj_layer.name,
-    #                             QMessageBox.YesRole,
-    #                         )
-    #                         msg.addButton(
-    #                             "Skip object '%s'" % obj.name, QMessageBox.YesRole
-    #                         )
-
-    #                         self.core.parentWindow(msg)
-    #                         action = msg.exec_()
-
-    #                     if action == 0:
-    #                         bpy.context.window_manager.windows[0].view_layer = obj_layer
-    #                         curlayer = obj_layer
-    #                     else:
-    #                         return
-    #                 else:
-    #                     if not quiet:
-    #                         self.core.popup(
-    #                             "The object '%s' is not on the current viewlayer and couldn't be found on any other viewlayer. This object can't be selected and will be skipped in the current process."
-    #                             % obj.name
-    #                         )
-    #                     return
-
-    #             obj.select_set(select, view_layer=curlayer)
-    #             bpy.context.view_layer.objects.active = obj
-
-    # @err_catcher(name=__name__)
-    # def sm_export_addObjects(self, origin, objects=None):
-    #     taskName = origin.getTaskname()
-    #     if not taskName:
-    #         origin.setTaskname("Export")
-    #         taskName = origin.getTaskname()
-
-    #     if taskName not in self.getGroups():
-    #         result = self.createGroups(name=taskName)
-    #         if not result:
-    #             self.core.popup("Couldn't add objects. Make sure you are in a context where collections can be created.")
-    #             return
-
-    #     if not objects:
-    #         objects = self.getSelectedNodes()
-
-    #     for obj in objects:
-    #         if obj.bl_rna.identifier.upper() == "COLLECTION":
-    #             children = self.getGroups()[taskName].children
-    #             if obj not in list(children):
-    #                 children.link(obj)
-    #         else:
-    #             collection = self.getGroups()[taskName]
-    #             if obj not in list(collection.objects):
-    #                 collection.objects.link(obj)
-
-    # @err_catcher(name=__name__)
-    # def getNodeName(self, origin, node):
-    #     return node["name"]
-
-    # @err_catcher(name=__name__)
-    # def getSelectedNodes(self):
-    #     if bpy.app.version < (4, 0, 0):
-    #         objects = [
-    #             o
-    #             for o in bpy.context.scene.objects
-    #             if self.getSelectObject(o)
-    #         ]
-    #     else:
-    #         window = bpy.context.window_manager.windows[0]
-    #         area = next(area for area in window.screen.areas if area.type == 'OUTLINER')
-    #         with bpy.context.temp_override(
-    #             window=window,
-    #             area=area,
-    #             region=next(region for region in area.regions if region.type == 'WINDOW'),
-    #             screen=window.screen
-    #         ):
-    #             ids = bpy.context.selected_ids
-    #             objects = ids
-
-    #     return objects
-
-    # @err_catcher(name=__name__)
-    # def selectNodes(self, origin):
-    #     if origin.lw_objects.selectedItems() != []:
-    #         self.deselectObjects()
-    #         for i in origin.lw_objects.selectedItems():
-    #             node = origin.nodes[origin.lw_objects.row(i)]
-    #             if self.getObject(node):
-    #                 self.selectObject(self.getObject(node), quiet=True)
-
-    # @err_catcher(name=__name__)
-    # def isNodeValid(self, origin, node):
-    #     if type(node) == str:
-    #         node = self.getNode(node)
-
-    #     return bool(self.getObject(node))
 
     # @err_catcher(name=__name__)
     # def getCamNodes(self, origin, cur=False):
@@ -1387,6 +1129,480 @@ class Prism_SynthEyes_Functions(object):
 
 
 
+
+
+    @err_catcher(name=__name__)
+    def exportUSDA(self, exportPath=None, details={}):
+        try:
+            exportPath = os.path.normpath(exportPath)
+            self.synthEyes.Export("USD ASCII Scene", exportPath)
+
+            return True
+        
+        except:
+            return False
+        
+
+    @err_catcher(name=__name__)
+    def exportBLEND(self, exportPath=None, details={}):
+        try:
+            exportPath = os.path.normpath(exportPath)
+
+            exportPath = exportPath.replace(".blend", ".py")
+            self.synthEyes.Export("Blender (Python)", exportPath)
+
+            return True
+        
+        except:
+            return False
+
+    
+
+    # @err_catcher(name=__name__)
+    # def getOutputName(self, useVersion="next"):
+    #     context = self.getCurrentContext()
+    #     # location = self.cb_outPath.currentText()
+    #     location = "global"
+    #     version = useVersion if useVersion != "next" else None
+    #     if "type" not in context:
+    #         return
+
+    #     product = self.getProductname()
+    #     if not product:
+    #         return
+
+    #     # if self.getOutputType() == "ShotCam":
+    #     #     context["entityType"] = "shot"
+    #     #     context["type"] = "shot"
+    #     #     if "asset_path" in context:
+    #     #         del context["asset_path"]
+
+    #     #     if "asset" in context:
+    #     #         del context["asset"]
+
+    #     #     extension = ""
+    #     #     framePadding = None
+    #     # else:
+
+    #     # rangeType = self.cb_rangeType.currentText()
+    #     # extension = self.getOutputType()
+    #     extension = ".usda"
+
+    #     # if rangeType == "Single Frame" or extension != ".obj":
+    #     #     framePadding = ""
+    #     # else:
+    #         # framePadding = "#" * self.core.framePadding
+
+    #     # framePadding = "#" * self.core.framePadding
+    #     framePadding = ""#" * self.core.framePadding"
+
+    #     outputPathData = self.core.products.generateProductPath(
+    #         entity=context,
+    #         task=product,
+    #         extension=extension,
+    #         framePadding=framePadding,
+    #         # comment=self.getComment(),
+    #         comment="",
+    #         version=version,
+    #         location=location,
+    #         returnDetails=True,
+    #     )
+
+    #     outputFolder = os.path.dirname(outputPathData["path"])
+    #     hVersion = outputPathData["version"]
+
+    #     return outputPathData["path"], outputFolder, hVersion
+
+
+    # @err_catcher(name=__name__)
+    # def getCurrentContext(self):
+    #     context = {}
+    #     # if self.allowCustomContext:
+    #     #     ctype = self.getContextType()
+    #     #     if ctype == "Custom":
+    #     #         context = self.customContext
+
+    #     if not context:
+    #         # if self.getOutputType() == "ShotCam":
+    #         #     if self.shotCamsInitialized:
+    #         #         context = self.cb_sCamShot.currentData()
+    #         #     else:
+    #         #         fileName = self.core.getCurrentFileName()
+    #         #         context = self.core.getScenefileData(fileName)
+
+    #         #     if context and self.core.getConfig("globals", "productTasks", config="project"):
+    #         #         context["department"] = os.getenv("PRISM_SHOTCAM_DEPARTMENT", "Layout")
+    #         #         context["task"] = os.getenv("PRISM_SHOTCAM_TASK", "Cameras")
+
+    #         # else:
+    #         fileName = self.core.getCurrentFileName()
+    #         context = self.core.getScenefileData(fileName)
+
+    #     if context and "username" in context:
+    #         del context["username"]
+
+    #     if context and "user" in context:
+    #         del context["user"]
+
+    #     return context or {}
+
+
+    # @err_catcher(name=__name__)
+    # def getProductname(self):
+    #     # if self.getOutputType() == "ShotCam":
+    #     #     productName = "_ShotCam"
+    #     # else:
+    #     # productName = self.l_taskName.text()
+    #     productName = "SynthTest"
+
+    #     return productName
+
+
+ 
+    # @err_catcher(name=__name__)
+    # def sm_saveImports(self, origin, importPaths):
+    #     try:
+    #         bpy.context.scene["PrismImports"] = importPaths.replace("\\\\", "\\")
+    #     except Exception as e:
+    #         logger.debug("failed to save imports: %s" % str(e))
+
+
+
+
+    @err_catcher(name=__name__)
+    def getDefaultState(self):
+        defaultState = """{
+        "states": [
+            {
+                "statename": "publish",
+                "comment": "",
+                "description": ""
+            }
+        ]
+    }
+    """
+        return defaultState
+    
+
+    @err_catcher(name=__name__)
+    def compressState(self, data):
+        raw = json.dumps(data, separators=(",", ":")).encode()
+        return base64.b64encode(zlib.compress(raw)).decode()
+
+
+    @err_catcher(name=__name__)
+    def decompressState(self, txt):
+        return json.loads(zlib.decompress(base64.b64decode(txt)).decode())
+
+
+    @err_catcher(name=__name__)
+    def getNoteByNumber(self, num):
+        for note in self.synthEyes.Notes():
+            if note.number == num:
+                return note
+        return None
+
+
+    @err_catcher(name=__name__)
+    def getIndexNote(self):
+
+        note = self.getNoteByNumber(1000)
+
+        if not note:
+            note = self.createIndexNote()
+
+        return note
+    
+
+    @err_catcher(name=__name__)
+    def createIndexNote(self):
+
+        note = self.synthEyes.CreateNew("NOTE")
+
+        note.number = 1000
+        note.shotID = 0
+        note.show = 0.0
+        note.text = json.dumps({"notes": []})
+
+        return note
+    
+    @err_catcher(name=__name__)
+    def createStateNote(self, number):
+
+        note = self.synthEyes.CreateNew("NOTE")
+
+        note.number = number
+        note.shotID = 0
+        note.show = 0.0
+
+        return note
+    
+
+    @err_catcher(name=__name__)
+    def sm_saveStates(self, origin=None, buf=None):
+
+        data = json.loads(buf)
+
+        self.synthEyes.Begin()
+
+        index_note = self.getIndexNote()
+
+        old_index = json.loads(index_note.text)
+        old_notes = set(old_index.get("notes", []))
+
+        note_numbers = []
+
+        for i, state in enumerate(data["states"]):
+
+            number = 1001 + i
+            note_numbers.append(number)
+
+            note = self.getNoteByNumber(number)
+
+            if not note:
+                note = self.createStateNote(number)
+
+            note.text = self.compressState(state)
+
+        # remove unused notes
+        new_notes = set(note_numbers)
+        to_delete = old_notes - new_notes
+
+        for number in to_delete:
+            note = self.getNoteByNumber(number)
+            if note:
+                self.synthEyes.Delete(note)
+
+        index_note.text = json.dumps({"notes": note_numbers})
+
+        self.synthEyes.Accept("Write Prism States")
+
+
+
+    @err_catcher(name=__name__)
+    def sm_readStates(self, origin=None):
+
+        index_note = self.getNoteByNumber(1000)
+
+        if not index_note:
+            return self.getDefaultState()
+
+        index = json.loads(index_note.text)
+
+        states = []
+
+        for number in index["notes"]:
+
+            note = self.getNoteByNumber(number)
+
+            if note and note.text:
+                states.append(self.decompressState(note.text))
+
+        return json.dumps({"states": states}, indent=4)
+    
+
+
+    @err_catcher(name=__name__)
+    def sm_deleteStates(self, origin=None):
+
+        self.synthEyes.Begin()
+
+        index_note = self.getNoteByNumber(1000)
+
+        if not index_note:
+            index_note = self.createIndexNote()
+
+        index = json.loads(index_note.text)
+
+        for number in index.get("notes", []):
+
+            note = self.getNoteByNumber(number)
+
+            if note:
+                # note.Delete()
+                self.synthEyes.Delete(note)
+
+        index_note.text = json.dumps({"notes": []})
+
+        self.synthEyes.Accept("Cleared Prism States")
+
+
+
+
+
+
+
+
+
+
+    # @err_catcher(name=__name__)
+    # def getGroups(self):
+    #     if bpy.app.version < (2, 80, 0):
+    #         return bpy.data.groups
+    #     else:
+    #         return bpy.data.collections
+
+    # @err_catcher(name=__name__)
+    # def createGroups(self, name):
+    #     if bpy.app.version < (2, 80, 0):
+    #         return bpy.ops.group.create(self.getOverrideContext(), name=name)
+    #     else:
+    #         if bpy.app.version < (4, 0, 0):
+    #             if bpy.ops.collection.create.poll(self.getOverrideContext()):
+    #                 return bpy.ops.collection.create(self.getOverrideContext(), name=name)
+    #         else:
+    #             ctx = self.getOverrideContext()
+    #             ctx.pop("region")
+    #             with bpy.context.temp_override(**ctx):
+    #                 if bpy.ops.collection.create.poll():
+    #                     return bpy.ops.collection.create(name=name)
+
+    # @err_catcher(name=__name__)
+    # def getSelectObject(self, obj):
+    #     if bpy.app.version < (2, 80, 0):
+    #         return obj.select
+    #     else:
+    #         return obj.select_get()
+
+    # @err_catcher(name=__name__)
+    # def selectObjects(self, objs, select=True, quiet=False):
+    #     for obj in objs:
+    #         self.selectObject(obj, select=select, quiet=quiet)
+
+    # @err_catcher(name=__name__)
+    # def deselectObjects(self):
+    #     if bpy.app.version < (4, 0, 0):
+    #         bpy.ops.object.select_all(
+    #             self.getOverrideContext(), action="DESELECT"
+    #         )
+    #     else:
+    #         with bpy.context.temp_override(**self.getOverrideContext()):
+    #             bpy.ops.object.select_all(action="DESELECT")
+
+    # @err_catcher(name=__name__)
+    # def selectObject(self, obj, select=True, quiet=False):
+    #     if bpy.app.version < (2, 80, 0):
+    #         obj.select = select
+    #         bpy.context.scene.objects.active = obj
+    #     else:
+    #         curlayer = bpy.context.window_manager.windows[0].view_layer
+    #         if obj.bl_rna.identifier.upper() == "COLLECTION":
+    #             self.selectObjects(obj.all_objects, quiet=quiet)
+    #         else:
+    #             if obj not in list(curlayer.objects):
+    #                 obj_layer = None
+    #                 for vlayer in list(bpy.context.scene.view_layers):
+    #                     if obj in list(vlayer.objects):
+    #                         obj_layer = vlayer
+    #                         break
+
+    #                 if obj_layer:
+    #                     if quiet:
+    #                         action = 1
+    #                     else:
+    #                         msgText = (
+    #                             "The object '%s' is not on the current viewlayer, but it's on viewlayer '%s'.\nOnly objects on the current viewlayer can be selected, which is necessary to process this object.\n\nHow do you want to coninue?"
+    #                             % (obj.name, obj_layer.name)
+    #                         )
+    #                         msg = QMessageBox(QMessageBox.Question, "Prism", msgText)
+    #                         msg.addButton(
+    #                             "Set viewlayer '%s' active" % obj_layer.name,
+    #                             QMessageBox.YesRole,
+    #                         )
+    #                         msg.addButton(
+    #                             "Skip object '%s'" % obj.name, QMessageBox.YesRole
+    #                         )
+
+    #                         self.core.parentWindow(msg)
+    #                         action = msg.exec_()
+
+    #                     if action == 0:
+    #                         bpy.context.window_manager.windows[0].view_layer = obj_layer
+    #                         curlayer = obj_layer
+    #                     else:
+    #                         return
+    #                 else:
+    #                     if not quiet:
+    #                         self.core.popup(
+    #                             "The object '%s' is not on the current viewlayer and couldn't be found on any other viewlayer. This object can't be selected and will be skipped in the current process."
+    #                             % obj.name
+    #                         )
+    #                     return
+
+    #             obj.select_set(select, view_layer=curlayer)
+    #             bpy.context.view_layer.objects.active = obj
+
+    # @err_catcher(name=__name__)
+    # def sm_export_addObjects(self, origin, objects=None):
+    #     taskName = origin.getTaskname()
+    #     if not taskName:
+    #         origin.setTaskname("Export")
+    #         taskName = origin.getTaskname()
+
+    #     if taskName not in self.getGroups():
+    #         result = self.createGroups(name=taskName)
+    #         if not result:
+    #             self.core.popup("Couldn't add objects. Make sure you are in a context where collections can be created.")
+    #             return
+
+    #     if not objects:
+    #         objects = self.getSelectedNodes()
+
+    #     for obj in objects:
+    #         if obj.bl_rna.identifier.upper() == "COLLECTION":
+    #             children = self.getGroups()[taskName].children
+    #             if obj not in list(children):
+    #                 children.link(obj)
+    #         else:
+    #             collection = self.getGroups()[taskName]
+    #             if obj not in list(collection.objects):
+    #                 collection.objects.link(obj)
+
+    # @err_catcher(name=__name__)
+    # def getNodeName(self, origin, node):
+    #     return node["name"]
+
+    # @err_catcher(name=__name__)
+    # def getSelectedNodes(self):
+    #     if bpy.app.version < (4, 0, 0):
+    #         objects = [
+    #             o
+    #             for o in bpy.context.scene.objects
+    #             if self.getSelectObject(o)
+    #         ]
+    #     else:
+    #         window = bpy.context.window_manager.windows[0]
+    #         area = next(area for area in window.screen.areas if area.type == 'OUTLINER')
+    #         with bpy.context.temp_override(
+    #             window=window,
+    #             area=area,
+    #             region=next(region for region in area.regions if region.type == 'WINDOW'),
+    #             screen=window.screen
+    #         ):
+    #             ids = bpy.context.selected_ids
+    #             objects = ids
+
+    #     return objects
+
+    # @err_catcher(name=__name__)
+    # def selectNodes(self, origin):
+    #     if origin.lw_objects.selectedItems() != []:
+    #         self.deselectObjects()
+    #         for i in origin.lw_objects.selectedItems():
+    #             node = origin.nodes[origin.lw_objects.row(i)]
+    #             if self.getObject(node):
+    #                 self.selectObject(self.getObject(node), quiet=True)
+
+    # @err_catcher(name=__name__)
+    # def isNodeValid(self, origin, node):
+    #     if type(node) == str:
+    #         node = self.getNode(node)
+
+    #     return bool(self.getObject(node))
+
+
+
+
     # @err_catcher(name=__name__)
     # def registerOperator(self, name, label, code):
     #     def execute(self, context):
@@ -1432,27 +1648,27 @@ class Prism_SynthEyes_Functions(object):
     #     bpy.utils.register_class(menuClass)
     #     bpy.types.TOPBAR_MT_editor_menus.append(draw)
 
-    # @err_catcher(name=__name__)
-    # def sm_export_preExecute(self, origin, startFrame, endFrame):
-    #     warnings = []
+    @err_catcher(name=__name__)
+    def sm_export_preExecute(self, origin, startFrame, endFrame):
+        warnings = []
 
-    #     outType = origin.getOutputType()
+        outType = origin.getOutputType()
 
-    #     if outType != "ShotCam":
-    #         if (
-    #             outType == ".fbx"
-    #             and startFrame != endFrame
-    #             and bpy.app.version < (2, 80, 0)
-    #         ):
-    #             warnings.append(
-    #                 [
-    #                     "FBX animation export seems to be broken in synthEyes 2.79.",
-    #                     "Please check the exported file for animation offsets.",
-    #                     2,
-    #                 ]
-    #             )
+        # if outType != "ShotCam":
+        #     if (
+        #         outType == ".fbx"
+        #         and startFrame != endFrame
+        #         and bpy.app.version < (2, 80, 0)
+        #     ):
+        #         warnings.append(
+        #             [
+        #                 "FBX animation export seems to be broken in synthEyes 2.79.",
+        #                 "Please check the exported file for animation offsets.",
+        #                 2,
+        #             ]
+        #         )
 
-    #     return warnings
+        return warnings
 
     # @err_catcher(name=__name__)
     # def sm_render_startup(self, origin):
@@ -1956,95 +2172,14 @@ class Prism_SynthEyes_Functions(object):
 
     #     self.startRenderThread(origin)
 
-    # @err_catcher(name=__name__)
-    # def startRenderThread(self, origin):
-    #     if hasattr(self, "checkIsRenderingTimer") and self.checkIsRenderingTimer.isActive():
-    #         self.checkIsRenderingTimer.stop()
 
-    #     self.checkIsRenderingTimer = QTimer()
-    #     self.checkIsRenderingTimer.setSingleShot(True)
-    #     self.checkIsRenderingTimer.timeout.connect(lambda: self.checkRenderFinished(origin))
-    #     self.checkIsRenderingTimer.start(1000)
 
-    # @err_catcher(name=__name__)
-    # def sm_render_undoRenderSettings(self, origin, rSettings):
-    #     if "width" in rSettings:
-    #         bpy.context.scene.render.resolution_x = rSettings["width"]
-    #     if "height" in rSettings:
-    #         bpy.context.scene.render.resolution_y = rSettings["height"]
-    #     if "prev_start" in rSettings:
-    #         bpy.context.scene.frame_start = rSettings["prev_start"]
-    #     if "prev_end" in rSettings:
-    #         bpy.context.scene.frame_end = rSettings["prev_end"]
-    #     if "fileformat" in rSettings:
-    #         bpy.context.scene.render.image_settings.file_format = rSettings[
-    #             "fileformat"
-    #         ]
-    #     if "overwrite" in rSettings:
-    #         bpy.context.scene.render.use_overwrite = rSettings["overwrite"]
-    #     if "fileextension" in rSettings:
-    #         bpy.context.scene.render.use_file_extension = rSettings["fileextension"]
-    #     if "resolutionpercent" in rSettings:
-    #         bpy.context.scene.render.resolution_percentage = rSettings[
-    #             "resolutionpercent"
-    #         ]
-
-    #     if platform.system() == "Windows":
-    #         tmpOutput = os.path.join(os.environ["temp"], "PrismRender")
-    #         if os.path.exists(tmpOutput):
-    #             try:
-    #                 shutil.rmtree(tmpOutput)
-    #             except:
-    #                 pass
-
-    #     bDir = os.path.dirname(rSettings["origOutputName"])
-    #     if os.path.exists(bDir) and len(os.listdir(bDir)) == 0:
-    #         try:
-    #             shutil.rmtree(bDir)
-    #         except:
-    #             pass
-
-    #         origin.l_pathLast.setText(rSettings["outputName"])
-    #         origin.l_pathLast.setToolTip(rSettings["outputName"])
-    #         origin.stateManager.saveStatesToScene()
-
-    # @err_catcher(name=__name__)
-    # def sm_render_getDeadlineParams(self, origin, dlParams, homeDir):
-    #     dlParams["jobInfoFile"] = os.path.join(
-    #         homeDir, "temp", "synthEyes_submit_info.job"
-    #     )
-    #     dlParams["pluginInfoFile"] = os.path.join(
-    #         homeDir, "temp", "synthEyes_plugin_info.job"
-    #     )
-
-    #     dlParams["jobInfos"]["Plugin"] = "synthEyes"
-    #     dlParams["jobInfos"]["Comment"] = "Prism-Submission-synthEyes_ImageRender"
-    #     dlParams["pluginInfos"]["OutputFile"] = dlParams["jobInfos"]["OutputFilename0"]
-
-    # @err_catcher(name=__name__)
-    # def getCurrentRenderer(self, origin):
-    #     return bpy.context.window_manager.windows[0].scene.render.engine
 
     # @err_catcher(name=__name__)
     # def getCurrentSceneFiles(self, origin):
     #     return [self.core.getCurrentFileName()]
 
-    # @err_catcher(name=__name__)
-    # def sm_render_getRenderPasses(self, origin):
-    #     aovNames = [
-    #         x["name"]
-    #         for x in self.getAvailableAOVs()
-    #         if x["name"] not in self.getViewLayerAOVs()
-    #     ]
-    #     return aovNames
 
-    # @err_catcher(name=__name__)
-    # def sm_render_addRenderPass(self, origin, passName, steps):
-    #     self.enableViewLayerAOV(passName)
-
-    # @err_catcher(name=__name__)
-    # def sm_render_managerChanged(self, origin, isPandora):
-    #     pass
 
     # @err_catcher(name=__name__)
     # def sm_render_preExecute(self, origin):
@@ -2062,27 +2197,7 @@ class Prism_SynthEyes_Functions(object):
     #         )
     #     return outputName
 
-    # @err_catcher(name=__name__)
-    # def sm_render_submitScene(self, origin, jobPath):
-    #     jobFilePath = os.path.join(jobPath, self.core.getCurrentFileName(path=False))
-    #     bpy.ops.wm.save_as_mainfile(filepath=jobFilePath, copy=True)
-    #     bpy.ops.wm.revert_mainfile()
-    #     self.core.stateManager()
 
-    # @err_catcher(name=__name__)
-    # def deleteNodes(self, origin, handles):
-    #     for handle in handles:
-    #         obj = self.getObject(handle)
-    #         if obj.bl_rna.identifier.upper() == "COLLECTION":
-    #             bpy.data.collections.remove(obj)
-    #         else:
-    #             bpy.data.objects.remove(obj)
-
-    # #   bpy.ops.object.select_all(self.getOverrideContext(origin), action='DESELECT')
-    # #   for i in handles:
-    # #       self.selectObject(bpy.data.objects[i])
-    # #   bpy.ops.object.make_local(self.getOverrideContext(origin), type='SELECT_OBDATA_MATERIAL')
-    # #   bpy.ops.object.delete(self.getOverrideContext(origin))
 
     # @err_catcher(name=__name__)
     # def sm_import_startup(self, origin):
@@ -2299,149 +2414,16 @@ class Prism_SynthEyes_Functions(object):
 
     #     return importedNodes
 
-    # @err_catcher(name=__name__)
-    # def createOverride(self, obj):
-    #     node = self.getNode(obj)
-    #     ctx = self.getOverrideContext()
-    #     if bpy.app.version >= (2, 80, 0):
-    #         ctx.pop("screen")
-    #         ctx.pop("area")
 
-    #     if bpy.context.mode != 'OBJECT':
-    #         if bpy.app.version < (4, 0, 0):
-    #             try:
-    #                 bpy.ops.object.mode_set(ctx, mode="OBJECT")
-    #             except:
-    #                 pass
-    #         else:
-    #             with bpy.context.temp_override(**ctx):
-    #                 if bpy.context.object:
-    #                     try:
-    #                         bpy.ops.object.mode_set(mode="OBJECT")
-    #                     except:
-    #                         pass
-
-    #     if obj.bl_rna.identifier.upper() == "COLLECTION":
-    #         if obj and obj.library:
-    #             bpy.context.view_layer.objects.active = None
-    #             self.deselectObjects()
-    #             for lobj in obj.objects:
-    #                 lobj.select_set(True)
-
-    #             if bpy.app.version < (4, 0, 0):
-    #                 bpy.ops.object.make_override_library(ctx, collection=obj)
-    #             else:
-    #                 with bpy.context.temp_override(**ctx):
-    #                     bpy.ops.object.make_override_library(collection=obj)
-    #     else:
-    #         if obj and obj.library:
-    #             bpy.context.view_layer.objects.link(obj)
-    #             bpy.context.view_layer.objects.active = obj
-    #             obj.select_set(True)
-
-    #         if bpy.app.version < (4, 0, 0):
-    #             result = bpy.ops.object.make_override_library(ctx)
-    #         else:
-    #             with bpy.context.temp_override(**ctx):
-    #                 result = bpy.ops.object.make_override_library()
-
-    #         self.core.popup(result)
-
-    #     obj = self.getObject(node)
-    #     # self.core.popup(obj)
-    #     obj.override_library.is_system_override = False
-
-    # @err_catcher(name=__name__)
-    # def getNode(self, obj):
-    #     if type(obj) == str:
-    #         node = {"name": obj, "library": ""}
-    #     else:
-    #         lib = obj.library
-    #         if not lib and obj.override_library and obj.override_library.reference:
-    #             lib = obj.override_library.reference.library
-
-    #         libpath = getattr(lib, "filepath", "")
-    #         node = {"name": obj.name, "library": libpath}
-    #     return node
-
-    # @err_catcher(name=__name__)
-    # def getObject(self, node):
-    #     if type(node) == str:
-    #         node = self.getNode(node)
-
-    #     for obj in bpy.data.objects:
-    #         libMatch = getattr(obj.library, "filepath", "") == node["library"]
-    #         overrideMatch = obj.override_library and obj.override_library.reference and getattr(obj.override_library.reference.library, "filepath", "") == node["library"]
-    #         if (
-    #             obj.name == node["name"]
-    #             and (libMatch or overrideMatch)
-    #         ):
-    #             return obj
-
-    #     for obj in bpy.data.collections:
-    #         libMatch = getattr(obj.library, "filepath", "") == node["library"]
-    #         overrideMatch = obj.override_library and obj.override_library.reference and getattr(obj.override_library.reference.library, "filepath", "") == node["library"]
-    #         if (
-    #             obj.name == node["name"]
-    #             and (libMatch or overrideMatch)
-    #         ):
-    #             return obj
-
-    # @err_catcher(name=__name__)
-    # def isolateSelection(self):
-    #     if bpy.app.version < (4, 0, 0):
-    #         bpy.ops.view3d.localview(self.getOverrideContext(context="VIEW_3D"))
-    #     else:
-    #         with bpy.context.temp_override(**self.getOverrideContext(context="VIEW_3D")):
-    #             if bpy.context.space_data.local_view:
-    #                 bpy.ops.view3d.localview()
-
-    #             bpy.ops.view3d.localview()
 
     # @err_catcher(name=__name__)
     # def onGenerateStateNameContext(self, *args):
     #     if args[0].className == "ImportFile":
     #         args[1]["collection"] = args[0].setName
 
-    # @err_catcher(name=__name__)
-    # def sm_import_disableObjectTracking(self, origin):
-    #     stateGroup = [x for x in self.getGroups() if x.name == origin.setName]
-    #     if len(stateGroup) > 0:
-    #         self.getGroups().remove(stateGroup[0])
 
-    # @err_catcher(name=__name__)
-    # def sm_import_updateObjects(self, origin):
-    #     if origin.setName == "":
-    #         return
 
-    #     origin.nodes = []
-    #     if origin.setName in self.getGroups() and origin.chb_trackObjects.isChecked():
-    #         group = self.getGroups()[origin.setName]
-    #         nodes = []
-    #         for obj in group.objects:
-    #             if not obj.users_scene:
-    #                 group.objects.unlink(obj)
-    #                 continue
 
-    #             nodes.append(self.getNode(obj))
-
-    #         for child in group.children:
-    #             nodes.append(self.getNode(child))
-
-    #         origin.nodes = nodes
-
-    # @err_catcher(name=__name__)
-    # def sm_import_removeNameSpaces(self, origin):
-    #     for i in origin.nodes:
-    #         if not self.getObject(i):
-    #             continue
-
-    #         nodeName = self.getNodeName(origin, i)
-    #         newName = nodeName.rsplit(":", 1)[-1]
-    #         if newName != nodeName and not i["library"]:
-    #             self.getObject(i).name = newName
-
-    #     origin.updateUi()
 
     # @err_catcher(name=__name__)
     # def sm_import_fixImportPath(self, filepath):
@@ -2562,25 +2544,7 @@ class Prism_SynthEyes_Functions(object):
     # def sm_playblast_execute(self, origin):
     #     pass
 
-    # @err_catcher(name=__name__)
-    # def captureViewportThumbnail(self):
-    #     if bpy.app.background:
-    #         return
 
-    #     path = tempfile.NamedTemporaryFile(suffix=".jpg").name
-    #     if bpy.app.version < (4, 0, 0):
-    #         bpy.ops.screen.screenshot(self.getOverrideContext(), filepath=path)
-    #     else:
-    #         with bpy.context.temp_override(**self.getOverrideContext()):
-    #             bpy.ops.screen.screenshot(filepath=path)
-
-    #     pm = self.core.media.getPixmapFromPath(path)
-    #     try:
-    #         os.remove(path)
-    #     except:
-    #         pass
-
-    #     return pm
 
     # @err_catcher(name=__name__)
     # def sm_setActivePalette(self, origin, listWidget, inactive, inactivef, activef):
