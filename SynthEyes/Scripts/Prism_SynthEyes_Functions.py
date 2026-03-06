@@ -98,22 +98,17 @@ class Prism_SynthEyes_Functions(object):
         self.synthEyes = None
 
         self.importSyPy3()
-        # self.core.registerCallback(
-        #     "onUserSettingsOpen", self.onUserSettingsOpen, plugin=self.plugin
-        # )
-        # self.core.registerCallback(
-        #     "onProjectBrowserStartup", self.onProjectBrowserStartup, plugin=self.plugin
-        # )
+
+        ##  CALLBACKS
+
         self.core.registerCallback("onStateManagerOpen", self.onStateManagerOpen, plugin=self.plugin, priority=20)
-        # self.core.registerCallback(
-        #     "onStateCreated", self.onStateCreated, plugin=self.plugin
-        # )
-        # self.core.registerCallback(
-        #     "prePlayblast", self.prePlayblast, plugin=self.plugin
-        # )
-        # self.core.registerCallback(
-        #     "onGenerateStateNameContext", self.onGenerateStateNameContext, plugin=self.plugin
-        # )
+
+        # self.core.registerCallback("onUserSettingsOpen", self.onUserSettingsOpen, plugin=self.plugin)
+        # self.core.registerCallback("onProjectBrowserStartup", self.onProjectBrowserStartup, plugin=self.plugin)
+        # self.core.registerCallback("onStateCreated", self.onStateCreated, plugin=self.plugin)
+        # self.core.registerCallback("prePlayblast", self.prePlayblast, plugin=self.plugin)
+        # self.core.registerCallback("onGenerateStateNameContext", self.onGenerateStateNameContext, plugin=self.plugin)
+
 
         # self.importHandlers = {
         #     ".abc": {"importFunction": self.importAlembic},
@@ -231,14 +226,28 @@ class Prism_SynthEyes_Functions(object):
         origin.b_createExport.deleteLater()
         origin.b_createPlayblast.deleteLater()
 
-        #	Create Import Image buton
-        origin.b_importImage = QPushButton(origin.w_CreateImports)
-        origin.b_importImage.setObjectName("b_importImage")
-        origin.b_importImage.setText("Import Image")
+        #	Create Shot Buttons
+        origin.b_createShot = QPushButton(origin.w_CreateImports)
+        origin.b_createShot.setObjectName("b_createShot")
+        origin.b_createShot.setText("Create New Scene")
+
         #	Add to the beginning of the layout
-        origin.horizontalLayout_3.insertWidget(0, origin.b_importImage)
+        origin.horizontalLayout_3.insertWidget(0, origin.b_createShot)
+
         #	Add connection to button
-        origin.b_importImage.clicked.connect(lambda: self.addImportState(origin, "Import2d"))
+        origin.b_createShot.clicked.connect(lambda: self.addShot(origin, "create"))
+
+
+        origin.b_addShot = QPushButton(origin.w_CreateImports)
+        origin.b_addShot.setObjectName("b_addShot")
+        origin.b_addShot.setText("Add Shot")
+
+        #	Add to the beginning of the layout
+        origin.horizontalLayout_3.insertWidget(1, origin.b_addShot)
+
+        #	Add connection to button
+        origin.b_addShot.clicked.connect(lambda: self.addShot(origin, "add"))
+
 
         # #	Create Import 3d buton
         # origin.b_import3d = QPushButton(origin.w_CreateImports)
@@ -351,23 +360,7 @@ class Prism_SynthEyes_Functions(object):
 
     @err_catcher(name=__name__)
     def testTwo(self):
-        # self.core.popup("IN TEST TWO")							#	TESTING
-
-        curr_filePath = self.synthEyes.SNIFileName()
-
-        self.core.popup(f"curr_filePath:  {curr_filePath}")							#	TESTING
-
-        testFilepath = r"D:\Prism\Aero Local\Prism Tests - Aero\01_Production\Shots\SynthEyesTests\SynthTests\Renders\external\BgPlate-HERO-Rec70924_2997\v001\rgb\310_360Cam-030_WitnessTest2_BgPlate-HERO-Rec70924_2997_v001_0001.exr"
-
-
-        self.core.popup("BEFORE ADD SHOT")							#	TESTING
-
-        self.synthEyes.NewSceneAndShot(testFilepath, asp = 0.0)
-
-        self.synthEyes.SetSNIFileName(curr_filePath)
-
-
-
+        self.core.popup("IN TEST TWO")							#	TESTING
 
 
     @err_catcher(name=__name__)
@@ -718,6 +711,63 @@ class Prism_SynthEyes_Functions(object):
         
         if result:
             return outputName
+    
+
+    @err_catcher(name=__name__)
+    def addShot(self, origin, mode):
+        if mode == "create":
+            question = ("Would you like to Create a New SynthEyes Scene?\n\n"
+                        "This will Create a New Scene.")
+
+        elif mode == "add":
+            question = ("Would you like to Add an Additional Shot to the\n"
+                        "existing Scene?")
+
+        else:
+            return False
+            
+        title = "Create/Add Shot"
+
+        result = self.core.popupQuestion(text=question, title=title)
+
+        if result != "Yes":
+            return
+
+        self.addShot_mode = mode
+        origin.createState("Synth_AddShot")   
+
+
+
+    @err_catcher(name=__name__)
+    def sm_addShot(self, origin, mode, shotFilepath, details=None):
+        try:
+            if mode == "create":
+                    curr_SniName = self.synthEyes.SNIFileName()
+
+                    self.synthEyes.NewSceneAndShot(shotFilepath, asp = 0.0)
+
+                    self.synthEyes.SetSNIFileName(curr_SniName)
+
+            
+            elif mode == "add":
+                self.synthEyes.AddShot(shotFilepath, asp = 0.0)
+
+            #   Find Edit Shot Menu Object
+            self.synthEyes.InitMenu()
+            shotMenu = self.synthEyes.TopMenu("Shot")
+            menu_idx = shotMenu.PosByName("Edit Shot")
+            menu_id = shotMenu.IDByPos(menu_idx)
+
+            #   Execute Save Action
+            self.synthEyes.PerformActionByIDAndContinue(menu_id)
+
+            return True
+                
+        except Exception as e:                                              #   TODO - Make file name
+
+            logger.warning(f"ERROR: Unable to Create Shot: {e}")
+            return False
+            
 
 
 

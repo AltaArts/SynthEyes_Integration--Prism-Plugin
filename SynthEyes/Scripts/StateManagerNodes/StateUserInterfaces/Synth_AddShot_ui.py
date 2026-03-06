@@ -45,45 +45,6 @@ class Ui_wg_Synth_AddShot(object):
 
         self.verticalLayout.addLayout(self.horizontalLayout)
 
-        self.f_name = QWidget(wg_Synth_AddShot)
-        self.f_name.setObjectName(u"f_name")
-        self.horizontalLayout_2 = QHBoxLayout(self.f_name)
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.horizontalLayout_2.setContentsMargins(9, 0, 18, 0)
-        self.l_thumb = QLabel(self.f_name)
-        self.l_thumb.setObjectName(u"l_thumb")
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.l_thumb.sizePolicy().hasHeightForWidth())
-        self.l_thumb.setSizePolicy(sizePolicy)
-        self.l_thumb.setMinimumSize(QSize(0, 0))
-
-        self.horizontalLayout_2.addWidget(self.l_thumb)
-
-        self.lo_options = QVBoxLayout()
-        self.lo_options.setObjectName(u"lo_options")
-        self.cb_taskColor = QComboBox(self.f_name)
-        self.cb_taskColor.setObjectName(u"cb_taskColor")
-
-        self.lo_options.addWidget(self.cb_taskColor)
-
-        self.b_focusView = QPushButton(self.f_name)
-        self.b_focusView.setObjectName(u"b_focusView")
-
-        self.lo_options.addWidget(self.b_focusView)
-
-        self.b_selectTools = QPushButton(self.f_name)
-        self.b_selectTools.setObjectName(u"b_selectTools")
-
-        self.lo_options.addWidget(self.b_selectTools)
-
-
-        self.horizontalLayout_2.addLayout(self.lo_options)
-
-
-        self.verticalLayout.addWidget(self.f_name)
-
         self.gb_import = QGroupBox(wg_Synth_AddShot)
         self.gb_import.setObjectName(u"gb_import")
         self.verticalLayout_2 = QVBoxLayout(self.gb_import)
@@ -195,53 +156,16 @@ class Ui_wg_Synth_AddShot(object):
         self.gb_options.setObjectName(u"gb_options")
         self.verticalLayout_6 = QVBoxLayout(self.gb_options)
         self.verticalLayout_6.setObjectName(u"verticalLayout_6")
-        self.lo_importButtons = QHBoxLayout()
-        self.lo_importButtons.setObjectName(u"lo_importButtons")
-        self.b_importAll = QPushButton(self.gb_options)
-        self.b_importAll.setObjectName(u"b_importAll")
+        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
-        self.lo_importButtons.addWidget(self.b_importAll)
-
-        self.b_importSel = QPushButton(self.gb_options)
-        self.b_importSel.setObjectName(u"b_importSel")
-
-        self.lo_importButtons.addWidget(self.b_importSel)
-
-        self.b_refresh = QPushButton(self.gb_options)
-        self.b_refresh.setObjectName(u"b_refresh")
-        self.b_refresh.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-
-        self.lo_importButtons.addWidget(self.b_refresh)
-
-
-        self.verticalLayout_6.addLayout(self.lo_importButtons)
+        self.verticalLayout_6.addItem(self.verticalSpacer)
 
 
         self.verticalLayout_2.addWidget(self.gb_options)
 
-        self.gb_channels = QGroupBox(self.gb_import)
-        self.gb_channels.setObjectName(u"gb_channels")
-        self.verticalLayout_4 = QVBoxLayout(self.gb_channels)
-        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
-        self.verticalLayout_4.setContentsMargins(9, 9, 9, 9)
-        self.lw_objects = QTreeWidget(self.gb_channels)
-        __qtreewidgetitem = QTreeWidgetItem()
-        __qtreewidgetitem.setText(0, u"1");
-        self.lw_objects.setHeaderItem(__qtreewidgetitem)
-        self.lw_objects.setObjectName(u"lw_objects")
-        self.lw_objects.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
-        self.lw_objects.setVerticalScrollMode(QAbstractItemView.ScrollMode.ScrollPerItem)
-        self.lw_objects.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerItem)
-
-        self.verticalLayout_4.addWidget(self.lw_objects)
-
-
-        self.verticalLayout_2.addWidget(self.gb_channels)
-
 
         self.verticalLayout.addWidget(self.gb_import)
 
-        QWidget.setTabOrder(self.chb_autoUpdate, self.lw_objects)
 
         self.retranslateUi(wg_Synth_AddShot)
 
@@ -252,9 +176,6 @@ class Ui_wg_Synth_AddShot(object):
         wg_Synth_AddShot.setWindowTitle(QCoreApplication.translate("wg_Synth_AddShot", u"ImportFile", None))
         self.l_class.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Import Images", None))
         self.l_name.setText(QCoreApplication.translate("wg_Synth_AddShot", u"State name:", None))
-        self.l_thumb.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Thumbnail", None))
-        self.b_focusView.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Focus View", None))
-        self.b_selectTools.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Select Tools", None))
         self.gb_import.setTitle("")
         self.gb_version.setTitle(QCoreApplication.translate("wg_Synth_AddShot", u"Version", None))
         self.l_text_Current.setText(QCoreApplication.translate("wg_Synth_AddShot", u"CURRENT:", None))
@@ -266,9 +187,5 @@ class Ui_wg_Synth_AddShot(object):
         self.l_autoUpdate.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Auto load latest version:           ", None))
         self.chb_autoUpdate.setText("")
         self.gb_options.setTitle(QCoreApplication.translate("wg_Synth_AddShot", u"Import", None))
-        self.b_importAll.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Import All", None))
-        self.b_importSel.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Import Selected", None))
-        self.b_refresh.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Refresh", None))
-        self.gb_channels.setTitle(QCoreApplication.translate("wg_Synth_AddShot", u"Image AOV / Channels", None))
     # retranslateUi
 
