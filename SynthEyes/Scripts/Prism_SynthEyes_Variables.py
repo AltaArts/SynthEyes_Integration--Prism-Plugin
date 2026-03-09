@@ -57,19 +57,12 @@ class Prism_SynthEyes_Variables(object):
         self.hasQtParent = False
         self.sceneFormats = [".sni"]
         self.appSpecificFormats = self.sceneFormats
+        self.importFormats = ["usd", "usdc", ".usda", ".abc", ".obj", ".fbx", "glb"]
         self.outputFormats = [".usda", ".abc", ".obj", ".fbx", ".comp", ".blend", "ShotCam"]
         self.appColor = [200, 180, 0]
         self.canDeleteRenderPasses = False
         self.colorButtonWithStyleSheet = True
         self.platforms = ["Windows", "Linux", "Darwin"]
-        self.pluginDirectory = os.path.abspath(
-            os.path.dirname(os.path.dirname(__file__))
-        )
-        self.appIcon = os.path.join(
-            self.pluginDirectory, "UserInterfaces", "SynthEyes.ico"
-        )
-
-
-        # self.prismAppIcon = os.path.join(                                                 #   TODO
-        #     self.pluginDirectory, "UserInterfaces", "Fusion-Prism.ico"
-        # )
+        self.pluginDirectory = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+        self.appIcon = os.path.join(self.pluginDirectory, "UserInterfaces", "SynthEyes.ico")
+        self.prismAppIcon = os.path.join(self.pluginDirectory, "UserInterfaces", "SynthEyes.ico")

@@ -57,8 +57,6 @@ from qtpy.QtWidgets import *
 
 from PrismUtils.Decorators import err_catcher
 
-import Libs.Prism_Fusion_lib_Fus as Fus
-import Libs.Prism_Fusion_lib_Helper as Helper
 
 
 logger = logging.getLogger(__name__)
@@ -99,6 +97,7 @@ class Synth_AddShotClass(object):
         self.state = getattr(self, "state", state)
         self.stateManager = getattr(self, "stateManager", stateManager)
         self.synthFuncts = getattr(self, "synthFuncts", self.core.appPlugin)
+        self.synthEyes = self.synthFuncts.synthEyes
 
 
         if not hasattr(self, "mediaChooser"):
@@ -108,6 +107,7 @@ class Synth_AddShotClass(object):
         self.taskName = ""
         self.setName = ""
         self.stateStatus = None
+        self.shotUUID = None
 
         #   State name stuff
         stateNameTemplate = "{entity}_{version}"
@@ -197,9 +197,6 @@ class Synth_AddShotClass(object):
             and not self.stateManager.standalone
             ):
 
-            #   Make new UID for State
-            self.stateUID = Helper.createUUID()
-
             #   Open MediaChooser to get import
             requestResult = self.callMediaWindow()
           
@@ -218,6 +215,9 @@ class Synth_AddShotClass(object):
             self.nameChanged()
             self.refresh()
             result = self.addShot(requestResult[0], requestResult[1])
+
+            if result:
+                self.shotUUID = result
 
 
         ##   4. If error
@@ -612,8 +612,8 @@ class Synth_AddShotClass(object):
             self.e_name.setText(data["statename"])
         if "statemode" in data:
             self.setStateMode(data["statemode"])
-        if "stateUID" in data:
-            self.stateUID = data["stateUID"]
+        if "shotUID" in data:
+            self.shotUUID = data["shotUID"]
         if "taskname" in data:
             self.taskName = data["taskname"]
         if "setname" in data:
@@ -666,30 +666,47 @@ class Synth_AddShotClass(object):
 
 
 
-    # @err_catcher(name=__name__)
-    # def preDelete(self, item):
-    #     if not self.core.uiAvailable:
-    #         action = "Yes"
-    #     else:
-    #         action = "No"
+    @err_catcher(name=__name__)
+    def preDelete(self, item):
+        # if not self.core.uiAvailable:
+        #     action = "Yes"
+        # else:
+        #     action = "No"
+          
+        self.core.popup("NOTE: At this time, Shots cannot be deleted from SynthEyes")
 
-    #     #   Get all Tool UIDs for the State
-    #     uids = Fus.getUIDsFromStateUIDs(comp, self.stateUID)
-            
-    #     if len(uids) > 0:
-    #         text = "Do you want to Delete the Associated Loader(s)?"
-    #         action = self.core.popupQuestion(text, title="Delete State", parent=self.stateManager)
+        # text = "Do you want to Delete the Shot?"
+        # action = self.core.popupQuestion(text, title="Delete Shot", parent=self.stateManager)
 
-    #     if action == "Yes":
-    #         #   Delete each tool
-    #         for uid in uids:
-    #             self.fuseFuncts.deleteNode(uid, delAction=True)
+        # if action == "Yes":
+        #     self.synthEyes.Begin()
+
+
+        #     shots = self.synthEyes.Shots()
+
+        #     self.core.popup(f"shots:  {shots}")							#	TESTING
+
+        #     #   Delete each tool
+        #     for shot in shots:
+
+        #         self.core.popup(f"STATE ID:  {str(self.shotUUID)}\n"
+        #                         f"SHOT ID: {str(shot.UniqID())}")							#	TESTING
+        #         self.core.popup(f"match:  :  {str(self.shotUUID) == str(shot.UniqID())}")							#	TESTING
+
+        #         if shot.uniqueID == self.shotUUID:
+        #             self.synthEyes.Delete(shot)
+
+
+
+
+        #     self.synthEyes.Accept("Delete Shot")
                
 
     @err_catcher(name=__name__)
     def getStateProps(self):
         self.importData["statename"] = self.e_name.text()
         self.importData["statemode"] = self.stateMode
+        self.importData["shotUID"] = self.shotUUID
         self.importData["filepath"] = self.getImportPath()
         self.importData["autoUpdate"] = str(self.chb_autoUpdate.isChecked())
         self.importData["taskname"] = self.taskName

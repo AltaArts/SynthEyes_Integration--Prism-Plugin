@@ -57,20 +57,10 @@ import zlib
 import base64
 
 
-import threading
-import traceback
-import time                                             #   TODO - CLEANUP
-import shutil
-import operator
-import tempfile
-import math
-
-
 PLUGINROOT = os.path.dirname(os.path.dirname(__file__))
 PYTHONLIBS = os.path.join(PLUGINROOT, "PythonLibs", "Python313")
 
 sys.path.append(PYTHONLIBS)
-
 import mss
 
 
@@ -96,15 +86,13 @@ class Prism_SynthEyes_Functions(object):
         self.plugin = plugin
 
         self.synthEyes = None
-
         self.importSyPy3()
 
         ##  CALLBACKS
 
         self.core.registerCallback("onStateManagerOpen", self.onStateManagerOpen, plugin=self.plugin, priority=20)
-
-        # self.core.registerCallback("onUserSettingsOpen", self.onUserSettingsOpen, plugin=self.plugin)
-        # self.core.registerCallback("onProjectBrowserStartup", self.onProjectBrowserStartup, plugin=self.plugin)
+        self.core.registerCallback("onProjectBrowserStartup", self.onProjectBrowserStartup, plugin=self.plugin)
+        self.core.registerCallback("onUserSettingsOpen", self.onUserSettingsOpen, plugin=self.plugin)
         # self.core.registerCallback("onStateCreated", self.onStateCreated, plugin=self.plugin)
         # self.core.registerCallback("prePlayblast", self.prePlayblast, plugin=self.plugin)
         # self.core.registerCallback("onGenerateStateNameContext", self.onGenerateStateNameContext, plugin=self.plugin)
@@ -199,57 +187,47 @@ class Prism_SynthEyes_Functions(object):
 
 
     #######################################
-    ##             CALLBACKS             ##   
+    ##             CALLBACKS             ##
     #######################################
 
 
-    # @err_catcher(name=__name__)
-    # def onProjectBrowserStartup(self, origin):
-    #     if bpy.app.version < (2, 80, 0):
-    #         origin.publicColor = QColor(50, 100, 170)
+    @err_catcher(name=__name__)
+    def onProjectBrowserStartup(self, origin):
+        origin.setWindowIcon(QIcon(self.prismAppIcon))
 
 
-    # @err_catcher(name=__name__)
-    # def onUserSettingsOpen(self, origin):
-    #     origin.resize(origin.width(), origin.height() + 60)
+
+    @err_catcher(name=__name__)
+    def onUserSettingsOpen(self, origin):
+        origin.setWindowIcon(QIcon(self.prismAppIcon))
 
 
 
     @err_catcher(name=__name__)
     def onStateManagerOpen(self, origin):
-        # origin.setWindowIcon(QIcon(self.prismAppIcon))                        #   TODO
+        origin.setWindowIcon(QIcon(self.prismAppIcon))
 
-        #	Remove Import buttons
+        #	Remove Import Export and Playblast buttons
         origin.b_createImport.deleteLater()
-
-        #	Remove Export and Playblast buttons
         origin.b_createExport.deleteLater()
         origin.b_createPlayblast.deleteLater()
 
-        #	Create Shot Buttons
+        #	Create New Scene Button
         origin.b_createShot = QPushButton(origin.w_CreateImports)
         origin.b_createShot.setObjectName("b_createShot")
         origin.b_createShot.setText("Create New Scene")
-
-        #	Add to the beginning of the layout
         origin.horizontalLayout_3.insertWidget(0, origin.b_createShot)
-
-        #	Add connection to button
         origin.b_createShot.clicked.connect(lambda: self.addShot(origin, "create"))
 
-
+        #   Add Shot Button
         origin.b_addShot = QPushButton(origin.w_CreateImports)
         origin.b_addShot.setObjectName("b_addShot")
         origin.b_addShot.setText("Add Shot")
-
-        #	Add to the beginning of the layout
         origin.horizontalLayout_3.insertWidget(1, origin.b_addShot)
-
-        #	Add connection to button
         origin.b_addShot.clicked.connect(lambda: self.addShot(origin, "add"))
 
 
-        # #	Create Import 3d buton
+        # #	Create Import 3d button
         # origin.b_import3d = QPushButton(origin.w_CreateImports)
         # origin.b_import3d.setObjectName("b_import3d")
         # origin.b_import3d.setText("Import 3d")
@@ -258,28 +236,24 @@ class Prism_SynthEyes_Functions(object):
         # #	Add connection to button
         # origin.b_import3d.clicked.connect(lambda: self.addImportState(origin, "Import3d"))
 
-        # Create a new button for RenderGroup
+        # Export Scene Button
         origin.b_exportScene = QPushButton(origin.w_CreateExports)
         origin.b_exportScene.setObjectName("b_exportScene")
         origin.b_exportScene.setText("Export Scene")
-
-        # Set the size policy to expanding to make it wider
         origin.b_exportScene.setMaximumSize(QSize(150, 16777215))
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         origin.b_exportScene.setSizePolicy(sizePolicy)
-
-        # Insert the new button before b_showExportStates
-        index = origin.horizontalLayout_4.indexOf(origin.b_showExportStates)
+        # index = origin.horizontalLayout_4.indexOf(origin.b_showExportStates)
         # origin.horizontalLayout_4.insertWidget(index - 1, origin.b_exportScene)
         origin.horizontalLayout_4.insertWidget(0, origin.b_exportScene)
-
         origin.b_exportScene.clicked.connect(lambda: origin.createState("Synth_SceneExport"))
 
         # origin.createState(appStates["stateType"], parent=parent, setActive=True, **appStates.get("kwargs", {}))
 
-        #   Remove Unused States
-        keepStates = ["Folder", "Synth_SceneExport", "Synth_AddShot"]
+        #   States to Keep in SynthEyes
+        keepStates = ["Folder", "Synth_AddShot", "Synth_ImportMesh", "Synth_SceneExport"]
 
+        #   Remove Unused States
         for state in list(origin.stateTypes.keys()):
             if state not in keepStates:
                 try:
@@ -323,7 +297,10 @@ class Prism_SynthEyes_Functions(object):
 
 
 
-    ####    Called From SynthEyes Prism Tools   ####
+
+    ###################################################
+    ##       Called From SynthEyes Prism Tools       ##   
+    ###################################################
     
     @err_catcher(name=__name__)
     def saveVersion(self):
@@ -363,6 +340,7 @@ class Prism_SynthEyes_Functions(object):
         self.core.popup("IN TEST TWO")							#	TESTING
 
 
+
     @err_catcher(name=__name__)
     def prismMenuTesting(self):
 
@@ -388,7 +366,6 @@ class Prism_SynthEyes_Functions(object):
         # last_id = self.synthEyes.core.Run("MENULAST1")
         # print(f"***  last_id:  {last_id}")								#	TESTING
 
-
         # count = prismMenu.Count()
 
         # for i in range(1, count+1):
@@ -396,11 +373,8 @@ class Prism_SynthEyes_Functions(object):
         #     mid  = prismMenu.IDByPos(i)
 
         #     print(i, name, mid)
-
-
         
         # # print(f"dir prismMenu:  {dir(prismMenu)}")							#	TESTING
-
 
         # act_projectB = prismMenu.SubMenuByName("Project Browser")
         # print(f"dir act_projectB:  {dir(act_projectB)}")								#	TESTING
@@ -412,20 +386,16 @@ class Prism_SynthEyes_Functions(object):
 
         # print(f"***  act_save runcmd:  {act_save.runcmd}")								#	TESTING
 
-
         # project_browser_id = prismMenu.IDByName("Project Browser")
         # save_next_id = prismMenu.IDByName("Save Next Version")
-
 
         # last_id = self.synthEyes.core.Run("MENULAST1")
 
         # print(f"***  last_id:  {last_id}")								#	TESTING
 
-
         # import time
 
         # print("Polling for menu selection (Ctrl+C to stop)...")
-
 
         # try:
         #     while True:
@@ -440,9 +410,6 @@ class Prism_SynthEyes_Functions(object):
         #         time.sleep(0.2)  # poll every 0.2 seconds
         # except KeyboardInterrupt:
         #     print("Polling stopped by user.")
-
-        
-
 
         # print(f"act_projectB.runcmd:  {act_projectB.runcmd}")
 
@@ -460,15 +427,10 @@ class Prism_SynthEyes_Functions(object):
 
         # print(f"dir core: {dir(self.synthEyes.core)}")
 
-
         # self.synthEyes.core.Run(act_projectB.runcmd)
-
-
 
         # actionName = "PRISM.OpenProjectBrowser"
         # self.synthEyes.core.Run(f'REGISTERACTION {actionName}')
-
-
 
         # act_projectB.runcmd = lambda: self.open_ProjectBrowser()
 
@@ -481,6 +443,9 @@ class Prism_SynthEyes_Functions(object):
 
 
 
+    ###################################################
+    ##                 File Handling                 ##   
+    ###################################################
 
     #   Returns SynthEyes Version
     @err_catcher(name=__name__)
@@ -612,9 +577,6 @@ class Prism_SynthEyes_Functions(object):
         return pixmap
     
 
-
-
-
     # @err_catcher(name=__name__)
     # def getImportPaths(self, origin):
     #     if "PrismImports" not in bpy.context.scene:
@@ -625,6 +587,7 @@ class Prism_SynthEyes_Functions(object):
 
     @err_catcher(name=__name__)
     def getFrameRange(self, origin):
+        # return [None, None]                                         #   TODO - FOR TESTING
         try:
             start = (self.synthEyes.AnimStart() + 1)
             end = (self.synthEyes.AnimEnd() +1)
@@ -634,9 +597,6 @@ class Prism_SynthEyes_Functions(object):
             logger.warning(f"ERROR: Unable to Get Framerange from SynthEyes: {e}")
             return [None, None]
 
-        # return [None, None]                                           ##   TODO - DISABLED FOR TESTING - RE-ENABLE WHEN DONE
-        
-    
 
     @err_catcher(name=__name__)
     def getCurrentFrame(self):
@@ -691,43 +651,25 @@ class Prism_SynthEyes_Functions(object):
     #         bpy.context.scene.render.resolution_y = height
 
 
-    @err_catcher(name=__name__)
-    def sm_sceneExport(self, origin, outputType, outputName, startFrame=None, endFrame=None, details=None):
 
-        # self.core.popup(f"outputType:  {outputType}")							#	TESTING
-        # self.core.popup(f"outputName:  {outputName}")							#	TESTING
-        # self.core.popup(f"details:  {details}")							#	TESTING
-
-
-        result = False
-
-        match outputType:
-            case ".usda":
-                result = self.exportUSDA(outputName)
-
-            case ".blend":
-                result = self.exportBLEND(outputName)
-
-        
-        if result:
-            return outputName
-    
+    #######################################
+    ##               Shots               ##   
+    #######################################
+   
 
     @err_catcher(name=__name__)
     def addShot(self, origin, mode):
         if mode == "create":
             question = ("Would you like to Create a New SynthEyes Scene?\n\n"
-                        "This will Create a New Scene.")
+                        "This will Create a New Clean Scene and Import the Shot")
 
         elif mode == "add":
             question = ("Would you like to Add an Additional Shot to the\n"
                         "existing Scene?")
-
         else:
             return False
             
         title = "Create/Add Shot"
-
         result = self.core.popupQuestion(text=question, title=title)
 
         if result != "Yes":
@@ -737,20 +679,19 @@ class Prism_SynthEyes_Functions(object):
         origin.createState("Synth_AddShot")   
 
 
-
     @err_catcher(name=__name__)
     def sm_addShot(self, origin, mode, shotFilepath, details=None):
         try:
             if mode == "create":
                     curr_SniName = self.synthEyes.SNIFileName()
 
-                    self.synthEyes.NewSceneAndShot(shotFilepath, asp = 0.0)
+                    shot = self.synthEyes.NewSceneAndShot(shotFilepath, asp = 0.0)
 
                     self.synthEyes.SetSNIFileName(curr_SniName)
 
             
             elif mode == "add":
-                self.synthEyes.AddShot(shotFilepath, asp = 0.0)
+                shot = self.synthEyes.AddShot(shotFilepath, asp = 0.0)
 
             #   Find Edit Shot Menu Object
             self.synthEyes.InitMenu()
@@ -761,7 +702,17 @@ class Prism_SynthEyes_Functions(object):
             #   Execute Save Action
             self.synthEyes.PerformActionByIDAndContinue(menu_id)
 
-            return True
+            # self.core.popup(f"dir shot:  {dir(shot)}")							#	TESTING
+            # self.synthEyes.begin()
+            # shot.Name = "CAM_TEST"
+            # self.synthEyes.Accept("Shot Rename")
+            # cams = shot.Cameras()
+            # for cam in cams:
+            #     self.core.popup(f"name:  {cam.Name}")							#	TESTING
+
+            # self.core.popup(f"shot.UniqID():  {shot.UniqID()}")							#	TESTING
+
+            return shot.UniqID()
                 
         except Exception as e:                                              #   TODO - Make file name
 
@@ -769,6 +720,388 @@ class Prism_SynthEyes_Functions(object):
             return False
             
 
+    #######################################
+    ##           Import Mesh             ##   
+    #######################################
+
+
+
+    # @err_catcher(name=__name__)
+    # def sm_import_startup(self, origin):
+    #     origin.f_abcPath.setVisible(True)
+
+    # @err_catcher(name=__name__)
+    # def importAlembic(self, importPath, origin=None):
+    #     if origin and origin.chb_abcPath.isChecked() and len(origin.nodes) > 0:
+    #         cache = None
+    #         for i in origin.nodes:
+    #             constraints = [
+    #                 x
+    #                 for x in self.getObject(i).constraints
+    #                 if x.type == "TRANSFORM_CACHE"
+    #             ]
+    #             modifiers = [
+    #                 x
+    #                 for x in self.getObject(i).modifiers
+    #                 if x.type == "MESH_SEQUENCE_CACHE"
+    #             ]
+    #             if len(constraints) > 0:
+    #                 cache = constraints[0].cache_file
+    #             elif len(modifiers) > 0:
+    #                 cache = modifiers[0].cache_file
+
+    #         if cache is not None:
+    #             cache.filepath = importPath
+    #             cache.name = os.path.basename(importPath)
+    #         #       bpy.context.scene.frame_current += 1        #updates the cache, but leads to crashes
+    #         #       bpy.context.scene.frame_current -= 1
+    #         else:
+    #             self.core.popup("No caches updated.")
+    #         return True
+    #     else:
+    #         if bpy.app.version < (4, 0, 0):
+    #             bpy.ops.wm.alembic_import(
+    #                 self.getOverrideContext(origin),
+    #                 filepath=importPath,
+    #                 set_frame_range=False,
+    #                 as_background_job=False,
+    #             )
+    #         else:
+    #             with bpy.context.temp_override(**self.getOverrideContext(origin)):
+    #                 bpy.ops.wm.alembic_import(
+    #                     filepath=importPath,
+    #                     set_frame_range=False,
+    #                     as_background_job=False,
+    #                 )
+
+    # @err_catcher(name=__name__)
+    # def importFBX(self, importPath, origin=None):
+    #     if bpy.app.version < (4, 0, 0):
+    #         bpy.ops.import_scene.fbx(self.getOverrideContext(origin), filepath=importPath)
+    #     else:
+    #         with bpy.context.temp_override(**self.getOverrideContext(origin)):
+    #             bpy.ops.import_scene.fbx(filepath=importPath)
+
+    # @err_catcher(name=__name__)
+    # def importObj(self, importPath, origin=None):
+    #     if bpy.app.version < (4, 0, 0):
+    #         bpy.ops.import_scene.obj(self.getOverrideContext(origin), filepath=importPath)
+    #     else:
+    #         with bpy.context.temp_override(**self.getOverrideContext(origin)):
+    #             bpy.ops.wm.obj_import(filepath=importPath)
+
+    # @err_catcher(name=__name__)
+    # def importGlb(self, importPath, origin=None):
+    #     with bpy.context.temp_override(**self.getOverrideContext(origin)):
+    #         bpy.ops.import_scene.gltf(filepath=importPath)
+
+    # @err_catcher(name=__name__)
+    # def importUsd(self, filepath, origin=None):
+    #     from _bpy import ops as _ops_module
+    #     try:
+    #         _ops_module.as_string("WM_OT_usd_import")
+    #     except:
+    #         ext = os.path.splitext(filepath)[1]
+    #         msg = "Format \"%s\" is not supported in this synthEyes version. Importing USD requires at least synthEyes 3.0." % ext
+    #         self.core.popup(msg)
+    #         return False
+
+    #     if bpy.app.version < (4, 0, 0):
+    #         bpy.ops.wm.usd_import(
+    #             self.getOverrideContext(origin),
+    #             filepath=filepath,
+    #             set_frame_range=False,
+    #             import_usd_preview=True,
+    #         )
+    #     else:
+    #         with bpy.context.temp_override(**self.getOverrideContext(origin)):
+    #             bpy.ops.wm.usd_import(
+    #                 filepath=filepath,
+    #                 set_frame_range=False,
+    #                 import_usd_preview=True,
+    #             )
+
+    # @err_catcher(name=__name__)
+    # def importFile(self, importPath):
+    #     if not importPath:
+    #         return
+
+    #     base, ext = os.path.splitext(importPath)
+    #     ext = ext.lower()
+    #     if ext in self.importHandlers:
+    #         return self.importHandlers[ext]["importFunction"](importPath)
+
+
+    @err_catcher(name=__name__)
+    def sm_import_importToApp(self, origin, doImport, update, impFileName):
+        fileName = os.path.splitext(os.path.basename(impFileName))
+        ext = fileName[1].lower()
+
+        if ext not in self.importFormats:
+            self.core.popup(f"Format {ext} is not supported for SynthEyes Mesh Import.")
+            return {"result": False, "doImport": doImport}
+        
+        else:
+            filePath = os.path.normpath(impFileName)
+
+            self.synthEyes.Begin()
+
+            scn = self.synthEyes.Scene()
+            meshObj = scn.Call("ReadMesh", filePath)
+
+            if not meshObj:
+                self.synthEyes.Accept("Configure Import")
+                return {"result": False, "doImport": False}
+            
+            meshObj.Name = fileName[0]
+
+            self.synthEyes.Accept("Configure Import")
+
+            result = meshObj.UniqID()
+            doImport = True
+
+            return {"result": result, "doImport": doImport}
+        
+
+
+    #######################################
+    ##             Exporting             ##   
+    #######################################
+
+
+    @err_catcher(name=__name__)
+    def sm_export_preExecute(self, origin, startFrame, endFrame):
+        warnings = []
+
+        outType = origin.getOutputType()
+
+        # if outType != "ShotCam":
+        #     if (
+        #         outType == ".fbx"
+        #         and startFrame != endFrame
+        #         and bpy.app.version < (2, 80, 0)
+        #     ):
+        #         warnings.append(
+        #             [
+        #                 "FBX animation export seems to be broken in synthEyes 2.79.",
+        #                 "Please check the exported file for animation offsets.",
+        #                 2,
+        #             ]
+        #         )
+
+        return warnings
+    
+
+    @err_catcher(name=__name__)
+    def sm_sceneExport(self, origin, outputType, outputName, startFrame=None, endFrame=None, details=None):
+        result = False
+
+        match outputType:
+            case ".usda":
+                result = self.exportUSDA(outputName)
+
+            case ".blend":
+                result = self.exportBLEND(outputName)
+        
+        if result:
+            return outputName
+    
+
+    @err_catcher(name=__name__)
+    def exportUSDA(self, exportPath=None, details={}):
+        try:
+            exportPath = os.path.normpath(exportPath)
+            self.synthEyes.Export("USD ASCII Scene", exportPath)
+
+            return True
+        
+        except:
+            return False
+        
+
+    @err_catcher(name=__name__)
+    def exportBLEND(self, exportPath=None, details={}):
+        try:
+            exportPath = os.path.normpath(exportPath)
+
+            exportPath = exportPath.replace(".blend", ".py")
+            self.synthEyes.Export("Blender (Python)", exportPath)
+
+            return True
+        
+        except:
+            return False
+
+
+
+    ###################################################
+    ##         State Manager States Handling         ##   
+    ###################################################
+
+    #   This uses SynthEyes Note objects to store the State Data.
+    #   Notes can only store a finite amount of characters, so
+    #   the Data is spread over several Note Objects.
+    #   The Index Note contains the listing of all the State Notes,
+    #   and each State Note contains a compressed version of a State.
+
+
+    #   Returns Default State String
+    @err_catcher(name=__name__)
+    def getDefaultState(self):
+        defaultState = """{
+        "states": [
+            {
+                "statename": "publish",
+                "comment": "",
+                "description": ""
+            }
+        ]
+    }
+    """
+        return defaultState
+    
+
+    #   Compresses State String Json
+    @err_catcher(name=__name__)
+    def compressState(self, data):
+        raw = json.dumps(data, separators=(",", ":")).encode()
+        return base64.b64encode(zlib.compress(raw)).decode()
+
+
+    #   Decompresses to Json String
+    @err_catcher(name=__name__)
+    def decompressState(self, txt):
+        return json.loads(zlib.decompress(base64.b64decode(txt)).decode())
+
+
+    #   Returns Note Object by Note Number
+    @err_catcher(name=__name__)
+    def getNoteByNumber(self, num):
+        for note in self.synthEyes.Notes():
+            if note.number == num:
+                return note
+        return None
+
+
+    #   Returns Root Index Note Object
+    @err_catcher(name=__name__)
+    def getIndexNote(self):
+        note = self.getNoteByNumber(1000)
+
+        if not note:
+            note = self.createIndexNote()
+
+        return note
+
+
+    #   Creates Root Index Note Object
+    @err_catcher(name=__name__)
+    def createIndexNote(self):
+        note = self.synthEyes.CreateNew("NOTE")
+
+        note.number = 1000
+        note.shotID = 0
+        note.show = 0.0
+        note.text = json.dumps({"notes": []})
+
+        return note
+
+
+    #   Creates Note Object to Store State Data    
+    @err_catcher(name=__name__)
+    def createStateNote(self, number):
+        note = self.synthEyes.CreateNew("NOTE")
+
+        note.number = number
+        note.shotID = 0
+        note.show = 0.0
+
+        return note
+    
+
+    #   Called to Save State Data
+    @err_catcher(name=__name__)
+    def sm_saveStates(self, origin=None, buf=None):
+        data = json.loads(buf)
+
+        self.synthEyes.Begin()
+
+        index_note = self.getIndexNote()
+
+        old_index = json.loads(index_note.text)
+        old_notes = set(old_index.get("notes", []))
+
+        note_numbers = []
+
+        for i, state in enumerate(data["states"]):
+            number = 1001 + i
+            note_numbers.append(number)
+
+            note = self.getNoteByNumber(number)
+
+            if not note:
+                note = self.createStateNote(number)
+
+            note.text = self.compressState(state)
+
+        #   Remove Unused Notes
+        new_notes = set(note_numbers)
+        to_delete = old_notes - new_notes
+
+        for number in to_delete:
+            note = self.getNoteByNumber(number)
+            if note:
+                self.synthEyes.Delete(note)
+
+        index_note.text = json.dumps({"notes": note_numbers})
+
+        self.synthEyes.Accept("Write Prism States")
+
+
+    #   Called to Retrieve State Data
+    @err_catcher(name=__name__)
+    def sm_readStates(self, origin=None):
+        index_note = self.getNoteByNumber(1000)
+
+        if not index_note:
+            return self.getDefaultState()
+
+        index = json.loads(index_note.text)
+
+        states = []
+
+        for number in index["notes"]:
+
+            note = self.getNoteByNumber(number)
+
+            if note and note.text:
+                states.append(self.decompressState(note.text))
+
+        return json.dumps({"states": states}, indent=4)
+    
+
+    #   Deletes All State Notes
+    @err_catcher(name=__name__)
+    def sm_deleteStates(self, origin=None):
+        self.synthEyes.Begin()
+
+        index_note = self.getNoteByNumber(1000)
+
+        if not index_note:
+            index_note = self.createIndexNote()
+
+        index = json.loads(index_note.text)
+
+        for number in index.get("notes", []):
+
+            note = self.getNoteByNumber(number)
+
+            if note:
+                self.synthEyes.Delete(note)
+
+        index_note.text = json.dumps({"notes": []})
+
+        self.synthEyes.Accept("Cleared Prism States")
 
 
 
@@ -1178,36 +1511,6 @@ class Prism_SynthEyes_Functions(object):
     #     return ctx
 
 
-
-
-
-    @err_catcher(name=__name__)
-    def exportUSDA(self, exportPath=None, details={}):
-        try:
-            exportPath = os.path.normpath(exportPath)
-            self.synthEyes.Export("USD ASCII Scene", exportPath)
-
-            return True
-        
-        except:
-            return False
-        
-
-    @err_catcher(name=__name__)
-    def exportBLEND(self, exportPath=None, details={}):
-        try:
-            exportPath = os.path.normpath(exportPath)
-
-            exportPath = exportPath.replace(".blend", ".py")
-            self.synthEyes.Export("Blender (Python)", exportPath)
-
-            return True
-        
-        except:
-            return False
-
-    
-
     # @err_catcher(name=__name__)
     # def getOutputName(self, useVersion="next"):
     #     context = self.getCurrentContext()
@@ -1315,174 +1618,6 @@ class Prism_SynthEyes_Functions(object):
     #         bpy.context.scene["PrismImports"] = importPaths.replace("\\\\", "\\")
     #     except Exception as e:
     #         logger.debug("failed to save imports: %s" % str(e))
-
-
-
-
-    @err_catcher(name=__name__)
-    def getDefaultState(self):
-        defaultState = """{
-        "states": [
-            {
-                "statename": "publish",
-                "comment": "",
-                "description": ""
-            }
-        ]
-    }
-    """
-        return defaultState
-    
-
-    @err_catcher(name=__name__)
-    def compressState(self, data):
-        raw = json.dumps(data, separators=(",", ":")).encode()
-        return base64.b64encode(zlib.compress(raw)).decode()
-
-
-    @err_catcher(name=__name__)
-    def decompressState(self, txt):
-        return json.loads(zlib.decompress(base64.b64decode(txt)).decode())
-
-
-    @err_catcher(name=__name__)
-    def getNoteByNumber(self, num):
-        for note in self.synthEyes.Notes():
-            if note.number == num:
-                return note
-        return None
-
-
-    @err_catcher(name=__name__)
-    def getIndexNote(self):
-
-        note = self.getNoteByNumber(1000)
-
-        if not note:
-            note = self.createIndexNote()
-
-        return note
-    
-
-    @err_catcher(name=__name__)
-    def createIndexNote(self):
-
-        note = self.synthEyes.CreateNew("NOTE")
-
-        note.number = 1000
-        note.shotID = 0
-        note.show = 0.0
-        note.text = json.dumps({"notes": []})
-
-        return note
-    
-    @err_catcher(name=__name__)
-    def createStateNote(self, number):
-
-        note = self.synthEyes.CreateNew("NOTE")
-
-        note.number = number
-        note.shotID = 0
-        note.show = 0.0
-
-        return note
-    
-
-    @err_catcher(name=__name__)
-    def sm_saveStates(self, origin=None, buf=None):
-
-        data = json.loads(buf)
-
-        self.synthEyes.Begin()
-
-        index_note = self.getIndexNote()
-
-        old_index = json.loads(index_note.text)
-        old_notes = set(old_index.get("notes", []))
-
-        note_numbers = []
-
-        for i, state in enumerate(data["states"]):
-
-            number = 1001 + i
-            note_numbers.append(number)
-
-            note = self.getNoteByNumber(number)
-
-            if not note:
-                note = self.createStateNote(number)
-
-            note.text = self.compressState(state)
-
-        # remove unused notes
-        new_notes = set(note_numbers)
-        to_delete = old_notes - new_notes
-
-        for number in to_delete:
-            note = self.getNoteByNumber(number)
-            if note:
-                self.synthEyes.Delete(note)
-
-        index_note.text = json.dumps({"notes": note_numbers})
-
-        self.synthEyes.Accept("Write Prism States")
-
-
-
-    @err_catcher(name=__name__)
-    def sm_readStates(self, origin=None):
-
-        index_note = self.getNoteByNumber(1000)
-
-        if not index_note:
-            return self.getDefaultState()
-
-        index = json.loads(index_note.text)
-
-        states = []
-
-        for number in index["notes"]:
-
-            note = self.getNoteByNumber(number)
-
-            if note and note.text:
-                states.append(self.decompressState(note.text))
-
-        return json.dumps({"states": states}, indent=4)
-    
-
-
-    @err_catcher(name=__name__)
-    def sm_deleteStates(self, origin=None):
-
-        self.synthEyes.Begin()
-
-        index_note = self.getNoteByNumber(1000)
-
-        if not index_note:
-            index_note = self.createIndexNote()
-
-        index = json.loads(index_note.text)
-
-        for number in index.get("notes", []):
-
-            note = self.getNoteByNumber(number)
-
-            if note:
-                # note.Delete()
-                self.synthEyes.Delete(note)
-
-        index_note.text = json.dumps({"notes": []})
-
-        self.synthEyes.Accept("Cleared Prism States")
-
-
-
-
-
-
-
-
 
 
     # @err_catcher(name=__name__)
@@ -1698,27 +1833,7 @@ class Prism_SynthEyes_Functions(object):
     #     bpy.utils.register_class(menuClass)
     #     bpy.types.TOPBAR_MT_editor_menus.append(draw)
 
-    @err_catcher(name=__name__)
-    def sm_export_preExecute(self, origin, startFrame, endFrame):
-        warnings = []
 
-        outType = origin.getOutputType()
-
-        # if outType != "ShotCam":
-        #     if (
-        #         outType == ".fbx"
-        #         and startFrame != endFrame
-        #         and bpy.app.version < (2, 80, 0)
-        #     ):
-        #         warnings.append(
-        #             [
-        #                 "FBX animation export seems to be broken in synthEyes 2.79.",
-        #                 "Please check the exported file for animation offsets.",
-        #                 2,
-        #             ]
-        #         )
-
-        return warnings
 
     # @err_catcher(name=__name__)
     # def sm_render_startup(self, origin):
@@ -2248,199 +2363,8 @@ class Prism_SynthEyes_Functions(object):
     #     return outputName
 
 
+        
 
-    # @err_catcher(name=__name__)
-    # def sm_import_startup(self, origin):
-    #     origin.f_abcPath.setVisible(True)
-
-    # @err_catcher(name=__name__)
-    # def importAlembic(self, importPath, origin=None):
-    #     if origin and origin.chb_abcPath.isChecked() and len(origin.nodes) > 0:
-    #         cache = None
-    #         for i in origin.nodes:
-    #             constraints = [
-    #                 x
-    #                 for x in self.getObject(i).constraints
-    #                 if x.type == "TRANSFORM_CACHE"
-    #             ]
-    #             modifiers = [
-    #                 x
-    #                 for x in self.getObject(i).modifiers
-    #                 if x.type == "MESH_SEQUENCE_CACHE"
-    #             ]
-    #             if len(constraints) > 0:
-    #                 cache = constraints[0].cache_file
-    #             elif len(modifiers) > 0:
-    #                 cache = modifiers[0].cache_file
-
-    #         if cache is not None:
-    #             cache.filepath = importPath
-    #             cache.name = os.path.basename(importPath)
-    #         #       bpy.context.scene.frame_current += 1        #updates the cache, but leads to crashes
-    #         #       bpy.context.scene.frame_current -= 1
-    #         else:
-    #             self.core.popup("No caches updated.")
-    #         return True
-    #     else:
-    #         if bpy.app.version < (4, 0, 0):
-    #             bpy.ops.wm.alembic_import(
-    #                 self.getOverrideContext(origin),
-    #                 filepath=importPath,
-    #                 set_frame_range=False,
-    #                 as_background_job=False,
-    #             )
-    #         else:
-    #             with bpy.context.temp_override(**self.getOverrideContext(origin)):
-    #                 bpy.ops.wm.alembic_import(
-    #                     filepath=importPath,
-    #                     set_frame_range=False,
-    #                     as_background_job=False,
-    #                 )
-
-    # @err_catcher(name=__name__)
-    # def importFBX(self, importPath, origin=None):
-    #     if bpy.app.version < (4, 0, 0):
-    #         bpy.ops.import_scene.fbx(self.getOverrideContext(origin), filepath=importPath)
-    #     else:
-    #         with bpy.context.temp_override(**self.getOverrideContext(origin)):
-    #             bpy.ops.import_scene.fbx(filepath=importPath)
-
-    # @err_catcher(name=__name__)
-    # def importObj(self, importPath, origin=None):
-    #     if bpy.app.version < (4, 0, 0):
-    #         bpy.ops.import_scene.obj(self.getOverrideContext(origin), filepath=importPath)
-    #     else:
-    #         with bpy.context.temp_override(**self.getOverrideContext(origin)):
-    #             bpy.ops.wm.obj_import(filepath=importPath)
-
-    # @err_catcher(name=__name__)
-    # def importGlb(self, importPath, origin=None):
-    #     with bpy.context.temp_override(**self.getOverrideContext(origin)):
-    #         bpy.ops.import_scene.gltf(filepath=importPath)
-
-    # @err_catcher(name=__name__)
-    # def importUsd(self, filepath, origin=None):
-    #     from _bpy import ops as _ops_module
-    #     try:
-    #         _ops_module.as_string("WM_OT_usd_import")
-    #     except:
-    #         ext = os.path.splitext(filepath)[1]
-    #         msg = "Format \"%s\" is not supported in this synthEyes version. Importing USD requires at least synthEyes 3.0." % ext
-    #         self.core.popup(msg)
-    #         return False
-
-    #     if bpy.app.version < (4, 0, 0):
-    #         bpy.ops.wm.usd_import(
-    #             self.getOverrideContext(origin),
-    #             filepath=filepath,
-    #             set_frame_range=False,
-    #             import_usd_preview=True,
-    #         )
-    #     else:
-    #         with bpy.context.temp_override(**self.getOverrideContext(origin)):
-    #             bpy.ops.wm.usd_import(
-    #                 filepath=filepath,
-    #                 set_frame_range=False,
-    #                 import_usd_preview=True,
-    #             )
-
-    # @err_catcher(name=__name__)
-    # def importFile(self, importPath):
-    #     if not importPath:
-    #         return
-
-    #     base, ext = os.path.splitext(importPath)
-    #     ext = ext.lower()
-    #     if ext in self.importHandlers:
-    #         return self.importHandlers[ext]["importFunction"](importPath)
-
-    # @err_catcher(name=__name__)
-    # def sm_import_importToApp(self, origin, doImport, update, impFileName):
-    #     fileName = os.path.splitext(os.path.basename(impFileName))
-    #     result = False
-
-    #     ext = fileName[1].lower()
-    #     importedNodes = None
-    #     if ext in [".blend"]:
-    #         prevSceneContent = list(bpy.data.scenes[0].collection.objects) + list(bpy.data.scenes[0].collection.children)
-    #         origin.setName = ""
-    #         dlg_sceneData = widget_import_scenedata.Import_SceneData(
-    #             self.core, self.plugin
-    #         )
-    #         dlgResult = dlg_sceneData.importScene(impFileName, update, origin)
-    #         if not dlgResult or not dlgResult.get("result"):
-    #             return
-
-    #         if dlg_sceneData.updated:
-    #             result = True
-
-    #         if dlgResult.get("mode") == "link":
-    #             importedNodes = dlgResult.get("importedNodes")
-
-    #         existingNodes = dlg_sceneData.existingNodes
-    #     else:
-    #         if not (ext == ".abc" and origin.chb_abcPath.isChecked()):
-    #             origin.preDelete(
-    #                 baseText="Do you want to delete the currently connected objects?\n\n"
-    #             )
-    #         existingNodes = list(bpy.data.objects) + list(bpy.data.collections)
-    #         prevSceneContent = list(bpy.data.scenes[0].collection.objects) + list(bpy.data.scenes[0].collection.children)
-    #         origin.setName = ""
-
-    #         if ext in self.importHandlers:
-    #             result = self.importHandlers[ext]["importFunction"](impFileName, origin)
-    #         else:
-    #             self.core.popup("Format is not supported.")
-    #             return {"result": False, "doImport": doImport}
-
-    #     if not result:
-    #         if importedNodes is None:
-    #             importedNodes = self.getImportedNodes(existingNodes, prevSceneContent)
-
-    #         origin.setName = "Import_" + fileName[0]
-    #         extension = 1
-    #         while origin.setName in self.getGroups() and extension < 999:
-    #             if "%s_%s" % (origin.setName, extension) not in self.getGroups():
-    #                 origin.setName += "_%s" % extension
-    #             extension += 1
-
-    #         if origin.chb_trackObjects.isChecked():
-    #             origin.nodes = importedNodes
-
-    #         if len(origin.nodes) > 0:
-    #             self.deselectObjects()
-    #             self.createGroups(name=origin.setName)
-
-    #             for node in origin.nodes:
-    #                 obj = self.getObject(node)
-    #                 if obj.bl_rna.identifier.upper() == "COLLECTION":
-    #                     children = self.getGroups()[origin.setName].children
-    #                     if obj not in list(children):
-    #                         children.link(obj)
-
-    #             for node in origin.nodes:
-    #                 obj = self.getObject(node)
-    #                 if obj.bl_rna.identifier.upper() != "COLLECTION":
-    #                     collection = self.getGroups()[origin.setName]
-    #                     colls = [collection] + collection.children_recursive
-    #                     curObjs = []
-    #                     for col in colls:
-    #                         curObjs += list(col.objects)
-
-    #                     if obj and obj not in curObjs:
-    #                         collection.objects.link(obj)
-
-    #         self.deselectObjects()
-    #         objs = [self.getObject(x) for x in importedNodes]
-    #         self.selectObjects(objs, quiet=True)
-
-    #         result = len(importedNodes) > 0
-    #         if not result and ext in [".blend"]:
-    #             if impFileName in [lib.filepath for lib in bpy.data.libraries]:
-    #                 result = True
-    #                 self.core.popup("The library \"%s\" is already linked into the current scenefile.\nTo link the same object multiple times, create an Library Override on the existing objects first." % impFileName)
-
-    #     return {"result": result, "doImport": doImport}
 
     # @err_catcher(name=__name__)
     # def getImportedNodes(self, existingNodes, prevSceneContent):
