@@ -211,6 +211,8 @@ class Prism_SynthEyes_Functions(object):
         origin.b_createImport.deleteLater()
         origin.b_createExport.deleteLater()
         origin.b_createPlayblast.deleteLater()
+        origin.b_shotCam.deleteLater()
+
 
         #	Create New Scene Button
         origin.b_createShot = QPushButton(origin.w_CreateImports)
@@ -226,15 +228,12 @@ class Prism_SynthEyes_Functions(object):
         origin.horizontalLayout_3.insertWidget(1, origin.b_addShot)
         origin.b_addShot.clicked.connect(lambda: self.addShot(origin, "add"))
 
-
-        # #	Create Import 3d button
-        # origin.b_import3d = QPushButton(origin.w_CreateImports)
-        # origin.b_import3d.setObjectName("b_import3d")
-        # origin.b_import3d.setText("Import 3d")
-        # #	Add to the 2nd position of the layout
-        # origin.horizontalLayout_3.insertWidget(1, origin.b_import3d)
-        # #	Add connection to button
-        # origin.b_import3d.clicked.connect(lambda: self.addImportState(origin, "Import3d"))
+        #   Add Mesh Button
+        origin.b_addMesh = QPushButton(origin.w_CreateImports)
+        origin.b_addMesh.setObjectName("b_addMesh")
+        origin.b_addMesh.setText("Add Mesh")
+        origin.horizontalLayout_3.insertWidget(2, origin.b_addMesh)
+        origin.b_addMesh.clicked.connect(lambda: origin.createState("Synth_ImportMesh"))
 
         # Export Scene Button
         origin.b_exportScene = QPushButton(origin.w_CreateExports)
@@ -619,6 +618,38 @@ class Prism_SynthEyes_Functions(object):
             logger.warning(f"ERROR: Unable to Set Framerange in SynthEyes: {e}")
 
 
+    @err_catcher(name=__name__)
+    def deleteObjByUUID(self, objType:str, uuid:str) -> bool:
+        try:
+            match objType:
+                case "shot":
+                    objs = self.synthEyes.Shots()
+                case "object":
+                    objs = self.synthEyes.Objects()
+                case "camera":
+                    objs = self.synthEyes.Cameras()
+                case "mesh":
+                    objs = self.synthEyes.Meshes()
+                case "light":
+                    objs = self.synthEyes.Lights()
+                case "extra":
+                    objs = self.synthEyes.Extras()
+
+            for obj in objs:
+                if obj.UniqID() == uuid:
+                    self.synthEyes.Begin()
+                    self.synthEyes.Delete(obj)
+                    self.synthEyes.Accept(f"Deleted {objType}")
+                    break
+
+            return True
+
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to delete {objType} - {uuid}")
+            return False
+
+
+
     # @err_catcher(name=__name__)
     # def getFPS(self, origin):
     #     intFps = bpy.context.scene.render.fps
@@ -681,44 +712,65 @@ class Prism_SynthEyes_Functions(object):
 
     @err_catcher(name=__name__)
     def sm_addShot(self, origin, mode, shotFilepath, details=None):
-        try:
-            if mode == "create":
-                    curr_SniName = self.synthEyes.SNIFileName()
+        if mode == "create":
+            try:
+                curr_SniName = self.synthEyes.SNIFileName()
 
-                    shot = self.synthEyes.NewSceneAndShot(shotFilepath, asp = 0.0)
+                shot = self.synthEyes.NewSceneAndShot(shotFilepath, asp = 0.0)
 
-                    self.synthEyes.SetSNIFileName(curr_SniName)
+                self.synthEyes.SetSNIFileName(curr_SniName)
 
+                camSuf = "SCENE"
+
+            except Exception as e:
+                logger.warning(f"ERROR: Unable to Create Scene Shot: {e}")
+                return False
             
-            elif mode == "add":
+        elif mode == "add":
+            try:
                 shot = self.synthEyes.AddShot(shotFilepath, asp = 0.0)
 
+                camSuf = "SHOT"
+
+            except Exception as e:
+                logger.warning(f"ERROR: Unable to Add Shot: {e}")
+                return False
+
+        if details:
+            try:
+                camName = f"CAMERA_{camSuf}-{details['identifier']}_{details['version']}"
+            
+                self.synthEyes.Begin()
+
+                for obj in shot.Objects():
+                    if obj.Name().lower().startswith("camera"):
+                        obj.SetName(camName)
+                        break
+
+                self.synthEyes.Accept("Shot Rename")
+
+            except Exception as e:
+                logger.warning(f"ERROR: Unable to Rename Shot: {e}")
+
+        self.synthEyes.Redraw()
+
+        try:
             #   Find Edit Shot Menu Object
             self.synthEyes.InitMenu()
             shotMenu = self.synthEyes.TopMenu("Shot")
             menu_idx = shotMenu.PosByName("Edit Shot")
             menu_id = shotMenu.IDByPos(menu_idx)
 
-            #   Execute Save Action
+            #   Execute Edit Shot Action
             self.synthEyes.PerformActionByIDAndContinue(menu_id)
 
-            # self.core.popup(f"dir shot:  {dir(shot)}")							#	TESTING
-            # self.synthEyes.begin()
-            # shot.Name = "CAM_TEST"
-            # self.synthEyes.Accept("Shot Rename")
-            # cams = shot.Cameras()
-            # for cam in cams:
-            #     self.core.popup(f"name:  {cam.Name}")							#	TESTING
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Call 'Edit Shot' Menu: {e}")
 
-            # self.core.popup(f"shot.UniqID():  {shot.UniqID()}")							#	TESTING
 
-            return shot.UniqID()
+        return shot.UniqID()
                 
-        except Exception as e:                                              #   TODO - Make file name
-
-            logger.warning(f"ERROR: Unable to Create Shot: {e}")
-            return False
-            
+           
 
     #######################################
     ##           Import Mesh             ##   
@@ -833,7 +885,7 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def sm_import_importToApp(self, origin, doImport, update, impFileName):
+    def sm_import_importToApp(self, origin, doImport, update, impFileName, data=None):
         fileName = os.path.splitext(os.path.basename(impFileName))
         ext = fileName[1].lower()
 
@@ -844,6 +896,14 @@ class Prism_SynthEyes_Functions(object):
         else:
             filePath = os.path.normpath(impFileName)
 
+            if data:
+                try:
+                    meshName = f"{data['product']}_{data['version']}"
+                except:
+                    pass
+            else:
+                meshName = fileName[0]
+
             self.synthEyes.Begin()
 
             scn = self.synthEyes.Scene()
@@ -853,7 +913,7 @@ class Prism_SynthEyes_Functions(object):
                 self.synthEyes.Accept("Configure Import")
                 return {"result": False, "doImport": False}
             
-            meshObj.Name = fileName[0]
+            meshObj.SetName(meshName)
 
             self.synthEyes.Accept("Configure Import")
 
@@ -861,6 +921,16 @@ class Prism_SynthEyes_Functions(object):
             doImport = True
 
             return {"result": result, "doImport": doImport}
+        
+
+    @err_catcher(name=__name__)
+    def sm_import_preDelete(self, origin, delData:dict):
+        try:
+            uuid = delData["meshUUID"]
+            self.deleteObjByUUID("mesh", uuid)
+
+        except Exception as e:
+            logger.warning(e)
         
 
 
@@ -2403,12 +2473,7 @@ class Prism_SynthEyes_Functions(object):
     # def sm_import_fixImportPath(self, filepath):
     #     return filepath.replace("\\\\", "\\")
 
-    # @err_catcher(name=__name__)
-    # def sm_import_preDelete(self, origin):
-    #     try:
-    #         self.getGroups().remove(self.getGroups()[origin.setName], do_unlink=True)
-    #     except Exception as e:
-    #         logger.warning(e)
+
 
     # @err_catcher(name=__name__)
     # def sm_playblast_startup(self, origin):
