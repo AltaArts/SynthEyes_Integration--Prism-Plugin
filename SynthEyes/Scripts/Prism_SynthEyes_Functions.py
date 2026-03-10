@@ -129,9 +129,16 @@ class Prism_SynthEyes_Functions(object):
                 self.core.changeProject(curPrj)
             return False
 
-        self.core.setActiveStyleSheet("synthEyes")
-        appIcon = QIcon(os.path.join(self.core.prismRoot, "Scripts", "UserInterfacesPrism", "p_tray.png"))
+        styleSheet = self.core.setActiveStyleSheet("SynthEyes")
+
         qapp = QApplication.instance()
+
+        if qapp:
+            for w in qapp.topLevelWidgets():
+                w.setStyleSheet(styleSheet["css"])
+                w.update()
+
+        appIcon = QIcon(os.path.join(self.core.prismRoot, "Scripts", "UserInterfacesPrism", "p_tray.png"))
         qapp.setWindowIcon(appIcon)
 
         origin.timer.stop()
@@ -194,18 +201,45 @@ class Prism_SynthEyes_Functions(object):
     @err_catcher(name=__name__)
     def onProjectBrowserStartup(self, origin):
         origin.setWindowIcon(QIcon(self.prismAppIcon))
-
+        ss = self.core.getActiveStyleSheet()
+        origin.setStyleSheet(ss["css"])
 
 
     @err_catcher(name=__name__)
     def onUserSettingsOpen(self, origin):
         origin.setWindowIcon(QIcon(self.prismAppIcon))
-
+        ss = self.core.getActiveStyleSheet()
+        origin.setStyleSheet(ss["css"])
 
 
     @err_catcher(name=__name__)
     def onStateManagerOpen(self, origin):
         origin.setWindowIcon(QIcon(self.prismAppIcon))
+        ss = self.core.getActiveStyleSheet()
+        origin.setStyleSheet(ss["css"])
+
+        origin.b_showImportStates.setStyleSheet("padding-left: 1px;padding-right: 1px;")
+        origin.b_showExportStates.setStyleSheet("padding-left: 1px;padding-right: 1px;")
+        # origin.b_createImport.setMinimumWidth(70 * self.core.uiScaleFactor)
+        # origin.b_createImport.setMaximumWidth(70 * self.core.uiScaleFactor)
+        # origin.b_createImport.setMinimumHeight(0)
+        # origin.b_createImport.setMaximumHeight(500 * self.core.uiScaleFactor)
+        # origin.b_shotCam.setMinimumHeight(0)
+        # origin.b_shotCam.setMaximumHeight(50 * self.core.uiScaleFactor)
+        origin.b_showImportStates.setMinimumWidth(30 * self.core.uiScaleFactor)
+        origin.b_showImportStates.setMaximumWidth(30 * self.core.uiScaleFactor)
+        origin.b_showExportStates.setMinimumWidth(30 * self.core.uiScaleFactor)
+        origin.b_showExportStates.setMaximumWidth(30 * self.core.uiScaleFactor)
+        # origin.b_createExport.setMinimumWidth(70 * self.core.uiScaleFactor)
+        # origin.b_createExport.setMaximumWidth(70 * self.core.uiScaleFactor)
+        origin.b_createRender.setMinimumWidth(70 * self.core.uiScaleFactor)
+        origin.b_createRender.setMaximumWidth(70 * self.core.uiScaleFactor)
+        # origin.b_createPlayblast.setMinimumWidth(80 * self.core.uiScaleFactor)
+        # origin.b_createPlayblast.setMaximumWidth(80 * self.core.uiScaleFactor)
+        origin.b_description.setMinimumWidth(35 * self.core.uiScaleFactor)
+        origin.b_description.setMaximumWidth(35 * self.core.uiScaleFactor)
+        origin.b_preview.setMinimumWidth(35 * self.core.uiScaleFactor)
+        origin.b_preview.setMaximumWidth(35 * self.core.uiScaleFactor)
 
         #	Remove Import Export and Playblast buttons
         origin.b_createImport.deleteLater()
@@ -250,7 +284,7 @@ class Prism_SynthEyes_Functions(object):
         # origin.createState(appStates["stateType"], parent=parent, setActive=True, **appStates.get("kwargs", {}))
 
         #   States to Keep in SynthEyes
-        keepStates = ["Folder", "Synth_AddShot", "Synth_ImportMesh", "Synth_SceneExport"]
+        keepStates = ["Folder", "Synth_AddShot", "Synth_ImportMesh", "Synth_SceneExport", "Synth_Render_StMap"]
 
         #   Remove Unused States
         for state in list(origin.stateTypes.keys()):
@@ -337,6 +371,7 @@ class Prism_SynthEyes_Functions(object):
     @err_catcher(name=__name__)
     def testTwo(self):
         self.core.popup("IN TEST TWO")							#	TESTING
+
 
 
 
@@ -682,6 +717,27 @@ class Prism_SynthEyes_Functions(object):
     #         bpy.context.scene.render.resolution_y = height
 
 
+    @err_catcher(name=__name__)
+    def getCamNodes(self, origin, cur=False):
+        return self.synthEyes.Cameras()
+    
+
+    @err_catcher(name=__name__)
+    def getCamName(self, origin, handle):
+        cams = self.synthEyes.Cameras()
+        if cams:
+            return cams[0].Name()
+        
+        return None
+    
+
+    # @err_catcher(name=__name__)
+    # def selectCam(self, origin):
+    #     if self.getObject(origin.curCam):
+    #         self.deselectObjects()
+    #         self.selectObject(self.getObject(origin.curCam))
+
+
 
     #######################################
     ##               Shots               ##   
@@ -1001,8 +1057,80 @@ class Prism_SynthEyes_Functions(object):
         
         except:
             return False
+        
 
 
+    # @err_catcher(name=__name__)
+    # def sm_export_startup(self, origin):
+    #     if origin.className == "Export":
+    #         origin.w_additionalOptions.setVisible(False)
+
+
+
+
+    #######################################
+    ##             Rendering             ##   
+    #######################################
+
+
+    @err_catcher(name=__name__)
+    def sm_render_stMap_preSubmit(self, origin, rSettings):            #   TODO
+        pass
+
+
+    @err_catcher(name=__name__)
+    def sm_render_stMap(self, origin, stType, rangeType, outputName, rSettings, context):
+
+        # .WriteRedistortImage(filenm, clip)
+        # .WriteRedistortSequence(fnm, cmp, flt, walp, clip)
+        # .WriteUndistortImage(filenm, clip)
+        # .WriteUndistortSequence(fnm, cmp, flt, walp, clip)
+
+        #  Writes a sequence of UVMaps, starting at the given first filename (must include any leading zeros).
+        #  Cmp is the compression specification string; flt=1 for a full floating-point map or =0 for 16bit;
+        #  walp is 2 to write premultiplied alpha, 1 for non-premultiplied, or 0 for no alpha;
+        #  clp=1 to clip to 0..1, or =0 to allow out-of-range color values (safety areas).
+
+        ######################################################################################
+        #   FYI:  STMAP Sequences are not working yet.  Even though it looks like it should,
+        #   I am getting a SynthEyes error.  I think it is from the compression specification str.
+        ######################################################################################
+
+        if stType == "redistort":
+            if rangeType == "sequence":
+                stFunct = "WriteRedistortSequence"
+            else:
+                stFunct = "WriteRedistortImage"
+
+        elif stType == "undistort":
+            if rangeType == "sequence":
+                stFunct = "WriteUndistortSequence"
+            else:
+                stFunct = "WriteUndistortImage"
+
+    
+        shots = self.synthEyes.Shots()                  #   TODO - ENSURE CORRECT SHOT
+        shot = shots[0]
+
+        result = shot.Call(stFunct, outputName)
+
+        self.core.popup(f"result:  {result}")							#	TESTING
+
+
+
+
+
+
+
+    @err_catcher(name=__name__)
+    def sm_render_stMap_undoRenderSettings(self, origin, rSettings):            #   TODO
+        pass
+
+
+
+
+
+        
 
     ###################################################
     ##         State Manager States Handling         ##   
@@ -1175,24 +1303,9 @@ class Prism_SynthEyes_Functions(object):
 
 
 
-    # @err_catcher(name=__name__)
-    # def getCamNodes(self, origin, cur=False):
-    #     return [x.name for x in bpy.context.scene.objects if x.type == "CAMERA"]
 
-    # @err_catcher(name=__name__)
-    # def getCamName(self, origin, handle):
-    #     return handle
 
-    # @err_catcher(name=__name__)
-    # def selectCam(self, origin):
-    #     if self.getObject(origin.curCam):
-    #         self.deselectObjects()
-    #         self.selectObject(self.getObject(origin.curCam))
 
-    # @err_catcher(name=__name__)
-    # def sm_export_startup(self, origin):
-    #     if origin.className == "Export":
-    #         origin.w_additionalOptions.setVisible(False)
 
     # @err_catcher(name=__name__)
     # def getValidGroupName(self, groupName):
