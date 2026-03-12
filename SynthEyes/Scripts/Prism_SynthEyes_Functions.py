@@ -97,21 +97,38 @@ class Prism_SynthEyes_Functions(object):
         # self.core.registerCallback("prePlayblast", self.prePlayblast, plugin=self.plugin)
         # self.core.registerCallback("onGenerateStateNameContext", self.onGenerateStateNameContext, plugin=self.plugin)
 
+        #   Dict of UI Display Names, SynthEyes Names, and Extensions
+        self.synthFormatNames = {
+            "USD  (.usda)": {
+                    "synthName": "USD ASCII Scene",
+                    "format": ".usda"
+                    },
+            "FBX  (.fbx)": {
+                    "synthName": "Filmbox FBX",
+                    "format": ".fbx"
+                    },
+            "Alembic  (.abc)": {
+                    "synthName": "Alembic 1.5+",
+                    "format": ".abc"
+                    },
+            "Blender  (.py)": {
+                    "synthName": "Blender (Python)",
+                    "format": ".py"
+                    },
+            "Maya  (.ma)": {
+                    "synthName": "Maya ASCII Updated",
+                    "format": ".ma"
+                    },
+            "BMD Fusion  (.comp)": {
+                    "synthName": "Fusion Composition",
+                    "format": ".comp"
+                    },
+            "Nuke  (.nk)": {
+                    "synthName": "Nuke (Current)",
+                    "format": ".nk"
+                    },
+           }
 
-        # self.importHandlers = {
-        #     ".abc": {"importFunction": self.importAlembic},
-        #     ".fbx": {"importFunction": self.importFBX},
-        #     ".obj": {"importFunction": self.importObj},
-        #     ".glb": {"importFunction": self.importGlb},
-        # }
-
-        # self.exportHandlers = {
-        #     ".abc": {"exportFunction": self.exportAlembic},
-        #     ".fbx": {"exportFunction": self.exportFBX},
-        #     ".obj": {"exportFunction": self.exportObj},
-        #     ".glb": {"exportFunction": self.exportGLB},
-        #     ".blend": {"exportFunction": self.exportBlend},
-        # }
 
     @err_catcher(name=__name__)
     def startup(self, origin):
@@ -372,10 +389,164 @@ class Prism_SynthEyes_Functions(object):
     def testTwo(self):
         self.core.popup("IN TEST TWO")							#	TESTING
 
+        
+
+        # testPath = r"C:\\Users\\Joshua Breckeen\\Desktop\\TEST_STMAP\\TEST_STMAP_v001.0001.exr"
+
+
+        # args = [outputName]
+
+        # if stType == "redistort":
+        #     if rangeType == "sequence":
+        #         stFunct = "WriteRedistortSequence"
+        #         args.extend(["exr: <ZIP-scanline>,45", 1, 0, 0])
+        #     else:
+        #         stFunct = "WriteRedistortImage"
+
+        # elif stType == "undistort":
+        #     if rangeType == "sequence":
+        #         stFunct = "WriteUndistortSequence"
+        #         args.extend(["exr: <ZIP-scanline>,45", 1, 0, 0])
+        #     else:
+        #         stFunct = "WriteUndistortImage"
+
+    
+    #   "exr: <ZIP-scanline>,45"
+
+
+        # shots = self.synthEyes.Shots()                  #   TODO - ENSURE CORRECT SHOT
+        # shot = shots[0]
+
+        # result = shot.Call(stFunct, *args)
+
+        # result = shot.Call("WriteRedistortSequence", "exr: <ZIP-scanline>,45", 1, 1, 1)
+
+        # self.core.popup(f"result:  {result}")							#	TESTING
 
 
 
-    @err_catcher(name=__name__)
+    @err_catcher(name=__name__)                                                 #   TESTING
+    def saveSynthPrefs(self):
+
+        import json
+        import os
+        from concurrent.futures import ThreadPoolExecutor, TimeoutError
+
+        # Path to JSON output
+        jsonPath = r"C:\Users\Joshua Breckeen\Desktop\SynthPrefs.json"
+
+
+        # Dynamic skip list for problematic prefs
+        skip_list = {
+            "solvercalib",
+            "setAsPrefs",
+            "placeAsPrefs",
+            "removePrefs",
+            "setToPrefs",
+            }
+
+
+        # Read existing JSON to resume if file exists
+        if os.path.exists(jsonPath):
+            with open(jsonPath, "r", encoding="utf-8") as f:
+                try:
+                    existing_prefs = json.load(f)
+                    start_idx = max(p["index"] for p in existing_prefs) + 1
+                except:
+                    existing_prefs = []
+                    start_idx = 0
+        else:
+            existing_prefs = []
+            start_idx = 0
+
+        print(f"Starting at index {start_idx}")
+
+        # Prepare file for incremental writing
+        if not os.path.exists(jsonPath) or start_idx == 0:
+            # new file: start JSON array
+            with open(jsonPath, "w", encoding="utf-8") as f:
+                f.write("[\n")
+        else:
+            # existing file: continue, remove final ']'
+            with open(jsonPath, "rb+") as f:
+                f.seek(-2, os.SEEK_END)
+                f.truncate()
+                f.write(b",\n")
+
+        numPrefs = self.synthEyes.NumPrefs()
+        print(f"Total prefs: {numPrefs}")
+
+        self.synthEyes.BeginPref()
+
+        executor = ThreadPoolExecutor(max_workers=1)  # single thread for safety
+        first = (start_idx == 0) and (len(existing_prefs) == 0)
+
+        try:
+            for idx in range(start_idx, numPrefs):
+
+                name = self.synthEyes.PrefName(idx)
+                variable = self.synthEyes.PrefVariable(idx)
+
+                if not variable:
+                    continue  # skip headers
+
+                description = self.synthEyes.PrefDescription(idx)
+
+                # Skip known problematic prefs
+                if variable in skip_list:
+                    print(f"**** Skipped pref {variable}")
+                    pref_entry = {
+                        "index": idx,
+                        "name": name,
+                        "variable": variable,
+                        "value": None,
+                        "description": description
+                    }
+                else:
+                    # Function to safely read value
+                    def get_value():
+                        try:
+                            return self.synthEyes.GetPrefFromIndex(idx)
+                        except:
+                            return None
+
+                    future = executor.submit(get_value)
+                    try:
+                        value = future.result(timeout=2.0)  # 2 sec timeout
+                        print(f"Pref {variable} = {value}")  # print successful read
+                    except TimeoutError:
+                        print(f"**** Pref {variable} timed out, skipping")
+                        value = None
+                        skip_list.add(variable)  # dynamically add to skip list
+
+                    pref_entry = {
+                        "index": idx,
+                        "name": name,
+                        "variable": variable,
+                        "value": value,
+                        "description": description
+                    }
+
+                # Write directly to disk incrementally
+                with open(jsonPath, "a", encoding="utf-8") as f:
+                    if not first:
+                        f.write(",\n")
+                    f.write(json.dumps(pref_entry, ensure_ascii=False))
+                    first = False
+
+        finally:
+            self.synthEyes.AcceptPref()
+            executor.shutdown(wait=False)
+
+        # Close JSON array
+        with open(jsonPath, "a", encoding="utf-8") as f:
+            f.write("\n]")
+
+        print(f"Prefs successfully written to: {jsonPath}")
+
+
+
+    @err_catcher(name=__name__)                                                 #   TESTING
     def prismMenuTesting(self):
 
         self.synthEyes.InitMenu()
@@ -589,7 +760,6 @@ class Prism_SynthEyes_Functions(object):
 
         EnumWindows(EnumWindowsProc(foreach_window), 0)
 
-
         if not target_hwnd:
             logger.warning("ERROR: Thumbnail generation failed.  Could not find SynthEyes Window")
             return None
@@ -723,7 +893,7 @@ class Prism_SynthEyes_Functions(object):
     
 
     @err_catcher(name=__name__)
-    def getCamName(self, origin, handle):
+    def getCamName(self, origin, handle):                           #   TODO - Make Return current or passed Camera
         cams = self.synthEyes.Cameras()
         if cams:
             return cams[0].Name()
@@ -757,6 +927,7 @@ class Prism_SynthEyes_Functions(object):
             return False
             
         title = "Create/Add Shot"
+
         result = self.core.popupQuestion(text=question, title=title)
 
         if result != "Yes":
@@ -776,7 +947,7 @@ class Prism_SynthEyes_Functions(object):
 
                 self.synthEyes.SetSNIFileName(curr_SniName)
 
-                camSuf = "SCENE"
+                camSuffix = "SCENE"
 
             except Exception as e:
                 logger.warning(f"ERROR: Unable to Create Scene Shot: {e}")
@@ -786,7 +957,7 @@ class Prism_SynthEyes_Functions(object):
             try:
                 shot = self.synthEyes.AddShot(shotFilepath, asp = 0.0)
 
-                camSuf = "SHOT"
+                camSuffix = "SHOT"
 
             except Exception as e:
                 logger.warning(f"ERROR: Unable to Add Shot: {e}")
@@ -794,7 +965,7 @@ class Prism_SynthEyes_Functions(object):
 
         if details:
             try:
-                camName = f"CAMERA_{camSuf}-{details['identifier']}_{details['version']}"
+                camName = f"CAMERA_{camSuffix}-{details['identifier']}_{details['version']}"
             
                 self.synthEyes.Begin()
 
@@ -999,71 +1170,47 @@ class Prism_SynthEyes_Functions(object):
     def sm_export_preExecute(self, origin, startFrame, endFrame):
         warnings = []
 
-        outType = origin.getOutputType()
-
-        # if outType != "ShotCam":
-        #     if (
-        #         outType == ".fbx"
-        #         and startFrame != endFrame
-        #         and bpy.app.version < (2, 80, 0)
-        #     ):
-        #         warnings.append(
-        #             [
-        #                 "FBX animation export seems to be broken in synthEyes 2.79.",
-        #                 "Please check the exported file for animation offsets.",
-        #                 2,
-        #             ]
-        #         )
 
         return warnings
     
-
-    @err_catcher(name=__name__)
-    def sm_sceneExport(self, origin, outputType, outputName, startFrame=None, endFrame=None, details=None):
-        result = False
-
-        match outputType:
-            case ".usda":
-                result = self.exportUSDA(outputName)
-
-            case ".blend":
-                result = self.exportBLEND(outputName)
-        
-        if result:
-            return outputName
-    
-
-    @err_catcher(name=__name__)
-    def exportUSDA(self, exportPath=None, details={}):
-        try:
-            exportPath = os.path.normpath(exportPath)
-            self.synthEyes.Export("USD ASCII Scene", exportPath)
-
-            return True
-        
-        except:
-            return False
-        
-
-    @err_catcher(name=__name__)
-    def exportBLEND(self, exportPath=None, details={}):
-        try:
-            exportPath = os.path.normpath(exportPath)
-
-            exportPath = exportPath.replace(".blend", ".py")
-            self.synthEyes.Export("Blender (Python)", exportPath)
-
-            return True
-        
-        except:
-            return False
-        
-
 
     # @err_catcher(name=__name__)
     # def sm_export_startup(self, origin):
     #     if origin.className == "Export":
     #         origin.w_additionalOptions.setVisible(False)
+    
+
+    @err_catcher(name=__name__)
+    def sm_sceneExport(self, origin, outputType, outputName, startFrame=None, endFrame=None, details=None):
+        try:
+            synthFormatType = self.synthFormatNames[outputType]["synthName"]
+            exportPath = os.path.normpath(outputName)
+
+            self.synthEyes.Export(synthFormatType, exportPath)
+
+            result = True
+
+        except:
+            return False
+
+        if result:
+            return outputName
+
+
+    @err_catcher(name=__name__)
+    def sm_export_preDelete(self, origin):
+        # try:
+        #     self.getGroups().remove(self.getGroups()[origin.getTaskname()], do_unlink=True)
+        # except Exception as e:
+        #     logger.warning(e)
+
+        pass
+    
+
+        
+
+
+
 
 
 
@@ -1087,7 +1234,8 @@ class Prism_SynthEyes_Functions(object):
         # .WriteUndistortSequence(fnm, cmp, flt, walp, clip)
 
         #  Writes a sequence of UVMaps, starting at the given first filename (must include any leading zeros).
-        #  Cmp is the compression specification string; flt=1 for a full floating-point map or =0 for 16bit;
+        #  Cmp is the compression specification string;
+        #  flt=1 for a full floating-point map or =0 for 16bit;
         #  walp is 2 to write premultiplied alpha, 1 for non-premultiplied, or 0 for no alpha;
         #  clp=1 to clip to 0..1, or =0 to allow out-of-range color values (safety areas).
 
@@ -1096,28 +1244,33 @@ class Prism_SynthEyes_Functions(object):
         #   I am getting a SynthEyes error.  I think it is from the compression specification str.
         ######################################################################################
 
+        args = [outputName]
+
         if stType == "redistort":
             if rangeType == "sequence":
                 stFunct = "WriteRedistortSequence"
+                args.extend(["exr: <ZIP-scanline>,45", 1, 0, 0])
             else:
                 stFunct = "WriteRedistortImage"
 
         elif stType == "undistort":
             if rangeType == "sequence":
                 stFunct = "WriteUndistortSequence"
+                args.extend(["exr: <ZIP-scanline>,45", 1, 0, 0])
             else:
                 stFunct = "WriteUndistortImage"
 
     
+    #   "exr: <ZIP-scanline>,45"
+
+
         shots = self.synthEyes.Shots()                  #   TODO - ENSURE CORRECT SHOT
         shot = shots[0]
 
-        result = shot.Call(stFunct, outputName)
+        result = shot.Call(stFunct, *args)
 
-        self.core.popup(f"result:  {result}")							#	TESTING
-
-
-
+  
+        return int(result) == 1
 
 
 
@@ -1645,12 +1798,11 @@ class Prism_SynthEyes_Functions(object):
 
     #     return outputName
 
-    # @err_catcher(name=__name__)
-    # def sm_export_preDelete(self, origin):
-    #     try:
-    #         self.getGroups().remove(self.getGroups()[origin.getTaskname()], do_unlink=True)
-    #     except Exception as e:
-    #         logger.warning(e)
+
+
+
+
+
 
     # @err_catcher(name=__name__)
     # def getOverrideContext(self, origin=None, context=None, dftContext=True):

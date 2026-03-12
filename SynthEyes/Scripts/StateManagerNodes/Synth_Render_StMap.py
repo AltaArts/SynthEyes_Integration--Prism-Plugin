@@ -68,30 +68,19 @@ class Synth_Render_StMapClass(object):
         self.cleanOutputdir = True
 
         self.e_name.setText(state.text(0) + " - {identifier}")
-        self.l_class.setText("StMap Render")
 
-        # self.rangeTypes = [
-        #     "Scene",
-        #     "Shot",
-        #     "Shot + 1",
-        #     "Single Frame",
-        #     "Custom",
-        #     "Expression",
-        # ]
-        # self.cb_rangeType.addItems(self.rangeTypes)
-        # for idx, rtype in enumerate(self.rangeTypes):
-        #     self.cb_rangeType.setItemData(
-        #         idx, self.stateManager.getFrameRangeTypeToolTip(rtype), Qt.ToolTipRole
-        #     )
-        # self.w_frameExpression.setToolTip(
-        #     self.stateManager.getFrameRangeTypeToolTip("ExpressionField")
-        # )
+        #   Initial State Name
+        self.l_class.setText("StMap Render")
+        self.setIdentifier("STMap")
+        self.mediaType = "2drenders"
+        self.tasknameRequired = True
 
         self.renderPresets = (
             self.stateManager.stateTypes["RenderSettings"].getPresets(self.core)
             if "RenderSettings" in self.stateManager.stateTypes
             else {}
-        )
+            )
+        
         if self.renderPresets:
             self.cb_renderPreset.addItems(self.renderPresets.keys())
         else:
@@ -104,13 +93,12 @@ class Synth_Render_StMapClass(object):
 
         masterItems = ["Set as master", "Add to master", "Don't update master"]
         self.cb_master.addItems(masterItems)
+
         self.product_paths = self.core.paths.getRenderProductBasePaths()
         self.cb_outPath.addItems(list(self.product_paths.keys()))
         if len(self.product_paths) < 2:
             self.w_outPath.setVisible(False)
 
-        self.mediaType = "2drenders"
-        self.tasknameRequired = True
         self.outputFormats = [
             ".exr",
             ".dpx",
@@ -125,6 +113,9 @@ class Synth_Render_StMapClass(object):
         if "Get from rendersettings" not in self.resolutionPresets:
             self.resolutionPresets.append("Get from rendersettings")
 
+        self.chb_undistort.setChecked(True)
+        self.chb_redistort.setChecked(True)
+
         self.connectEvents()
 
         self.oldPalette = self.b_changeTask.palette()
@@ -135,7 +126,7 @@ class Synth_Render_StMapClass(object):
         self.cb_cam.showPopupOrig = self.cb_cam.showPopup
         self.cb_cam.showPopup = self.showCameraPopup
 
-        self.setTaskWarn(True)
+        # self.setTaskWarn(True)
         self.nameChanged(state.text(0))
 
         self.core.callback("onStateStartup", self)
@@ -148,6 +139,32 @@ class Synth_Render_StMapClass(object):
             self.initializeContextBasedSettings()
 
 
+    @err_catcher(name=__name__)
+    def tooltips(self):
+        tip = "Click to change Media Identifier Name"
+        self.b_changeTask.setToolTip(tip)
+        tip = ("Format for STMap Output\n\n"
+               "Note: EXR's will be saved as 32bit with no compression")
+        # self.cb_format.setToolTip(tip)
+        # tip = ""
+        # self.b_changeTask.setToolTip(tip)
+        # tip = ""
+        # self.b_changeTask.setToolTip(tip)
+        # tip = ""
+        # self.b_changeTask.setToolTip(tip)
+        # tip = ""
+        # self.b_changeTask.setToolTip(tip)
+        # tip = ""
+        # self.b_changeTask.setToolTip(tip)
+        # tip = ""
+        # self.b_changeTask.setToolTip(tip)
+        # tip = ""
+        # self.b_changeTask.setToolTip(tip)
+
+
+
+
+    #   Load Saved Options Data
     @err_catcher(name=__name__)
     def loadData(self, data):
         if "contextType" in data:
@@ -173,22 +190,6 @@ class Synth_Render_StMapClass(object):
             if idx != -1:
                 self.cb_renderPreset.setCurrentIndex(idx)
                 self.stateManager.saveStatesToScene()
-        if "rangeType" in data:
-            rangeType = data["rangeType"]
-            self.rb_renderType_single.setChecked(rangeType)
-            self.rb_renderType_seq.setChecked( not rangeType)
-        #     idx = self.cb_rangeType.findText(data["rangeType"])
-        #     if idx != -1:
-        #         self.cb_rangeType.setCurrentIndex(idx)
-        #         self.updateRange()
-
-
-        # if "startframe" in data:
-        #     self.sp_rangeStart.setValue(int(data["startframe"]))
-        # if "endframe" in data:
-        #     self.sp_rangeEnd.setValue(int(data["endframe"]))
-        # if "frameExpression" in data:
-        #     self.le_frameExpression.setText(data["frameExpression"])
         if "currentcam" in data:
             camName = getattr(self.core.appPlugin, "getCamName", lambda x, y: "")(
                 self, data["currentcam"]
@@ -215,6 +216,14 @@ class Synth_Render_StMapClass(object):
             idx = self.cb_format.findText(data["outputFormat"])
             if idx != -1:
                 self.cb_format.setCurrentIndex(idx)
+        if "output_undistort" in data:
+            self.chb_undistort.setChecked(data["output_undistort"])
+        if "output_redistort" in data:
+            self.chb_redistort.setChecked(data["output_redistort"])
+        if "renderType" in data:
+            renderType = (data["renderType"] == "single")
+            self.rb_renderType_single.setChecked(renderType)
+            self.rb_renderType_seq.setChecked( not renderType)
         if "useVersionOverride" in data:
             self.chb_version.setChecked(data["useVersionOverride"])
         if "versionOverride" in data:
@@ -231,6 +240,7 @@ class Synth_Render_StMapClass(object):
 
         self.core.callback("onStateSettingsLoaded", self, data)
 
+
     @err_catcher(name=__name__)
     def connectEvents(self):
         self.e_name.textChanged.connect(self.nameChanged)
@@ -240,16 +250,6 @@ class Synth_Render_StMapClass(object):
         self.b_changeTask.clicked.connect(self.changeTask)
         self.chb_renderPreset.stateChanged.connect(self.presetOverrideChanged)
         self.cb_renderPreset.activated.connect(self.stateManager.saveStatesToScene)
-        # self.cb_rangeType.activated.connect(self.rangeTypeChanged)
-        # self.sp_rangeStart.editingFinished.connect(self.startChanged)
-        # self.sp_rangeEnd.editingFinished.connect(self.endChanged)
-        # self.le_frameExpression.textChanged.connect(self.frameExpressionChanged)
-        # self.le_frameExpression.editingFinished.connect(self.stateManager.saveStatesToScene)
-        # self.le_frameExpression.setMouseTracking(True)
-        # self.le_frameExpression.origMoveEvent = self.le_frameExpression.mouseMoveEvent
-        # self.le_frameExpression.mouseMoveEvent = self.exprMoveEvent
-        # self.le_frameExpression.leaveEvent = self.exprLeaveEvent
-        # self.le_frameExpression.focusOutEvent = self.exprFocusOutEvent
         self.cb_cam.activated.connect(self.setCam)
         self.chb_resOverride.stateChanged.connect(self.resOverrideChanged)
         self.sp_resWidth.editingFinished.connect(self.stateManager.saveStatesToScene)
@@ -266,25 +266,9 @@ class Synth_Render_StMapClass(object):
 
     @err_catcher(name=__name__)
     def initializeContextBasedSettings(self):
-        context = self.getCurrentContext()
-        # if context.get("type") == "asset":
-        #     self.setRangeType("Single Frame")
-        # elif context.get("type") == "shot":
-        #     self.setRangeType("Shot")
-        # elif self.stateManager.standalone:
-        #     self.setRangeType("Custom")
-        # else:
-        #     self.setRangeType("Scene")
-
-        # start, end = self.getFrameRange("Scene")
-        # if start is not None:
-        #     self.sp_rangeStart.setValue(start)
-
-        # if end is not None:
-        #     self.sp_rangeEnd.setValue(end)
-
-        if context.get("task"):
-            self.setIdentifier(context.get("task"))
+        # context = self.getCurrentContext()                 #   Commented Out for Initial Naming
+        # if context.get("task"):
+        #     self.setIdentifier(context.get("task"))
 
         self.updateUi()
 
@@ -308,12 +292,14 @@ class Synth_Render_StMapClass(object):
                 "label": "Open in Explorer...",
                 "callback": lambda: self.core.openFolder(path)
             },
-        ]
+            ]
+        
         if os.getenv("PRISM_COPY_FILE_CONTENT", "0") == "1":
             options.append({
                 "label": "Copy",
                 "callback": lambda: self.core.copyToClipboard(path, file=True)
             })
+
         else:
             options.append({
                 "label": "Copy Path",
@@ -353,108 +339,6 @@ class Synth_Render_StMapClass(object):
         self.stateManager.saveStatesToScene()
 
 
-    # @err_catcher(name=__name__)
-    # def rangeTypeChanged(self, state):
-    #     self.updateUi()
-    #     self.stateManager.saveStatesToScene()
-
-
-    # @err_catcher(name=__name__)
-    # def startChanged(self):
-    #     if self.sp_rangeStart.value() > self.sp_rangeEnd.value():
-    #         self.sp_rangeEnd.setValue(self.sp_rangeStart.value())
-
-    #     self.stateManager.saveStatesToScene()
-
-
-    # @err_catcher(name=__name__)
-    # def endChanged(self):
-    #     if self.sp_rangeEnd.value() < self.sp_rangeStart.value():
-    #         self.sp_rangeStart.setValue(self.sp_rangeEnd.value())
-
-    #     self.stateManager.saveStatesToScene()
-
-
-    # @err_catcher(name=__name__)
-    # def frameExpressionChanged(self, text=None):
-    #     if not hasattr(self, "expressionWinLabel"):
-    #         return
-
-    #     frames = self.core.resolveFrameExpression(self.le_frameExpression.text())
-    #     if len(frames) > 1000:
-    #         frames = frames[:1000]
-    #         frames.append("...")
-
-    #     for idx in range(int(len(frames) / 30.0)):
-    #         frames.insert((idx+1)*30, "\n")
-
-    #     frameStr = ",".join([str(x) for x in frames]) or "invalid expression"
-    #     self.expressionWinLabel.setText(frameStr)
-    #     self.expressionWin.resize(1, 1)
-
-
-    # @err_catcher(name=__name__)
-    # def exprMoveEvent(self, event):
-    #     self.showExpressionWin(event)
-    #     if hasattr(self, "expressionWin") and self.expressionWin.isVisible():
-    #         self.expressionWin.move(
-    #             QCursor.pos().x() + 20, QCursor.pos().y() - self.expressionWin.height()
-    #         )
-    #     self.le_frameExpression.origMoveEvent(event)
-
-
-    # @err_catcher(name=__name__)
-    # def showExpressionWin(self, event):
-    #     if not hasattr(self, "expressionWin") or not self.expressionWin.isVisible():
-    #         if hasattr(self, "expressionWin"):
-    #             self.expressionWin.close()
-
-    #         self.expressionWin = QFrame()
-    #         ss = getattr(self.core.appPlugin, "getFrameStyleSheet", lambda x: "")(self)
-    #         self.expressionWin.setStyleSheet(
-    #             ss + """ .QFrame{ border: 2px solid rgb(100,100,100);} """
-    #         )
-
-    #         self.core.parentWindow(self.expressionWin)
-    #         winwidth = 10
-    #         winheight = 10
-    #         VBox = QVBoxLayout()
-    #         frames = self.core.resolveFrameExpression(self.le_frameExpression.text())
-    #         if len(frames) > 1000:
-    #             frames = frames[:1000]
-    #             frames.append("...")
-
-    #         for idx in range(int(len(frames) / 30.0)):
-    #             frames.insert((idx+1)*30, "\n")
-
-    #         frameStr = ",".join([str(x) for x in frames]) or "invalid expression"
-    #         self.expressionWinLabel = QLabel(frameStr)
-    #         VBox.addWidget(self.expressionWinLabel)
-    #         self.expressionWin.setLayout(VBox)
-    #         self.expressionWin.setWindowFlags(
-    #             Qt.FramelessWindowHint  # hides the window controls
-    #             | Qt.WindowStaysOnTopHint  # forces window to top... maybe
-    #             | Qt.SplashScreen  # this one hides it from the task bar!
-    #         )
-
-    #         self.expressionWin.setGeometry(0, 0, winwidth, winheight)
-    #         self.expressionWin.move(QCursor.pos().x() + 20, QCursor.pos().y())
-    #         self.expressionWin.setAttribute(Qt.WA_ShowWithoutActivating)
-    #         self.expressionWin.show()
-
-
-    # @err_catcher(name=__name__)
-    # def exprLeaveEvent(self, event):
-    #     if hasattr(self, "expressionWin") and self.expressionWin.isVisible():
-    #         self.expressionWin.close()
-
-
-    # @err_catcher(name=__name__)
-    # def exprFocusOutEvent(self, event):
-    #     if hasattr(self, "expressionWin") and self.expressionWin.isVisible():
-    #         self.expressionWin.close()
-
-
     @err_catcher(name=__name__)
     def setCam(self, index):
         self.curCam = self.camlist[index]
@@ -486,6 +370,7 @@ class Synth_Render_StMapClass(object):
                         break
             else:
                 name = text.format(**context)
+
         except Exception:
             name = text
 
@@ -564,7 +449,8 @@ class Synth_Render_StMapClass(object):
             showTasks=True,
             taskType="3d",
             core=self.core,
-        )
+            )
+        
         self.core.parentWindow(self.nameWin)
         self.nameWin.setWindowTitle("Change Identifier")
         self.nameWin.l_item.setText("Identifier:")
@@ -657,22 +543,6 @@ class Synth_Render_StMapClass(object):
             self.core.popup("No versions exists in the current context.", severity="info")
 
 
-    # @err_catcher(name=__name__)
-    # def getRangeType(self):
-    #     return self.cb_rangeType.currentText()
-
-
-    # @err_catcher(name=__name__)
-    # def setRangeType(self, rangeType):
-    #     idx = self.cb_rangeType.findText(rangeType)
-    #     if idx != -1:
-    #         self.cb_rangeType.setCurrentIndex(idx)
-    #         self.updateRange()
-    #         return True
-
-    #     return False
-
-
     @err_catcher(name=__name__)
     def getResolution(self, resolution):
         res = None
@@ -697,10 +567,10 @@ class Synth_Render_StMapClass(object):
         return res
 
 
-    @err_catcher(name=__name__)
-    def onRenderLayerChanged(self, state):
-        self.updateUi()
-        self.stateManager.saveStatesToScene()
+    # @err_catcher(name=__name__)
+    # def onRenderLayerChanged(self, state):
+    #     self.updateUi()
+    #     self.stateManager.saveStatesToScene()
 
 
     @err_catcher(name=__name__)
@@ -743,7 +613,6 @@ class Synth_Render_StMapClass(object):
 
     @err_catcher(name=__name__)
     def refreshCameras(self):
-        # update Cams
         self.cb_cam.clear()
         self.camlist = camNames = []
 
@@ -770,7 +639,7 @@ class Synth_Render_StMapClass(object):
         self.w_context.setHidden(not self.allowCustomContext)
         self.refreshContext()
         self.refreshCameras()
-        # self.updateRange()
+
         self.w_comment.setHidden(not self.stateManager.useStateComments())
 
         if not self.core.mediaProducts.getUseMaster():
@@ -809,26 +678,7 @@ class Synth_Render_StMapClass(object):
         return context
 
 
-    # @err_catcher(name=__name__)
-    # def updateRange(self):
-    #     rangeType = self.cb_rangeType.currentText()
-    #     isCustom = rangeType == "Custom"
-    #     isExp = rangeType == "Expression"
-    #     self.l_rangeStart.setVisible(not isCustom and not isExp)
-    #     self.l_rangeEnd.setVisible(not isCustom and not isExp)
-    #     self.sp_rangeStart.setVisible(isCustom)
-    #     self.sp_rangeEnd.setVisible(isCustom)
-    #     self.w_frameRangeValues.setVisible(not isExp)
-    #     self.w_frameExpression.setVisible(isExp)
-
-    #     if not isCustom and not isExp:
-    #         frange = self.getFrameRange(rangeType=rangeType)
-    #         start = str(int(frange[0])) if frange[0] is not None else "-"
-    #         end = str(int(frange[1])) if frange[1] is not None else "-"
-    #         self.l_rangeStart.setText(start)
-    #         self.l_rangeEnd.setText(end)
-
-
+    #   Return STMap Render Type (single or image sequence)
     @err_catcher(name=__name__)
     def getFrameRangeType(self):
         if self.rb_renderType_seq.isChecked():
@@ -956,36 +806,51 @@ class Synth_Render_StMapClass(object):
 
     @err_catcher(name=__name__)
     def executeState(self, parent, useVersion="next"):
-        executeMaster = True
-
         fileName = self.core.getCurrentFileName()
         context = self.getCurrentContext()
-
         ident_base = self.getIdentifier()
 
-        idfs = {
-            "undistort": f"{ident_base}_UnDistort-Rec709Lin",
-            "redistort": f"{ident_base}_ReDistort-Rec709Lin"
-        }
 
+        idfs = {}
+        if self.chb_undistort.isChecked():
+            idfs["undistort"] = f"{ident_base}_UnDistort-Rec709Lin"
+        if self.chb_redistort.isChecked():
+            idfs["redistort"] = f"{ident_base}_ReDistort-Rec709Lin"
+
+        if len(idfs) < 1:
+            self.core.popup("There are No STMAP Types Checked.")
+            return False
+        
         rangeType = self.getFrameRangeType()
 
-        #   This is to Abort for Sequences that I cannot get to work yet.
+        #   This is to Abort for Sequences - I cannot get it to work yet.                    #   TODO
         if rangeType == "sequence":
             self.core.popup("At present, STMap Sequences are Not Supported.\n"
                             "Please use Single Image output.")
-            return False
-        
+            return [self.state.text(0) + " - error - StMap Render Failed"]
 
         frames = self.getFrameRange(rangeType)
         frame_start = frames[0]
         frame_end = frames[1]
 
+        errors = []
+
         for stType in idfs.keys():
-            
             stName = idfs[stType]
 
             outputName, outputPath, hVersion = self.getOutputName(useVersion="next", identifier=stName, rangeType=rangeType)
+            expandedOutputPath = self.expandvars(outputPath)
+
+            outLength = len(outputName)
+            if platform.system() == "Windows" and os.getenv("PRISM_IGNORE_PATH_LENGTH") != "1" and outLength > 255:
+                return [
+                    self.state.text(0)
+                    + " - error - The outputpath is longer than 255 characters (%s), which is not supported on Windows. Please shorten the outputpath by changing the comment, identifier or projectpath."
+                    % outLength
+                ]
+
+            if not os.path.exists(os.path.dirname(expandedOutputPath)):
+                os.makedirs(os.path.dirname(expandedOutputPath))
 
             if rangeType == "sequence":
                 paddingNum = self.core.framePadding
@@ -996,91 +861,45 @@ class Synth_Render_StMapClass(object):
             useVersion = hVersion if useVersion == "next" or (self.core.compareVersions(hVersion, useVersion) == "higher") else useVersion
 
             rSettings = {
-            "outputName": outputName,
-            "startFrame": frame_start,
-            "endFrame": frame_end,
-            "frames": frames,
-            "identifier": stName,
-        }
+                "outputName": outputName,
+                "startFrame": frame_start,
+                "endFrame": frame_end,
+                "frames": frames,
+                "identifier": stName,
+                }
 
             result = self.core.appPlugin.sm_render_stMap(self, stType, rangeType, rSettings["outputName"], rSettings, context)
 
+            if result:
+                try:
+                    details = context.copy()
+                    if "filename" in details:
+                        del details["filename"]
 
+                    if "extension" in details:
+                        del details["extension"]
 
-        self.core.popup(f"result:  {result}")							#	TESTING
+                    details["version"] = hVersion
+                    details["sourceScene"] = fileName
+                    details["identifier"] = stName
+                    details["comment"] = self.getComment()
+                    details["startframe"] = frame_start
+                    details["endframe"] = frame_end
+                    details["path"] = expandedOutputPath
+                    details["mediaType"] = self.mediaType
 
-        if result and "Result=Success" in result:
-            return [self.state.text(0) + " - success"]
-    
+                    self.core.saveVersionInfo(filepath=expandedOutputPath, details=details)
+                except:
+                    errors.append(f"{stName}: VersionInfo Error")
 
+                try:
+                    self.handleMasterVersion(outputName, details)
+                except:
+                    errors.append(f"{stName}: Master Error")
+            else:
+                errors.append(f"{stName}: Render Error")
 
-        # if not self.renderingStarted:
-        #     idfFunc = getattr(self.core.appPlugin, "sm_render_getIdentifiers", None)
-        #     if idfFunc:
-        #         idfs = idfFunc(self)
-        #     else:
-        #         idfs = None
-
-        #     if idfs is None:
-        #         idfs = [self.getIdentifier()]
-
-        #     # layerFunc = getattr(self.core.appPlugin, "sm_render_getLayers", None)
-        #     # if layerFunc:
-        #     #     layers = layerFunc(self)
-        #     # else:
-        #     #     layers = None
-
-        #     # if layers is None:
-        #     layers = [""]
-
-        #     if useVersion == "next" and len(idfs) > 1 and os.getenv("PRISM_RENDER_LAYERS_ALIGN_VERSIONS", "1") == "1":
-        #         for idf in idfs:
-        #             for layer in layers:
-        #                 outputName, outputPath, hVersion = self.getOutputName(useVersion="next", identifier=idf, layer=layer)
-        #                 useVersion = hVersion if useVersion == "next" or (self.core.compareVersions(hVersion, useVersion) == "higher") else useVersion
-
-        #     for idf in idfs:
-        #         for layer in layers:
-        #             result = self.executeIdentifier(
-        #                 idf,
-        #                 useVersion,
-        #                 context,
-        #                 fileName,
-        #                 startFrame,
-        #                 endFrame,
-        #                 frames,
-        #                 rangeType,
-        #                 parent,
-        #                 layer,
-        #             )
-        #             if not isinstance(result, dict):
-        #                 return result
-
-        #             if not self.renderingStarted:
-        #                 self.core.appPlugin.sm_render_stMap_undoRenderSettings(self, result["rSettings"])
-
-
-
-        # executeMaster = result["updateMaster"]
-        rSettings = result["rSettings"]
-        outputName = result["outputName"]
-        result = result["result"]
-
-        executeMaster = False                                               # TESTING
-
-        # rSettings = self.LastRSettings
-        # result = self.core.appPlugin.sm_render_stMap(self, rSettings["outputName"], rSettings, context)
-        # outputName = rSettings["outputName"]
-
-        # if result == "publish paused":
-        #     return [self.state.text(0) + " - publish paused"]
-        
-        # else:
-
-
-        if executeMaster:
-            self.handleMasterVersion(self.expandvars(outputName))
-
+        if not errors:
             kwargs = {
                 "state": self,
                 "scenefile": fileName,
@@ -1090,22 +909,24 @@ class Synth_Render_StMapClass(object):
 
             self.core.callback("postRender", **kwargs)
 
-            if result and "Result=Success" in result:
-                return [self.state.text(0) + " - success"]
-            
-            else:
-                erStr = "%s ERROR - sm_default_imageRenderPublish %s:\n%s" % (
-                    time.strftime("%d/%m/%y %X"),
-                    self.core.version,
-                    result,
+            return [self.state.text(0) + " - success"]
+
+        else:
+            erStr = "%s ERROR - sm_default_imageRenderPublish %s:\n%s" % (
+                time.strftime("%d/%m/%y %X"),
+                self.core.version,
+                errors,
                 )
-                if not result.startswith("Execute Canceled: "):
-                    if result == "unknown error (files do not exist)":
-                        msg = "No files were created during the rendering. If you think this is a Prism bug please report it on our Discord server:\nwww.prism-pipeline.com/discord\nor write a mail to contact@prism-pipeline.com"
-                        self.core.popup(msg)
-                    else:
-                        self.core.writeErrorLog(erStr)
-                return [self.state.text(0) + " - error - " + result]
+            
+            if not result.startswith("Execute Canceled: "):
+                if result == "unknown error (files do not exist)":
+                    msg = "No files were created during the rendering. If you think this is a Prism bug please report it on our Discord server:\nwww.prism-pipeline.com/discord\nor write a mail to contact@prism-pipeline.com"
+                    self.core.popup(msg)
+
+                else:
+                    self.core.writeErrorLog(erStr)
+
+            return [self.state.text(0) + " - error - " + result]
 
 
     @err_catcher(name=__name__)
@@ -1132,15 +953,15 @@ class Synth_Render_StMapClass(object):
 
 
     @err_catcher(name=__name__)
-    def handleMasterVersion(self, outputName):
+    def handleMasterVersion(self, outputName, context):
         if not self.isUsingMasterVersion():
             return
 
         masterAction = self.cb_master.currentText()
         if masterAction == "Set as master":
-            self.core.mediaProducts.updateMasterVersion(outputName)
+            self.core.mediaProducts.updateMasterVersion(outputName, context=context)
         elif masterAction == "Add to master":
-            self.core.mediaProducts.addToMasterVersion(outputName)
+            self.core.mediaProducts.addToMasterVersion(outputName, context=context)
 
 
     @err_catcher(name=__name__)
@@ -1169,10 +990,6 @@ class Synth_Render_StMapClass(object):
             "identifier": self.getIdentifier(),
             "renderpresetoverride": str(self.chb_renderPreset.isChecked()),
             "currentrenderpreset": self.cb_renderPreset.currentText(),
-            "rangeType": self.rb_renderType_single.isChecked(),
-            # "startframe": self.sp_rangeStart.value(),
-            # "endframe": self.sp_rangeEnd.value(),
-            # "frameExpression": self.le_frameExpression.text(),
             "currentcam": str(self.curCam),
             "resoverride": str(
                 [
@@ -1184,10 +1001,15 @@ class Synth_Render_StMapClass(object):
             "masterVersion": self.cb_master.currentText(),
             "curoutputpath": self.cb_outPath.currentText(),
             "outputFormat": str(self.cb_format.currentText()),
+            "output_undistort": self.chb_undistort.isChecked(),
+            "output_redistort": self.chb_redistort.isChecked(),
+            "renderType": ("single" if self.rb_renderType_single.isChecked() else "sequence"),
             "useVersionOverride": self.chb_version.isChecked(),
             "versionOverride": self.sp_version.value(),
             "lastexportpath": self.l_pathLast.text().replace("\\", "/"),
             "stateenabled": self.core.getCheckStateValue(self.state.checkState(0)),
-        }
+            }
+        
         self.core.callback("onStateGetSettings", self, stateProps)
+
         return stateProps

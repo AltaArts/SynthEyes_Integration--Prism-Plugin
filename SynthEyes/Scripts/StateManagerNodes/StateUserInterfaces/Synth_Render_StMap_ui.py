@@ -19,7 +19,7 @@ class Ui_wg_Synth_Render_StMap(object):
         wg_Synth_Render_StMap.resize(400, 657)
         self.verticalLayout = QVBoxLayout(wg_Synth_Render_StMap)
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout.setContentsMargins(0, 9, 0, 9)
         self.f_name = QWidget(wg_Synth_Render_StMap)
         self.f_name.setObjectName(u"f_name")
         self.horizontalLayout_4 = QHBoxLayout(self.f_name)
@@ -141,42 +141,6 @@ class Ui_wg_Synth_Render_StMap(object):
 
 
         self.verticalLayout_2.addWidget(self.f_taskname)
-
-        self.lo_renderType = QHBoxLayout()
-        self.lo_renderType.setObjectName(u"lo_renderType")
-        self.lo_renderType.setContentsMargins(9, -1, 9, -1)
-        self.l_renderType = QLabel(self.gb_imageRender)
-        self.l_renderType.setObjectName(u"l_renderType")
-
-        self.lo_renderType.addWidget(self.l_renderType)
-
-        self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.lo_renderType.addItem(self.horizontalSpacer_4)
-
-        self.rb_renderType_single = QRadioButton(self.gb_imageRender)
-        self.rb_renderType_single.setObjectName(u"rb_renderType_single")
-        self.rb_renderType_single.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.rb_renderType_single.setChecked(True)
-
-        self.lo_renderType.addWidget(self.rb_renderType_single)
-
-        self.horizontalSpacer_6 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.lo_renderType.addItem(self.horizontalSpacer_6)
-
-        self.rb_renderType_seq = QRadioButton(self.gb_imageRender)
-        self.rb_renderType_seq.setObjectName(u"rb_renderType_seq")
-        self.rb_renderType_seq.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-
-        self.lo_renderType.addWidget(self.rb_renderType_seq)
-
-        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.lo_renderType.addItem(self.horizontalSpacer_2)
-
-
-        self.verticalLayout_2.addLayout(self.lo_renderType)
 
         self.w_format = QWidget(self.gb_imageRender)
         self.w_format.setObjectName(u"w_format")
@@ -398,6 +362,81 @@ class Ui_wg_Synth_Render_StMap(object):
 
         self.verticalLayout.addWidget(self.gb_imageRender)
 
+        self.gb_mapTypes = QGroupBox(wg_Synth_Render_StMap)
+        self.gb_mapTypes.setObjectName(u"gb_mapTypes")
+        self.verticalLayout_5 = QVBoxLayout(self.gb_mapTypes)
+        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
+        self.verticalLayout_5.setContentsMargins(9, 9, 9, 9)
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.horizontalLayout.setContentsMargins(9, -1, 9, -1)
+        self.horizontalSpacer_11 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_11)
+
+        self.chb_undistort = QCheckBox(self.gb_mapTypes)
+        self.chb_undistort.setObjectName(u"chb_undistort")
+
+        self.horizontalLayout.addWidget(self.chb_undistort)
+
+        self.horizontalSpacer_14 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_14)
+
+        self.chb_redistort = QCheckBox(self.gb_mapTypes)
+        self.chb_redistort.setObjectName(u"chb_redistort")
+
+        self.horizontalLayout.addWidget(self.chb_redistort)
+
+        self.horizontalSpacer_13 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_13)
+
+
+        self.verticalLayout_5.addLayout(self.horizontalLayout)
+
+
+        self.verticalLayout.addWidget(self.gb_mapTypes)
+
+        self.gb_outputTypes = QGroupBox(wg_Synth_Render_StMap)
+        self.gb_outputTypes.setObjectName(u"gb_outputTypes")
+        self.verticalLayout_14 = QVBoxLayout(self.gb_outputTypes)
+        self.verticalLayout_14.setObjectName(u"verticalLayout_14")
+        self.verticalLayout_14.setContentsMargins(9, 9, 9, 9)
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.horizontalLayout_3.setContentsMargins(9, -1, 9, -1)
+        self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_3.addItem(self.horizontalSpacer_4)
+
+        self.rb_renderType_single = QRadioButton(self.gb_outputTypes)
+        self.rb_renderType_single.setObjectName(u"rb_renderType_single")
+        self.rb_renderType_single.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.rb_renderType_single.setChecked(True)
+
+        self.horizontalLayout_3.addWidget(self.rb_renderType_single)
+
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_3.addItem(self.horizontalSpacer_2)
+
+        self.rb_renderType_seq = QRadioButton(self.gb_outputTypes)
+        self.rb_renderType_seq.setObjectName(u"rb_renderType_seq")
+        self.rb_renderType_seq.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+
+        self.horizontalLayout_3.addWidget(self.rb_renderType_seq)
+
+        self.horizontalSpacer_6 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_3.addItem(self.horizontalSpacer_6)
+
+
+        self.verticalLayout_14.addLayout(self.horizontalLayout_3)
+
+
+        self.verticalLayout.addWidget(self.gb_outputTypes)
+
         self.gb_previous = QGroupBox(wg_Synth_Render_StMap)
         self.gb_previous.setObjectName(u"gb_previous")
         self.gb_previous.setCheckable(False)
@@ -410,7 +449,7 @@ class Ui_wg_Synth_Render_StMap(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 349, 241))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 349, 123))
         self.verticalLayout_3 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.l_pathLast = QLabel(self.scrollAreaWidgetContents)
@@ -463,9 +502,6 @@ class Ui_wg_Synth_Render_StMap(object):
         self.l_identifier.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Identifier:", None))
         self.l_taskName.setText("")
         self.b_changeTask.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"change", None))
-        self.l_renderType.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Render Type:", None))
-        self.rb_renderType_single.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Single Image  ", None))
-        self.rb_renderType_seq.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Sequence  ", None))
         self.l_format.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Format:", None))
         self.l_camera.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Camera:", None))
         self.l_rezOverride.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Resolution override:", None))
@@ -478,6 +514,12 @@ class Ui_wg_Synth_Render_StMap(object):
         self.label_8.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Version override:", None))
         self.chb_version.setText("")
         self.b_version.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"\u25bc", None))
+        self.gb_mapTypes.setTitle(QCoreApplication.translate("wg_Synth_Render_StMap", u"Map Types", None))
+        self.chb_undistort.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Un-Distort", None))
+        self.chb_redistort.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Re-Distort", None))
+        self.gb_outputTypes.setTitle(QCoreApplication.translate("wg_Synth_Render_StMap", u"Output Type", None))
+        self.rb_renderType_single.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Single Image  ", None))
+        self.rb_renderType_seq.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Sequence  ", None))
         self.gb_previous.setTitle(QCoreApplication.translate("wg_Synth_Render_StMap", u"Previous render", None))
         self.l_pathLast.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"None", None))
         self.b_pathLast.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"...", None))

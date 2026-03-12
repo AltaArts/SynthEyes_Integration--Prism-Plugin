@@ -58,6 +58,8 @@ class Synth_SceneExportClass(object):
         self.state = state
         self.core = core
         self.stateManager = stateManager
+        self.synthFuncts = self.core.appPlugin
+
         self.canSetVersion = True
         self.customContext = None
         self.allowCustomContext = False
@@ -84,7 +86,6 @@ class Synth_SceneExportClass(object):
         self.additionalSettings = []
         self.b_additionalSettings = QPushButton("Additional Settings...")
         self.b_additionalSettings.clicked.connect(self.showAdditionalSettings)
-        # self.lo_export.insertWidget(self.lo_export.indexOf(self.gb_objects), self.b_additionalSettings)
 
         self.nodes = []
 
@@ -95,7 +96,7 @@ class Synth_SceneExportClass(object):
                 idx, self.stateManager.getFrameRangeTypeToolTip(rtype), Qt.ToolTipRole
             )
 
-        outputFormats = getattr(self.core.appPlugin, "outputFormats", [])
+        outputFormats = self.synthFuncts.synthFormatNames.keys()
 
         self.cb_outType.addItems(outputFormats)
         self.export_paths = self.core.paths.getExportProductBasePaths()
@@ -128,8 +129,6 @@ class Synth_SceneExportClass(object):
             self.setProductname(data["taskname"])
         if "productname" in data:
             self.setProductname(data["productname"])
-        # if "connectednodes" in data:
-        #     self.nodes = eval(data["connectednodes"])
 
         self.updateUi()
 
@@ -209,12 +208,9 @@ class Synth_SceneExportClass(object):
         self.chb_master.stateChanged.connect(self.stateManager.saveStatesToScene)
         self.cb_outPath.activated.connect(self.stateManager.saveStatesToScene)
         self.cb_outType.activated.connect(lambda x: self.typeChanged(self.getOutputType()))
-        # self.chb_additionalOptions.stateChanged.connect(self.stateManager.saveStatesToScene)
         self.cb_cam.activated.connect(self.setCam)
         self.cb_sCamShot.activated.connect(self.stateManager.saveStatesToScene)
-        self.b_selectCam.clicked.connect(lambda: self.core.appPlugin.selectCam(self))
-        # if not self.stateManager.standalone:
-        #     self.b_add.clicked.connect(self.addObjects)
+        self.b_selectCam.clicked.connect(lambda: self.synthFuncts.selectCam(self))
         self.b_pathLast.clicked.connect(lambda: self.stateManager.showLastPathMenu(self))
 
 
@@ -402,6 +398,15 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
+    def getOutputExt(self):
+        try:
+            outputType = self.getOutputType()
+            return self.synthFuncts.synthFormatNames[outputType]["format"]
+        except:
+            return None
+
+
+    @err_catcher(name=__name__)
     def getContextType(self):
         contextType = self.cb_context.currentText()
         return contextType
@@ -532,7 +537,7 @@ class Synth_SceneExportClass(object):
 
     @err_catcher(name=__name__)
     def preDelete(self, item):
-        getattr(self.core.appPlugin, "sm_export_preDelete", lambda x: None)(self)
+        self.synthFuncts.sm_export_preDelete(self)
 
 
     @err_catcher(name=__name__)
@@ -790,13 +795,10 @@ class Synth_SceneExportClass(object):
             if not self.getProductname():
                 warnings.append(["No productname is given.", "", 3])
 
-            # if not self.chb_wholeScene.isChecked() and len(self.nodes) == 0:
-            #     warnings.append(["No objects are selected for export.", "", 3])
-
         if startFrame is None:
             warnings.append(["Framerange is invalid.", "", 3])
 
-        warnings += self.core.appPlugin.sm_export_preExecute(self, startFrame, endFrame)
+        warnings += self.synthFuncts.sm_export_preExecute(self, startFrame, endFrame)
 
         return [self.state.text(0), warnings]
     
@@ -826,7 +828,7 @@ class Synth_SceneExportClass(object):
             framePadding = None
         else:
             rangeType = self.cb_rangeType.currentText()
-            extension = self.getOutputType()
+            extension = self.getOutputExt()
 
             if rangeType == "Single Frame" or extension != ".obj":
                 framePadding = ""
@@ -887,6 +889,7 @@ class Synth_SceneExportClass(object):
         if rangeType == "Single Frame":
             endFrame = startFrame
 
+        ##   For ShotCam
         if self.getOutputType() == "ShotCam":
             if self.curCam is None:
                 return [
@@ -949,7 +952,7 @@ class Synth_SceneExportClass(object):
             details["version"] = hVersion
             details["sourceScene"] = fileName
             details["product"] = self.getProductname()
-            details["resolution"] = self.core.appPlugin.getResolution()
+            details["resolution"] = self.synthFuncts.getResolution()
             details["comment"] = self.getComment()
 
             details.update(self.cb_sCamShot.currentData())
@@ -966,7 +969,7 @@ class Synth_SceneExportClass(object):
             )
             self.core.saveVersionInfo(filepath=infoPath, details=details)
 
-            self.core.appPlugin.sm_export_exportShotcam(
+            self.synthFuncts.sm_export_exportShotcam(
                 self, startFrame=startFrame, endFrame=endFrame, outputName=outputName
             )
 
@@ -1006,6 +1009,8 @@ class Synth_SceneExportClass(object):
                 return [self.state.text(0) + " - success"]
             else:
                 return [self.state.text(0) + " - unknown error"]
+        
+        ##   For Other Than ShotCam
         else:
 
             if not self.getProductname():
@@ -1013,18 +1018,6 @@ class Synth_SceneExportClass(object):
                     self.state.text(0)
                     + ": error - No productname is given. Skipped the activation of this state."
                 ]
-
-            # if (
-            #     not self.chb_wholeScene.isChecked()
-            #     and len(
-            #         [x for x in self.nodes if self.core.appPlugin.isNodeValid(self, x)]
-            #     )
-            #     == 0
-            # ):
-            #     return [
-            #         self.state.text(0)
-            #         + ": error - No objects chosen. Skipped the activation of this state."
-            #     ]
 
             fileName = self.core.getCurrentFileName()
             context = self.getCurrentContext()
@@ -1091,16 +1084,12 @@ class Synth_SceneExportClass(object):
                 if preview:
                     self.core.products.setProductPreview(os.path.dirname(outputName), preview)
 
-
-            # updateMaster = True                                     #   TODO - LOOK AT THIS
-
-
-            outputType = self.getOutputType()
+            outputType = self.cb_outType.currentText()
 
             try:
                 submitResult = None
 
-                outputName = self.core.appPlugin.sm_sceneExport(
+                outputName = self.synthFuncts.sm_sceneExport(
                     self,
                     outputType,
                     outputName=outputName,
@@ -1137,13 +1126,7 @@ class Synth_SceneExportClass(object):
 
             useMaster = self.core.products.getUseMaster()
             if useMaster and self.getUpdateMasterVersion():
-                # self.core.products.updateMasterVersion(outputName)
                 self.handleMasterVersion(outputName)
-
-
-            # if updateMaster:
-                # self.handleMasterVersion(outputName)
-
 
             kwargs = {
                 "state": self,
@@ -1174,12 +1157,6 @@ class Synth_SceneExportClass(object):
     def getStateProps(self):
         stateProps = {}
 
-        nodes = []
-        if not self.stateManager.standalone:
-            for node in self.nodes:
-                if self.core.appPlugin.isNodeValid(self, node):
-                    nodes.append(node)
-
         stateProps.update(
             {
                 "stateName": self.e_name.text(),
@@ -1189,30 +1166,23 @@ class Synth_SceneExportClass(object):
                 "rangeType": str(self.cb_rangeType.currentText()),
                 "startframe": self.sp_rangeStart.value(),
                 "endframe": self.sp_rangeEnd.value(),
-                # "additionaloptions": str(self.chb_additionalOptions.isChecked()),
                 "updateMasterVersion": self.chb_master.isChecked(),
                 "curoutputpath": self.cb_outPath.currentText(),
                 "curoutputtype": self.getOutputType(),
-                # "wholescene": str(self.chb_wholeScene.isChecked()),
-                # "connectednodes": str(nodes),
                 "currentcam": str(self.curCam),
                 "currentscamshot": self.cb_sCamShot.currentText(),
-                # "submitrender": str(self.gb_submit.isChecked()),
-                # "rjmanager": str(self.cb_manager.currentText()),
-                # "rjprio": self.sp_rjPrio.value(),
-                # "rjframespertask": self.sp_rjFramesPerTask.value(),
-                # "rjtimeout": self.sp_rjTimeout.value(),
-                # "rjsuspended": str(self.chb_rjSuspended.isChecked()),
-                # "dlconcurrent": self.sp_dlConcurrentTasks.value(),
                 "lastexportpath": self.l_pathLast.text().replace("\\", "/"),
                 "stateenabled": self.core.getCheckStateValue(self.state.checkState(0)),
                 "additionalSettings": {s["name"]: s["value"] for s in self.additionalSettings}
             }
         )
+
         getattr(self.core.appPlugin, "sm_export_getStateProps", lambda x, y: None)(
             self, stateProps
         )
+
         self.core.callback("onStateGetSettings", self, stateProps)
+        
         return stateProps
 
 

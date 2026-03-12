@@ -117,7 +117,7 @@ class Ui_wg_Synth_SceneExport(object):
         self.w_taskname.setObjectName(u"w_taskname")
         self.horizontalLayout_4 = QHBoxLayout(self.w_taskname)
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        self.horizontalLayout_4.setContentsMargins(9, 0, 9, 0)
+        self.horizontalLayout_4.setContentsMargins(9, 5, 9, 5)
         self.l_tasklabel = QLabel(self.w_taskname)
         self.l_tasklabel.setObjectName(u"l_tasklabel")
 
@@ -143,6 +143,30 @@ class Ui_wg_Synth_SceneExport(object):
 
 
         self.lo_export.addWidget(self.w_taskname)
+
+        self.w_outType = QWidget(self.gb_export)
+        self.w_outType.setObjectName(u"w_outType")
+        self.horizontalLayout_9 = QHBoxLayout(self.w_outType)
+        self.horizontalLayout_9.setSpacing(0)
+        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
+        self.horizontalLayout_9.setContentsMargins(9, 5, 9, 5)
+        self.l_outType = QLabel(self.w_outType)
+        self.l_outType.setObjectName(u"l_outType")
+
+        self.horizontalLayout_9.addWidget(self.l_outType)
+
+        self.horizontalSpacer_3 = QSpacerItem(113, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_9.addItem(self.horizontalSpacer_3)
+
+        self.cb_outType = QComboBox(self.w_outType)
+        self.cb_outType.setObjectName(u"cb_outType")
+        self.cb_outType.setMinimumSize(QSize(124, 0))
+
+        self.horizontalLayout_9.addWidget(self.cb_outType)
+
+
+        self.lo_export.addWidget(self.w_outType)
 
         self.w_range = QWidget(self.gb_export)
         self.w_range.setObjectName(u"w_range")
@@ -265,30 +289,6 @@ class Ui_wg_Synth_SceneExport(object):
 
         self.lo_export.addWidget(self.w_outPath)
 
-        self.w_outType = QWidget(self.gb_export)
-        self.w_outType.setObjectName(u"w_outType")
-        self.horizontalLayout_9 = QHBoxLayout(self.w_outType)
-        self.horizontalLayout_9.setSpacing(0)
-        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
-        self.horizontalLayout_9.setContentsMargins(9, 0, 9, 0)
-        self.l_outType = QLabel(self.w_outType)
-        self.l_outType.setObjectName(u"l_outType")
-
-        self.horizontalLayout_9.addWidget(self.l_outType)
-
-        self.horizontalSpacer_3 = QSpacerItem(113, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_9.addItem(self.horizontalSpacer_3)
-
-        self.cb_outType = QComboBox(self.w_outType)
-        self.cb_outType.setObjectName(u"cb_outType")
-        self.cb_outType.setMinimumSize(QSize(124, 0))
-
-        self.horizontalLayout_9.addWidget(self.cb_outType)
-
-
-        self.lo_export.addWidget(self.w_outType)
-
         self.w_cam = QWidget(self.gb_export)
         self.w_cam.setObjectName(u"w_cam")
         self.horizontalLayout_3 = QHBoxLayout(self.w_cam)
@@ -356,7 +356,7 @@ class Ui_wg_Synth_SceneExport(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 329, 817))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 329, 797))
         self.horizontalLayout_12 = QHBoxLayout(self.scrollAreaWidgetContents)
         self.horizontalLayout_12.setObjectName(u"horizontalLayout_12")
         self.l_pathLast = QLabel(self.scrollAreaWidgetContents)
@@ -411,6 +411,7 @@ class Ui_wg_Synth_SceneExport(object):
         self.l_tasklabel.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Productname:", None))
         self.l_taskName.setText("")
         self.b_changeTask.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"change", None))
+        self.l_outType.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Output Type:", None))
         self.label_3.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Framerange:", None))
         self.l_rangeEnd.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"1100", None))
         self.l_rangeStart.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"1001", None))
@@ -419,7 +420,6 @@ class Ui_wg_Synth_SceneExport(object):
         self.l_master.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Update Master Version:", None))
         self.chb_master.setText("")
         self.l_outPath.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Location:", None))
-        self.l_outType.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Outputtype:", None))
         self.l_cam.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Camera:", None))
         self.l_sCamShot.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Shot:", None))
         self.b_selectCam.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Select", None))
