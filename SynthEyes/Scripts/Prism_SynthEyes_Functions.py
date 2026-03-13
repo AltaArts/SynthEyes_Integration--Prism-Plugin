@@ -282,7 +282,7 @@ class Prism_SynthEyes_Functions(object):
         #   Add Mesh Button
         origin.b_addMesh = QPushButton(origin.w_CreateImports)
         origin.b_addMesh.setObjectName("b_addMesh")
-        origin.b_addMesh.setText("Add Mesh")
+        origin.b_addMesh.setText("Mesh")
         origin.horizontalLayout_3.insertWidget(2, origin.b_addMesh)
         origin.b_addMesh.clicked.connect(lambda: origin.createState("Synth_ImportMesh"))
 
@@ -824,6 +824,34 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
+    def getObjByUUID(self, objType:str, uuid:str) -> bool:
+        try:
+            match objType:
+                case "shot":
+                    objs = self.synthEyes.Shots()
+                case "object":
+                    objs = self.synthEyes.Objects()
+                case "camera":
+                    objs = self.synthEyes.Cameras()
+                case "mesh":
+                    objs = self.synthEyes.Meshes()
+                case "light":
+                    objs = self.synthEyes.Lights()
+                case "extra":
+                    objs = self.synthEyes.Extras()
+
+            for obj in objs:
+                if obj.UniqID() == uuid:
+                    return obj
+
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to get {objType} - {uuid}")
+            return None
+
+
+
+
+    @err_catcher(name=__name__)
     def deleteObjByUUID(self, objType:str, uuid:str) -> bool:
         try:
             match objType:
@@ -842,6 +870,10 @@ class Prism_SynthEyes_Functions(object):
 
             for obj in objs:
                 if obj.UniqID() == uuid:
+                    if self.synthEyes.InUndo():
+                        logger.warning("Already in UNDO Block")
+                        return False
+                    
                     self.synthEyes.Begin()
                     self.synthEyes.Delete(obj)
                     self.synthEyes.Accept(f"Deleted {objType}")
@@ -1009,107 +1041,6 @@ class Prism_SynthEyes_Functions(object):
     # def sm_import_startup(self, origin):
     #     origin.f_abcPath.setVisible(True)
 
-    # @err_catcher(name=__name__)
-    # def importAlembic(self, importPath, origin=None):
-    #     if origin and origin.chb_abcPath.isChecked() and len(origin.nodes) > 0:
-    #         cache = None
-    #         for i in origin.nodes:
-    #             constraints = [
-    #                 x
-    #                 for x in self.getObject(i).constraints
-    #                 if x.type == "TRANSFORM_CACHE"
-    #             ]
-    #             modifiers = [
-    #                 x
-    #                 for x in self.getObject(i).modifiers
-    #                 if x.type == "MESH_SEQUENCE_CACHE"
-    #             ]
-    #             if len(constraints) > 0:
-    #                 cache = constraints[0].cache_file
-    #             elif len(modifiers) > 0:
-    #                 cache = modifiers[0].cache_file
-
-    #         if cache is not None:
-    #             cache.filepath = importPath
-    #             cache.name = os.path.basename(importPath)
-    #         #       bpy.context.scene.frame_current += 1        #updates the cache, but leads to crashes
-    #         #       bpy.context.scene.frame_current -= 1
-    #         else:
-    #             self.core.popup("No caches updated.")
-    #         return True
-    #     else:
-    #         if bpy.app.version < (4, 0, 0):
-    #             bpy.ops.wm.alembic_import(
-    #                 self.getOverrideContext(origin),
-    #                 filepath=importPath,
-    #                 set_frame_range=False,
-    #                 as_background_job=False,
-    #             )
-    #         else:
-    #             with bpy.context.temp_override(**self.getOverrideContext(origin)):
-    #                 bpy.ops.wm.alembic_import(
-    #                     filepath=importPath,
-    #                     set_frame_range=False,
-    #                     as_background_job=False,
-    #                 )
-
-    # @err_catcher(name=__name__)
-    # def importFBX(self, importPath, origin=None):
-    #     if bpy.app.version < (4, 0, 0):
-    #         bpy.ops.import_scene.fbx(self.getOverrideContext(origin), filepath=importPath)
-    #     else:
-    #         with bpy.context.temp_override(**self.getOverrideContext(origin)):
-    #             bpy.ops.import_scene.fbx(filepath=importPath)
-
-    # @err_catcher(name=__name__)
-    # def importObj(self, importPath, origin=None):
-    #     if bpy.app.version < (4, 0, 0):
-    #         bpy.ops.import_scene.obj(self.getOverrideContext(origin), filepath=importPath)
-    #     else:
-    #         with bpy.context.temp_override(**self.getOverrideContext(origin)):
-    #             bpy.ops.wm.obj_import(filepath=importPath)
-
-    # @err_catcher(name=__name__)
-    # def importGlb(self, importPath, origin=None):
-    #     with bpy.context.temp_override(**self.getOverrideContext(origin)):
-    #         bpy.ops.import_scene.gltf(filepath=importPath)
-
-    # @err_catcher(name=__name__)
-    # def importUsd(self, filepath, origin=None):
-    #     from _bpy import ops as _ops_module
-    #     try:
-    #         _ops_module.as_string("WM_OT_usd_import")
-    #     except:
-    #         ext = os.path.splitext(filepath)[1]
-    #         msg = "Format \"%s\" is not supported in this synthEyes version. Importing USD requires at least synthEyes 3.0." % ext
-    #         self.core.popup(msg)
-    #         return False
-
-    #     if bpy.app.version < (4, 0, 0):
-    #         bpy.ops.wm.usd_import(
-    #             self.getOverrideContext(origin),
-    #             filepath=filepath,
-    #             set_frame_range=False,
-    #             import_usd_preview=True,
-    #         )
-    #     else:
-    #         with bpy.context.temp_override(**self.getOverrideContext(origin)):
-    #             bpy.ops.wm.usd_import(
-    #                 filepath=filepath,
-    #                 set_frame_range=False,
-    #                 import_usd_preview=True,
-    #             )
-
-    # @err_catcher(name=__name__)
-    # def importFile(self, importPath):
-    #     if not importPath:
-    #         return
-
-    #     base, ext = os.path.splitext(importPath)
-    #     ext = ext.lower()
-    #     if ext in self.importHandlers:
-    #         return self.importHandlers[ext]["importFunction"](importPath)
-
 
     @err_catcher(name=__name__)
     def sm_import_importToApp(self, origin, doImport, update, impFileName, data=None):
@@ -1120,19 +1051,49 @@ class Prism_SynthEyes_Functions(object):
             self.core.popup(f"Format {ext} is not supported for SynthEyes Mesh Import.")
             return {"result": False, "doImport": doImport}
         
-        else:
-            filePath = os.path.normpath(impFileName)
+        filePath = os.path.normpath(impFileName)
 
-            if data:
-                try:
-                    meshName = f"{data['product']}_{data['version']}"
-                except:
-                    pass
-            else:
-                meshName = fileName[0]
+        #   Create Mesh Name
+        if data:
+            try:
+                meshName = f"{data['product']}_{data['version']}"
+            except:
+                pass
+        else:
+            meshName = fileName[0]
+
+
+        #   Get Existing Mesh
+        mesh_orig = self.getObjByUUID("mesh", data["meshUUID"])
+
+        ##   Update Existing Mesh
+        if update and mesh_orig:
 
             self.synthEyes.Begin()
 
+            #   Capture Original Mesh Transforms
+            meshTrans_orig = mesh_orig.trans
+
+            #   Load Mesh from New Filepath
+            mesh_orig.Call("ReadMesh", impFileName)
+
+            #   Apply Original Transforms
+            mesh_orig.Set("trans", meshTrans_orig)
+
+            #   Change Mesh Name
+            mesh_orig.SetName(meshName)
+
+            self.synthEyes.Accept("Update Mesh")
+
+
+            result = mesh_orig.UniqID()
+            doImport = True
+
+        ##   Create New Mesh
+        else:
+            self.synthEyes.Begin()
+
+            #   Create New Mesh from Filepath
             scn = self.synthEyes.Scene()
             meshObj = scn.Call("ReadMesh", filePath)
 
@@ -1140,14 +1101,16 @@ class Prism_SynthEyes_Functions(object):
                 self.synthEyes.Accept("Configure Import")
                 return {"result": False, "doImport": False}
             
+            #   Set Mesh Name
             meshObj.SetName(meshName)
 
-            self.synthEyes.Accept("Configure Import")
+            self.synthEyes.Accept("Import Mesh")
 
             result = meshObj.UniqID()
             doImport = True
 
-            return {"result": result, "doImport": doImport}
+
+        return {"result": result, "doImport": doImport}
         
 
     @err_catcher(name=__name__)
@@ -1174,12 +1137,6 @@ class Prism_SynthEyes_Functions(object):
         return warnings
     
 
-    # @err_catcher(name=__name__)
-    # def sm_export_startup(self, origin):
-    #     if origin.className == "Export":
-    #         origin.w_additionalOptions.setVisible(False)
-    
-
     @err_catcher(name=__name__)
     def sm_sceneExport(self, origin, outputType, outputName, startFrame=None, endFrame=None, details=None):
         try:
@@ -1199,11 +1156,6 @@ class Prism_SynthEyes_Functions(object):
 
     @err_catcher(name=__name__)
     def sm_export_preDelete(self, origin):
-        # try:
-        #     self.getGroups().remove(self.getGroups()[origin.getTaskname()], do_unlink=True)
-        # except Exception as e:
-        #     logger.warning(e)
-
         pass
     
 

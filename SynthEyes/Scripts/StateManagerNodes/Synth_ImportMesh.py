@@ -84,9 +84,6 @@ class Synth_ImportMeshClass(object):
         self.l_name.setVisible(False)
         self.e_name.setVisible(False)
 
-        # self.nodes = []
-        # self.nodeNames = []
-
         # self.f_abcPath.setVisible(False)
         # self.f_keepRefEdits.setVisible(False)
 
@@ -176,26 +173,8 @@ class Synth_ImportMeshClass(object):
                 self.core.appPlugin, "sm_import_fixImportPath", lambda x: x
             )(data["filepath"])
             self.setImportPath(data["filepath"])
-        # if "keepedits" in data:
-        #     self.chb_keepRefEdits.setChecked(eval(data["keepedits"]))
-        # if "autonamespaces" in data:
-        #     self.chb_autoNameSpaces.setChecked(eval(data["autonamespaces"]))
-        # if "updateabc" in data:
-        #     self.chb_abcPath.setChecked(eval(data["updateabc"]))
-        # if "trackobjects" in data:
-        #     self.chb_trackObjects.setChecked(eval(data["trackobjects"]))
-        # if "connectednodes" in data:
-        #     if self.core.isStr(data["connectednodes"]):
-        #         data["connectednodes"] = eval(data["connectednodes"])
-        #     self.nodes = [
-        #         x[1]
-        #         for x in data["connectednodes"]
-        #         if self.core.appPlugin.isNodeValid(self, x[1])
-        #     ]
         if "taskname" in data:
             self.taskName = data["taskname"]
-        # if "nodenames" in data:
-        #     self.nodeNames = eval(data["nodenames"])
         if "setname" in data:
             self.setName = data["setname"]
         if "autoUpdate" in data:
@@ -210,21 +189,9 @@ class Synth_ImportMeshClass(object):
         self.e_name.editingFinished.connect(self.stateManager.saveStatesToScene)
         self.b_browse.clicked.connect(self.browse)
         self.b_browse.customContextMenuRequested.connect(self.openFolder)
-        self.b_import.clicked.connect(self.importObject)
+        self.b_import.clicked.connect(lambda: self.importObject(update=True))
         self.b_importLatest.clicked.connect(self.importLatest)
         self.chb_autoUpdate.stateChanged.connect(self.autoUpdateChanged)
-        # self.chb_keepRefEdits.stateChanged.connect(self.stateManager.saveStatesToScene)
-        # self.chb_autoNameSpaces.stateChanged.connect(self.autoNameSpaceChanged)
-        # self.chb_abcPath.stateChanged.connect(self.stateManager.saveStatesToScene)
-        # self.chb_trackObjects.toggled.connect(self.updateTrackObjects)
-        # self.b_selectAll.clicked.connect(self.lw_objects.selectAll)
-        # if not self.stateManager.standalone:
-        #     self.b_nameSpaces.clicked.connect(
-        #         lambda: self.core.appPlugin.sm_import_removeNameSpaces(self)
-        #     )
-        #     self.lw_objects.itemSelectionChanged.connect(
-        #         lambda: self.core.appPlugin.selectNodes(self)
-        #     )
 
 
     @err_catcher(name=__name__)
@@ -396,14 +363,16 @@ class Synth_ImportMeshClass(object):
     @err_catcher(name=__name__)
     def importObject(self, update=False, path=None, settings=None):
         result = True
+
         if self.stateManager.standalone:
             return result
-
+        
         fileName = self.core.getCurrentFileName()
         impFileName = path or self.getImportPath()
         impFileName = os.path.normpath(impFileName)
 
         productData = self.core.products.getProductDataFromFilepath(impFileName)
+        productData["meshUUID"] = self.meshUUID
 
         kwargs = {
             "state": self,
@@ -411,6 +380,7 @@ class Synth_ImportMeshClass(object):
             "importfile": impFileName,
             "productData": productData
         }
+
         result = self.core.callback("preImport", **kwargs)
         for res in result:
             if isinstance(res, dict) and res.get("cancel", False):
@@ -437,12 +407,6 @@ class Synth_ImportMeshClass(object):
         self.taskName = cacheData.get("task")
         doImport = True
 
-        # if self.chb_trackObjects.isChecked():
-        #     getattr(self.core.appPlugin, "sm_import_updateObjects", lambda x: None)(
-        #         self
-        #     )
-
-
         importResult = self.core.appPlugin.sm_import_importToApp(
             self, doImport=doImport, update=update, impFileName=impFileName, data=productData)
 
@@ -459,19 +423,6 @@ class Synth_ImportMeshClass(object):
             if result == "canceled":
                 return
 
-            # self.nodeNames = [
-            #     self.core.appPlugin.getNodeName(self, x) for x in self.nodes
-            # ]
-            # illegalNodes = self.core.checkIllegalCharacters(self.nodeNames)
-            # if len(illegalNodes) > 0:
-            #     msgStr = "Objects with non-ascii characters were imported. Prism supports only the first 128 characters in the ascii table. Please rename the following objects as they will cause errors with Prism:\n\n"
-            #     for i in illegalNodes:
-            #         msgStr += i + "\n"
-            #     self.core.popup(msgStr)
-
-            # if self.chb_autoNameSpaces.isChecked():
-            #     self.core.appPlugin.sm_import_removeNameSpaces(self)
-
             if not result:
                 msgStr = "Import failed: %s" % impFileName
                 self.core.popup(msgStr, title="ImportFile")
@@ -480,7 +431,6 @@ class Synth_ImportMeshClass(object):
             "state": self,
             "scenefile": fileName,
             "importfile": impFileName,
-            # "importedObjects": self.nodeNames,
         }
         self.core.callback("postImport", **kwargs)
         self.setImportPath(impFileName)
@@ -606,59 +556,9 @@ class Synth_ImportMeshClass(object):
                 else:
                     self.b_importLatest.setPalette(self.oldPalette)
 
-        # isCache = self.stateMode == "ApplyCache"
-        # self.f_nameSpaces.setVisible(not isCache)
-
-        # self.lw_objects.clear()
-
-        # if self.chb_trackObjects.isChecked():
-        #     self.gb_objects.setVisible(True)
-        #     getattr(self.core.appPlugin, "sm_import_updateObjects", lambda x: None)(
-        #         self
-        #     )
-
-        #     for i in self.nodes:
-        #         item = QListWidgetItem(self.core.appPlugin.getNodeName(self, i))
-        #         getattr(
-        #             self.core.appPlugin,
-        #             "sm_import_updateListItem",
-        #             lambda x, y, z: None,
-        #         )(self, item, i)
-
-        #         self.lw_objects.addItem(item)
-        # else:
-        #     self.gb_objects.setVisible(False)
-
         self.nameChanged()
         self.setStateColor(status)
         getattr(self.core.appPlugin, "sm_import_updateUi", lambda x: None)(self)
-
-
-    # @err_catcher(name=__name__)
-    # def updateTrackObjects(self, state):
-    #     if not state:
-    #         if len(self.nodes) > 0:
-    #             msg = QMessageBox(
-    #                 QMessageBox.Question,
-    #                 "Track objects",
-    #                 "When you disable object tracking Prism won't be able to delete or replace the imported objects at a later point in time. You cannot undo this action. Are you sure you want to disable object tracking?",
-    #                 QMessageBox.Cancel,
-    #             )
-    #             msg.addButton("Continue", QMessageBox.YesRole)
-    #             msg.setParent(self.core.messageParent, Qt.Window)
-    #             action = msg.exec_()
-
-    #             if action != 0:
-    #                 self.chb_trackObjects.setChecked(True)
-    #                 return
-
-    #         self.nodes = []
-    #         getattr(
-    #             self.core.appPlugin, "sm_import_disableObjectTracking", lambda x: None
-    #         )(self)
-
-    #     self.updateUi()
-    #     self.stateManager.saveStatesToScene()
 
 
     @err_catcher(name=__name__)
@@ -687,23 +587,12 @@ class Synth_ImportMeshClass(object):
 
     @err_catcher(name=__name__)
     def getStateProps(self):
-        # connectedNodes = []
-        # if self.chb_trackObjects.isChecked():
-        #     for i in range(self.lw_objects.count()):
-        #         connectedNodes.append([self.lw_objects.item(i).text(), self.nodes[i]])
-
         return {
             "statename": self.e_name.text(),
             "statemode": self.stateMode,
             "meshUUID": self.meshUUID,
             "filepath": self.getImportPath(),
             "autoUpdate": str(self.chb_autoUpdate.isChecked()),
-            # "keepedits": str(self.chb_keepRefEdits.isChecked()),
-            # "autonamespaces": str(self.chb_autoNameSpaces.isChecked()),
-            # "updateabc": str(self.chb_abcPath.isChecked()),
-            # "trackobjects": str(self.chb_trackObjects.isChecked()),
-            # "connectednodes": connectedNodes,
             "taskname": self.taskName,
-            # "nodenames": str(self.nodeNames),
             "setname": self.setName,
         }
