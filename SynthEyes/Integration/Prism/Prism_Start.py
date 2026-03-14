@@ -49,6 +49,7 @@ import os
 import sys
 import socket
 import json
+import tempfile
 
 
 if "PRISM_ROOT" in os.environ:
@@ -78,8 +79,23 @@ def sendToPrism(command, payload=None):
     msg = {"command": command, "data": payload or {}}
 
     try:
+        #   Get Port from Saved Temp File
+        portFile = os.path.join(tempfile.gettempdir(), "prism_synth_port.txt")
+        with open(portFile) as f:
+            commsPort = int(f.read().strip())
+
+        if not commsPort:
+            raise Exception
+        
+    #   Use Default
+    except:
+        commsPort = 50555
+
+    try:
+        #   Start Listener Bridge
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(("127.0.0.1", 50555))
+        s.settimeout(1)
+        s.connect(("127.0.0.1", commsPort))
 
         s.send(json.dumps(msg).encode("utf-8"))
         s.close()

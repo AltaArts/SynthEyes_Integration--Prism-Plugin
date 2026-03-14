@@ -58,118 +58,69 @@ class Prism_SynthEyes_externalAccess_Functions(object):
     def __init__(self, core, plugin):
         self.core = core
         self.plugin = plugin
+
         self.core.registerCallback(
             "userSettings_saveSettings",
             self.userSettings_saveSettings,
             plugin=self.plugin,
-        )
+            )
+        
         self.core.registerCallback(
             "userSettings_loadSettings",
             self.userSettings_loadSettings,
             plugin=self.plugin,
-        )
+            )
+        
         self.core.registerCallback("getPresetScenes", self.getPresetScenes, plugin=self.plugin)
+
         ssheetPath = os.path.join(
             self.pluginDirectory,
             "UserInterfaces",
             "SynthEyesStyleSheet"
-        )
+            )
         self.core.registerStyleSheet(ssheetPath)
 
 
     @err_catcher(name=__name__)
     def userSettings_loadUI(self, origin, tab):
+        origin.gb_options = QGroupBox("SynthEyes Socket Communications")
+        lo_comms = QVBoxLayout()
+        origin.gb_options.setLayout(lo_comms)
+        origin.gb_options.setCheckable(False)
+        origin.gb_options.setChecked(True)
 
-        pass
+        w_bldAutoSavePath = QWidget()
+        lo_socketPort = QHBoxLayout()
 
-    #     origin.gb_bldAutoSave = QGroupBox("Auto save renderings")
-    #     lo_bldAutoSave = QVBoxLayout()
-    #     origin.gb_bldAutoSave.setLayout(lo_bldAutoSave)
-    #     origin.gb_bldAutoSave.setCheckable(True)
-    #     origin.gb_bldAutoSave.setChecked(False)
+        l_port = QLabel("Socket Port:   ")
+        lo_socketPort.addWidget(l_port)
 
-    #     origin.chb_bldRperProject = QCheckBox("use path only for current project")
+        origin.sp_port = QSpinBox()
+        origin.sp_port.setRange(49152, 65535)
+        origin.sp_port.setValue(50555)
+        lo_socketPort.addWidget(origin.sp_port)
 
-    #     w_bldAutoSavePath = QWidget()
-    #     lo_bldAutoSavePath = QHBoxLayout()
-    #     origin.le_bldAutoSavePath = QLineEdit()
-    #     b_bldAutoSavePath = QPushButton("...")
+        lo_socketPort.setContentsMargins(20, 0, 0, 20)
+        w_bldAutoSavePath.setLayout(lo_socketPort)
 
-    #     lo_bldAutoSavePath.setContentsMargins(0, 0, 0, 0)
-    #     b_bldAutoSavePath.setMinimumSize(40, 0)
-    #     b_bldAutoSavePath.setMaximumSize(40, 1000)
-    #     b_bldAutoSavePath.setFocusPolicy(Qt.NoFocus)
-    #     b_bldAutoSavePath.setContextMenuPolicy(Qt.CustomContextMenu)
-    #     w_bldAutoSavePath.setLayout(lo_bldAutoSavePath)
-    #     lo_bldAutoSavePath.addWidget(origin.le_bldAutoSavePath)
-    #     lo_bldAutoSavePath.addWidget(b_bldAutoSavePath)
+        lo_comms.addWidget(w_bldAutoSavePath)
+        tab.layout().addWidget(origin.gb_options)
 
-    #     lo_bldAutoSave.addWidget(origin.chb_bldRperProject)
-    #     lo_bldAutoSave.addWidget(w_bldAutoSavePath)
-    #     tab.layout().addWidget(origin.gb_bldAutoSave)
-
-    #     if hasattr(self.core, "projectPath") and self.core.projectPath is not None:
-    #         origin.le_bldAutoSavePath.setText(self.core.projectPath)
-
-    #     b_bldAutoSavePath.clicked.connect(
-    #         lambda: origin.browse(
-    #             windowTitle="Select render save path", uiEdit=origin.le_bldAutoSavePath
-    #         )
-    #     )
-    #     b_bldAutoSavePath.customContextMenuRequested.connect(
-    #         lambda: self.core.openFolder(origin.le_bldAutoSavePath.text())
-    #     )
 
     @err_catcher(name=__name__)
     def userSettings_saveSettings(self, origin, settings):
+        if "SynthEyes" not in settings:
+            settings["SynthEyes"] = {}
 
-        pass
-
-        # if "synthEyes" not in settings:
-        #     settings["synthEyes"] = {}
-
-        # if hasattr(origin, "le_bldAutoSavePath"):
-        #     bsPath = self.core.fixPath(origin.le_bldAutoSavePath.text())
-        #     if not bsPath.endswith(os.sep):
-        #         bsPath += os.sep
-
-        #     if origin.chb_bldRperProject.isChecked():
-        #         if os.path.exists(self.core.prismIni):
-        #             k = "autosavepath_%s" % self.core.projectName
-        #             settings["synthEyes"][k] = bsPath
-        #     else:
-        #         settings["synthEyes"]["autosavepath"] = bsPath
-
-        #     settings["synthEyes"]["autosaverender"] = origin.gb_bldAutoSave.isChecked()
-        #     settings["synthEyes"][
-        #         "autosaveperproject"
-        #     ] = origin.chb_bldRperProject.isChecked()
+        if hasattr(origin, "sp_port"):
+            settings["SynthEyes"]["commsPort"] = origin.sp_port.value()
 
 
     @err_catcher(name=__name__)
     def userSettings_loadSettings(self, origin, settings):
-
-        pass
-
-        # if "synthEyes" in settings:
-        #     if "autosaverender" in settings["synthEyes"]:
-        #         origin.gb_bldAutoSave.setChecked(settings["synthEyes"]["autosaverender"])
-
-        #     if "autosaveperproject" in settings["synthEyes"]:
-        #         origin.chb_bldRperProject.setChecked(
-        #             settings["synthEyes"]["autosaveperproject"]
-        #         )
-
-        #     pData = "autosavepath_%s" % getattr(self.core, "projectName", "")
-        #     if pData in settings["synthEyes"]:
-        #         if origin.chb_bldRperProject.isChecked():
-        #             origin.le_bldAutoSavePath.setText(settings["synthEyes"][pData])
-
-        #     if "autosavepath" in settings["synthEyes"]:
-        #         if not origin.chb_bldRperProject.isChecked():
-        #             origin.le_bldAutoSavePath.setText(
-        #                 settings["synthEyes"]["autosavepath"]
-        #             )
+        if "SynthEyes" in settings:
+            if "commsPort" in settings["SynthEyes"]:
+                origin.sp_port.setValue(settings["SynthEyes"]["commsPort"])
 
 
     @err_catcher(name=__name__)
@@ -182,31 +133,10 @@ class Prism_SynthEyes_externalAccess_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def getAutobackPath(self, origin):
-
-        pass
-
-        # autobackpath = ""
-        # if platform.system() == "Windows":
-        #     autobackpath = os.path.join(os.getenv("LocalAppdata"), "Temp")
-
-        # fileStr = "SynthEyes Scene File ("
-        # for i in self.sceneFormats:
-        #     fileStr += "*%s " % i
-
-        # fileStr += ")"
-
-        # return autobackpath, fileStr
-
-
-    @err_catcher(name=__name__)
     def getPresetScenes(self, presetScenes):
+        if os.getenv("PRISM_SHOW_DEFAULT_SCENEFILE_PRESETS", "1") != "1":
+            return
 
-        pass
-    
-        # if os.getenv("PRISM_SHOW_DEFAULT_SCENEFILE_PRESETS", "1") != "1":
-        #     return
-
-        # presetDir = os.path.join(self.pluginDirectory, "Presets")
-        # scenes = self.core.entities.getPresetScenesFromFolder(presetDir)
-        # presetScenes += scenes
+        presetDir = os.path.join(self.pluginDirectory, "Presets")
+        scenes = self.core.entities.getPresetScenesFromFolder(presetDir)
+        presetScenes += scenes

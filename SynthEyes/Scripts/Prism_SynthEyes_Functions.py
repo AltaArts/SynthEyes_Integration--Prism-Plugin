@@ -55,6 +55,7 @@ from ctypes import wintypes
 import json
 import zlib
 import base64
+import tempfile
 
 
 PLUGINROOT = os.path.dirname(os.path.dirname(__file__))
@@ -83,8 +84,6 @@ from Prism_SynthEyes_Listener import PrismCommsListener
 logger = logging.getLogger(__name__)
 
 
-HOST = "127.0.0.1"
-PORT = 50555
 
 #   Helper to Convert Python Bool to SynthEyes 0/1
 def boolToBit(boolInp: bool) -> int:
@@ -99,8 +98,10 @@ class Prism_SynthEyes_Functions(object):
 
         self.synthEyes = None
         self.importSyPy3()
+        self.loadSettings()
 
-        self.Listener = PrismCommsListener(self, host=HOST, port=PORT)
+        #   Socket Comms Bridge Thread
+        self.Listener = PrismCommsListener(self, host="127.0.0.1", port=self.commsPort)
         self.Listener.bridge.commandReceived.connect(self.handleIncomingCommand)
         self.Listener.start()
 
@@ -189,6 +190,25 @@ class Prism_SynthEyes_Functions(object):
 
         origin.timer.stop()
         origin.startAutosaveTimer()
+
+
+    #   Load from Prism Settings    
+    @err_catcher(name=__name__)
+    def loadSettings(self):
+        synthSettings = self.core.getConfig("SynthEyes")
+
+        if synthSettings:
+            self.commsPort = int(synthSettings["commsPort"])
+            logger.debug("Loaded Settings")
+
+        else:
+            logger.warning("SynthEyes Settings Not Found, using Defaults.")
+            self.commsPort = 50555
+
+        #   Write Port to Temp File
+        portFile = os.path.join(tempfile.gettempdir(), "prism_synth_port.txt")
+        with open(portFile, "w") as f:
+            f.write(str(self.commsPort))
 
 
     # # Generate a Random port (49152 - 65535)                  #   NOT SEEMILY NEEDED
