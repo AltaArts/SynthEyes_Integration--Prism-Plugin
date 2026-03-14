@@ -80,6 +80,12 @@ logger = logging.getLogger(__name__)
 
 
 
+#   Helper to Convert Python Bool to SynthEyes 0/1
+def boolToBit(boolInp: bool) -> int:
+    return int(boolInp)
+
+
+
 class Prism_SynthEyes_Functions(object):
     def __init__(self, core, plugin):
         self.core = core
@@ -128,6 +134,16 @@ class Prism_SynthEyes_Functions(object):
                     "format": ".nk"
                     },
            }
+        
+        self.synthExrCompression = {
+            "NONE": "exr: <None>,45",
+            "ZIP":"exr: <ZIP-block>,45",
+            "ZIPS": "exr: <ZIP-scanline>,45",
+            "DWAA": "exr: <DWAA32 Lossy>,45",
+            "DWAB": "exr: <DWAB256 Lossy>,45",
+            "RLE": "exr: <Run-length>,45",
+            "PXR24": "exr: <PXR Lossy>,45"
+            }
 
 
     @err_catcher(name=__name__)
@@ -207,6 +223,8 @@ class Prism_SynthEyes_Functions(object):
     # def sceneOpen(self, origin):
     #     if self.core.shouldAutosaveTimerRun():
     #         origin.startAutosaveTimer()
+
+
 
 
 
@@ -301,7 +319,7 @@ class Prism_SynthEyes_Functions(object):
         # origin.createState(appStates["stateType"], parent=parent, setActive=True, **appStates.get("kwargs", {}))
 
         #   States to Keep in SynthEyes
-        keepStates = ["Folder", "Synth_AddShot", "Synth_ImportMesh", "Synth_SceneExport", "Synth_Render_StMap"]
+        keepStates = ["Folder", "Synth_AddShot", "Synth_ImportMesh", "Synth_SceneExport", "Synth_Render_StMap", "Synth_ImageRender"]
 
         #   Remove Unused States
         for state in list(origin.stateTypes.keys()):
@@ -347,11 +365,11 @@ class Prism_SynthEyes_Functions(object):
 
 
 
-
     ###################################################
     ##       Called From SynthEyes Prism Tools       ##   
     ###################################################
     
+
     @err_catcher(name=__name__)
     def saveVersion(self):
         self.core.saveScene()
@@ -389,7 +407,10 @@ class Prism_SynthEyes_Functions(object):
     def testTwo(self):
         self.core.popup("IN TEST TWO")							#	TESTING
 
-        
+
+
+        #########    DISTORT SEQUENCE TESTING    #########
+
 
         # testPath = r"C:\\Users\\Joshua Breckeen\\Desktop\\TEST_STMAP\\TEST_STMAP_v001.0001.exr"
 
@@ -422,6 +443,10 @@ class Prism_SynthEyes_Functions(object):
         # result = shot.Call("WriteRedistortSequence", "exr: <ZIP-scanline>,45", 1, 1, 1)
 
         # self.core.popup(f"result:  {result}")							#	TESTING
+
+
+
+
 
 
 
@@ -562,7 +587,6 @@ class Prism_SynthEyes_Functions(object):
             prismMenu.AddMenuItem(3, "Project Browser", 3)
             prismMenu.AddMenuItem(4, "State Manager", 4)
             prismMenu.AddMenuItem(5, "Prism Settings", 5)
-            prismMenu.AddMenuItem(6, "Export Scene", 6)
 
             # self.synthEyes.ReloadAll()
             self.synthEyes.Redraw()
@@ -649,13 +673,197 @@ class Prism_SynthEyes_Functions(object):
 
 
     ###################################################
-    ##                 File Handling                 ##   
+    ##                  Synth Stuff                  ##   
     ###################################################
+
 
     #   Returns SynthEyes Version
     @err_catcher(name=__name__)
     def getAppVersion(self, origin):
         return self.synthEyes.Version()
+
+
+    @err_catcher(name=__name__)
+    def getFrameRange(self, origin):
+        # return [None, None]                                         #   TODO - FOR TESTING
+        try:
+            start = (self.synthEyes.AnimStart() + 1)
+            end = (self.synthEyes.AnimEnd() +1)
+            return[start, end]
+        
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Get Framerange from SynthEyes: {e}")
+            return [None, None]
+
+
+    @err_catcher(name=__name__)
+    def getCurrentFrame(self):
+        try:
+            currentFrame = self.synthEyes.Frame()
+            return currentFrame
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Get Current Frame from SynthEyes: {e}")
+            return None
+
+
+    @err_catcher(name=__name__)
+    def setFrameRange(self, origin, startFrame, endFrame):
+        try:
+            self.synthEyes.SetAnimStart(startFrame)
+            self.synthEyes.SetAnimEnd(endFrame)
+            logger.debug("Updated Framerange in SynthEyes")
+
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Set Framerange in SynthEyes: {e}")
+
+
+    @err_catcher(name=__name__)
+    def getObjByUUID(self, objType:str, uuid:str) -> bool:
+        try:
+            match objType:
+                case "shot":
+                    objs = self.synthEyes.Shots()
+                case "object":
+                    objs = self.synthEyes.Objects()
+                case "camera":
+                    objs = self.synthEyes.Cameras()
+                case "mesh":
+                    objs = self.synthEyes.Meshes()
+                case "light":
+                    objs = self.synthEyes.Lights()
+                case "extra":
+                    objs = self.synthEyes.Extras()
+
+            for obj in objs:
+                if obj.UniqID() == uuid:
+                    return obj
+
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to get {objType} - {uuid}")
+            return None
+
+
+    @err_catcher(name=__name__)
+    def deleteObjByUUID(self, objType:str, uuid:str) -> bool:
+        try:
+            match objType:
+                case "shot":
+                    objs = self.synthEyes.Shots()
+                case "object":
+                    objs = self.synthEyes.Objects()
+                case "camera":
+                    objs = self.synthEyes.Cameras()
+                case "mesh":
+                    objs = self.synthEyes.Meshes()
+                case "light":
+                    objs = self.synthEyes.Lights()
+                case "extra":
+                    objs = self.synthEyes.Extras()
+
+            for obj in objs:
+                if obj.UniqID() == uuid:
+                    if self.synthEyes.InUndo():
+                        logger.warning("Already in UNDO Block")
+                        return False
+                    
+                    self.synthEyes.Begin()
+                    self.synthEyes.Delete(obj)
+                    self.synthEyes.Accept(f"Deleted {objType}")
+                    break
+
+            return True
+
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to delete {objType} - {uuid}")
+            return False
+    
+
+
+    @err_catcher(name=__name__)
+    def getCamNodes(self, origin=None, cur=False):
+        return self.synthEyes.Cameras()
+    
+
+    @err_catcher(name=__name__)
+    def getCamName(self, origin, handle):                           #   TODO - Make Return current or passed Camera
+        cams = self.synthEyes.Cameras()
+        if cams:
+            return cams[0].Name()
+        
+        return None
+    
+    
+    @err_catcher(name=__name__)
+    def getCamFromName(self, camName):
+        cameras = self.getCamNodes()
+        for cam in cameras:
+            if cam.Name() == camName:
+                return cam
+            
+        return None
+    
+
+    @err_catcher(name=__name__)
+    def getShotFromCamName(self, camName):
+        camera = self.getCamFromName(camName)
+
+        if camera:
+            return camera.shot
+        
+        return None
+
+
+    # @err_catcher(name=__name__)
+    # def selectCam(self, origin):
+    #     if self.getObject(origin.curCam):
+    #         self.deselectObjects()
+    #         self.selectObject(self.getObject(origin.curCam))
+
+
+    # @err_catcher(name=__name__)
+    # def getImportPaths(self, origin):
+    #     if "PrismImports" not in bpy.context.scene:
+    #         return False
+    #     else:
+    #         return bpy.context.scene["PrismImports"]
+
+
+    # @err_catcher(name=__name__)
+    # def getFPS(self, origin):
+    #     intFps = bpy.context.scene.render.fps
+    #     baseFps = bpy.context.scene.render.fps_base
+    #     return round(intFps / baseFps, 2)
+
+
+    # @err_catcher(name=__name__)
+    # def setFPS(self, origin, fps):
+    #     if int(fps) == fps:
+    #         bpy.context.scene.render.fps = int(fps)
+    #     else:
+    #         intFps = math.ceil(fps)
+    #         bpy.context.scene.render.fps = intFps
+    #         bpy.context.scene.render.fps_base = intFps/fps
+
+
+    # @err_catcher(name=__name__)
+    # def getResolution(self):
+    #     width = bpy.context.scene.render.resolution_x
+    #     height = bpy.context.scene.render.resolution_y
+    #     return [width, height]
+
+
+    # @err_catcher(name=__name__)
+    # def setResolution(self, width=None, height=None):
+    #     if width:
+    #         bpy.context.scene.render.resolution_x = width
+    #     if height:
+    #         bpy.context.scene.render.resolution_y = height
+
+
+
+    ###################################################
+    ##                 File Handling                 ##   
+    ###################################################
 
 
     #   Returns Current SynthEyes File Name/Path
@@ -781,165 +989,6 @@ class Prism_SynthEyes_Functions(object):
         return pixmap
     
 
-    # @err_catcher(name=__name__)
-    # def getImportPaths(self, origin):
-    #     if "PrismImports" not in bpy.context.scene:
-    #         return False
-    #     else:
-    #         return bpy.context.scene["PrismImports"]
-
-
-    @err_catcher(name=__name__)
-    def getFrameRange(self, origin):
-        # return [None, None]                                         #   TODO - FOR TESTING
-        try:
-            start = (self.synthEyes.AnimStart() + 1)
-            end = (self.synthEyes.AnimEnd() +1)
-            return[start, end]
-        
-        except Exception as e:
-            logger.warning(f"ERROR: Unable to Get Framerange from SynthEyes: {e}")
-            return [None, None]
-
-
-    @err_catcher(name=__name__)
-    def getCurrentFrame(self):
-        try:
-            currentFrame = self.synthEyes.Frame()
-            return currentFrame
-        except Exception as e:
-            logger.warning(f"ERROR: Unable to Get Current Frame from SynthEyes: {e}")
-            return None
-
-
-    @err_catcher(name=__name__)
-    def setFrameRange(self, origin, startFrame, endFrame):
-        try:
-            self.synthEyes.SetAnimStart(startFrame)
-            self.synthEyes.SetAnimEnd(endFrame)
-            logger.debug("Updated Framerange in SynthEyes")
-
-        except Exception as e:
-            logger.warning(f"ERROR: Unable to Set Framerange in SynthEyes: {e}")
-
-
-    @err_catcher(name=__name__)
-    def getObjByUUID(self, objType:str, uuid:str) -> bool:
-        try:
-            match objType:
-                case "shot":
-                    objs = self.synthEyes.Shots()
-                case "object":
-                    objs = self.synthEyes.Objects()
-                case "camera":
-                    objs = self.synthEyes.Cameras()
-                case "mesh":
-                    objs = self.synthEyes.Meshes()
-                case "light":
-                    objs = self.synthEyes.Lights()
-                case "extra":
-                    objs = self.synthEyes.Extras()
-
-            for obj in objs:
-                if obj.UniqID() == uuid:
-                    return obj
-
-        except Exception as e:
-            logger.warning(f"ERROR: Unable to get {objType} - {uuid}")
-            return None
-
-
-
-
-    @err_catcher(name=__name__)
-    def deleteObjByUUID(self, objType:str, uuid:str) -> bool:
-        try:
-            match objType:
-                case "shot":
-                    objs = self.synthEyes.Shots()
-                case "object":
-                    objs = self.synthEyes.Objects()
-                case "camera":
-                    objs = self.synthEyes.Cameras()
-                case "mesh":
-                    objs = self.synthEyes.Meshes()
-                case "light":
-                    objs = self.synthEyes.Lights()
-                case "extra":
-                    objs = self.synthEyes.Extras()
-
-            for obj in objs:
-                if obj.UniqID() == uuid:
-                    if self.synthEyes.InUndo():
-                        logger.warning("Already in UNDO Block")
-                        return False
-                    
-                    self.synthEyes.Begin()
-                    self.synthEyes.Delete(obj)
-                    self.synthEyes.Accept(f"Deleted {objType}")
-                    break
-
-            return True
-
-        except Exception as e:
-            logger.warning(f"ERROR: Unable to delete {objType} - {uuid}")
-            return False
-
-
-
-    # @err_catcher(name=__name__)
-    # def getFPS(self, origin):
-    #     intFps = bpy.context.scene.render.fps
-    #     baseFps = bpy.context.scene.render.fps_base
-    #     return round(intFps / baseFps, 2)
-
-
-    # @err_catcher(name=__name__)
-    # def setFPS(self, origin, fps):
-    #     if int(fps) == fps:
-    #         bpy.context.scene.render.fps = int(fps)
-    #     else:
-    #         intFps = math.ceil(fps)
-    #         bpy.context.scene.render.fps = intFps
-    #         bpy.context.scene.render.fps_base = intFps/fps
-
-
-    # @err_catcher(name=__name__)
-    # def getResolution(self):
-    #     width = bpy.context.scene.render.resolution_x
-    #     height = bpy.context.scene.render.resolution_y
-    #     return [width, height]
-
-
-    # @err_catcher(name=__name__)
-    # def setResolution(self, width=None, height=None):
-    #     if width:
-    #         bpy.context.scene.render.resolution_x = width
-    #     if height:
-    #         bpy.context.scene.render.resolution_y = height
-
-
-    @err_catcher(name=__name__)
-    def getCamNodes(self, origin, cur=False):
-        return self.synthEyes.Cameras()
-    
-
-    @err_catcher(name=__name__)
-    def getCamName(self, origin, handle):                           #   TODO - Make Return current or passed Camera
-        cams = self.synthEyes.Cameras()
-        if cams:
-            return cams[0].Name()
-        
-        return None
-    
-
-    # @err_catcher(name=__name__)
-    # def selectCam(self, origin):
-    #     if self.getObject(origin.curCam):
-    #         self.deselectObjects()
-    #         self.selectObject(self.getObject(origin.curCam))
-
-
 
     #######################################
     ##               Shots               ##   
@@ -1034,7 +1083,6 @@ class Prism_SynthEyes_Functions(object):
     #######################################
     ##           Import Mesh             ##   
     #######################################
-
 
 
     # @err_catcher(name=__name__)
@@ -1159,17 +1207,64 @@ class Prism_SynthEyes_Functions(object):
         pass
     
 
-        
-
-
-
-
-
 
 
     #######################################
     ##             Rendering             ##   
     #######################################
+
+
+
+    @err_catcher(name=__name__)
+    def sm_render_preExecute(self, origin):
+        warnings = []
+
+        return warnings
+
+
+    @err_catcher(name=__name__)
+    def sm_render_Sequence(self, origin, stateManager, outputPath, rSettings, context):
+        camName = rSettings["currentCam"]
+        compType = rSettings["exrCompress"]
+        include_RGB = rSettings["include_RGB"]
+        include_alpha = rSettings["include_Alpha"]
+        include_meshes = rSettings["include_Mesh"]
+        include_burnIn = rSettings["include_Burnin"]
+
+        settingsStr = ("imp: "
+                       f"{boolToBit(include_RGB)},"
+                       f"{boolToBit(include_alpha)},"
+                       f"{boolToBit(include_meshes)},"
+                       f"{boolToBit(include_burnIn)}")
+
+        stateManager.showMinimized()
+
+        try:
+            shot = self.getShotFromCamName(camName)
+
+            self.synthEyes.Begin()
+
+            shot.Set("renderFile", outputPath)
+            shot.Set("renderSettings", settingsStr)
+            shot.Set("renderCompression", self.synthExrCompression[compType])
+
+            self.synthEyes.Accept("RenderSettings")
+
+
+            self.synthEyes.Begin()
+
+            result = shot.Call("Render")
+
+            self.synthEyes.Accept("Render")
+
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Render Image Sequence: {e}")
+            return False
+        
+        finally:
+            stateManager.showNormal()
+
+        return int(result) == 1
 
 
     @err_catcher(name=__name__)
@@ -1213,27 +1308,16 @@ class Prism_SynthEyes_Functions(object):
                 stFunct = "WriteUndistortImage"
 
     
-    #   "exr: <ZIP-scanline>,45"
-
-
-        shots = self.synthEyes.Shots()                  #   TODO - ENSURE CORRECT SHOT
-        shot = shots[0]
+        shot = self.getShotFromCamName(rSettings["currentCam"])
 
         result = shot.Call(stFunct, *args)
-
   
         return int(result) == 1
-
-
 
 
     @err_catcher(name=__name__)
     def sm_render_stMap_undoRenderSettings(self, origin, rSettings):            #   TODO
         pass
-
-
-
-
 
         
 
