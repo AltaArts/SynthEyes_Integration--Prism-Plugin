@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>wg_Synth_ImageRender</class>
- <widget class="QWidget" name="wg_Synth_ImageRender">
+ <class>wg_Synth_Playblast</class>
+ <widget class="QWidget" name="wg_Synth_Playblast">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -59,7 +59,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Render Sequence</string>
+         <string>Playblast</string>
         </property>
        </widget>
       </item>
@@ -916,6 +916,30 @@
        </layout>
       </item>
       <item>
+       <layout class="QHBoxLayout" name="f_include1_2">
+        <property name="leftMargin">
+         <number>30</number>
+        </property>
+        <property name="rightMargin">
+         <number>9</number>
+        </property>
+        <item>
+         <widget class="QCheckBox" name="chb_include_Items">
+          <property name="text">
+           <string>Include Viewport Items</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="chb_include_Grid">
+          <property name="text">
+           <string>Include Grid</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
        <layout class="QHBoxLayout" name="f_include1">
         <property name="leftMargin">
          <number>30</number>
@@ -948,9 +972,9 @@
          <number>9</number>
         </property>
         <item>
-         <widget class="QCheckBox" name="chb_include_Mesh">
+         <widget class="QCheckBox" name="chb_include_Depth">
           <property name="text">
-           <string>Include Mesh</string>
+           <string>Include Depth</string>
           </property>
          </widget>
         </item>
@@ -1001,7 +1025,7 @@
            <x>0</x>
            <y>0</y>
            <width>409</width>
-           <height>659</height>
+           <height>631</height>
           </rect>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_3">

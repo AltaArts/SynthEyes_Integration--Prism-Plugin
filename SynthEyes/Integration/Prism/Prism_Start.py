@@ -47,6 +47,8 @@
 
 import os
 import sys
+import socket
+import json
 
 
 if "PRISM_ROOT" in os.environ:
@@ -70,6 +72,23 @@ from qtpy.QtWidgets import *
 
 
 
+#   Socket Communication
+#   Imported to Each Prism Menu Script
+def sendToPrism(command, payload=None):
+    msg = {"command": command, "data": payload or {}}
+
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(("127.0.0.1", 50555))
+
+        s.send(json.dumps(msg).encode("utf-8"))
+        s.close()
+
+    except Exception as e:
+        print("[Script_SaveVersion]  ERROR: Could not connect to Prism listener:", e)
+
+
+#   Prism Tools Persistent Object
 class PrismToolsWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -118,6 +137,8 @@ class PrismToolsWindow(QMainWindow):
             "openProjectBrowser": "Project Browser",
             "openStateManager": "State Manager",
             "openPrismSettings": "Prism Settings",
+            "testOne": "Test 1",        #   TESTING
+            "testTwo": "Test 2"         #   TESTING
         }
 
         #   Itterate Over Buttons and Create Objects
@@ -161,6 +182,8 @@ class PrismToolsWindow(QMainWindow):
         self.b_openStateManager.clicked.connect(self.open_StateManager)
         self.b_openPrismSettings.clicked.connect(self.open_PrismSettings)
 
+        self.b_testOne.clicked.connect(self.testOne)                        #   TESTING
+        self.b_testTwo.clicked.connect(self.testTwo)                        #   TESTING
 
 
     #   Periodically Checks if SynthEyes is Still Running
@@ -175,10 +198,10 @@ class PrismToolsWindow(QMainWindow):
         try:
             parent = psutil.Process(self.parent_pid)
             if not parent.is_running():
-                self.close()
+                QApplication.quit()
 
         except psutil.NoSuchProcess:
-            self.close()
+            QApplication.quit()
 
 
     #   Calls from Prism Tools Buttons
@@ -198,12 +221,23 @@ class PrismToolsWindow(QMainWindow):
         self.synthFuncts.open_PrismSettings()
 
 
+    def testOne(self):                          #   TESTING
+        self.synthFuncts.testOne()
+        
+    def testTwo(self):                          #   TESTING
+        self.synthFuncts.testTwo()
+
+
 #   Entry Point
 def main():
     app = QApplication(sys.argv)
 
+    #   Ensures Prism Tools Window Stays Persistent
+    app.setQuitOnLastWindowClosed(False)
+
+    #   Creates Hidden Prism Tools Window
     window = PrismToolsWindow()
-    window.show()
+    # window.show() #   Uncomment to Display Window
 
     sys.exit(app.exec_())
 

@@ -76,9 +76,15 @@ if eval(os.getenv("PRISM_DEBUG", "False")):
 
 from PrismUtils.Decorators import err_catcher as err_catcher
 
+
+from Prism_SynthEyes_Listener import PrismCommsListener
+
+
 logger = logging.getLogger(__name__)
 
 
+HOST = "127.0.0.1"
+PORT = 50555
 
 #   Helper to Convert Python Bool to SynthEyes 0/1
 def boolToBit(boolInp: bool) -> int:
@@ -94,14 +100,21 @@ class Prism_SynthEyes_Functions(object):
         self.synthEyes = None
         self.importSyPy3()
 
-        ##  CALLBACKS
+        self.Listener = PrismCommsListener(self, host=HOST, port=PORT)
+        self.Listener.bridge.commandReceived.connect(self.handleIncomingCommand)
+        self.Listener.start()
 
+        ##  CALLBACKS
         self.core.registerCallback("onStateManagerOpen", self.onStateManagerOpen, plugin=self.plugin, priority=20)
         self.core.registerCallback("onProjectBrowserStartup", self.onProjectBrowserStartup, plugin=self.plugin)
         self.core.registerCallback("onUserSettingsOpen", self.onUserSettingsOpen, plugin=self.plugin)
         # self.core.registerCallback("onStateCreated", self.onStateCreated, plugin=self.plugin)
         # self.core.registerCallback("prePlayblast", self.prePlayblast, plugin=self.plugin)
         # self.core.registerCallback("onGenerateStateNameContext", self.onGenerateStateNameContext, plugin=self.plugin)
+
+
+        self.findPrismActions()
+        self.createPrismMenu()
 
         #   Dict of UI Display Names, SynthEyes Names, and Extensions
         self.synthFormatNames = {
@@ -191,6 +204,12 @@ class Prism_SynthEyes_Functions(object):
     #     return pin
 
 
+
+    ###########################################
+    ##         PRISM SYNTHEYES BRIDGE        ##
+    ###########################################
+
+
     #   Parses the Integration Path and Imports SyPy3
     @err_catcher(name=__name__)
     def importSyPy3(self):
@@ -210,6 +229,78 @@ class Prism_SynthEyes_Functions(object):
             self.synthEyes.OpenExisting()
 
             logger.debug("Imported SynthEyes SyPy3")
+
+
+    #   Queries Script Menu Items and Finds Prism Script ID's
+    @err_catcher(name=__name__)
+    def findPrismActions(self):     
+        mainMenu = self.synthEyes.MainMenu()
+        scriptMenu = mainMenu.SubMenuByName("Script")
+        prismMenu = scriptMenu.SubMenuByName("Prism")
+
+        for item in range(prismMenu.Count()):
+            actID = prismMenu.IDByPos(item)
+            actName = prismMenu.NameByPos(item)
+
+            if actName == "Prism - Save Version":
+                self.act_saveVersion_ID = actID
+
+            if actName == "Prism - Save Comment":
+                self.act_saveComment_ID = actID
+
+            if actName == "Prism - Open Project Browser":
+                self.act_projectManager_ID = actID
+
+            if actName == "Prism - Open State Manager":
+                self.act_stateManager_ID = actID
+
+            if actName == "Prism - Open Prism Settings":
+                self.act_prismSettings_ID = actID
+
+
+    #   Creates Custom Prism Menu in SynthEyes Main Toolbar
+    @err_catcher(name=__name__)
+    def createPrismMenu(self):
+
+        self.synthEyes.InitMenu()
+
+        mainMenu = self.synthEyes.MainMenu()
+        prismMenu = mainMenu.SubMenuByName("Prism")
+
+        if not prismMenu.Exists():
+            prismMenu = mainMenu.AddSubMenu(9, "Prism")
+
+            prismMenu.AddMenuItem(1, "Save Next Version", self.act_saveVersion_ID)
+            prismMenu.AddMenuItem(2, "Save Version with Comment", self.act_saveComment_ID)
+            prismMenu.AddMenuItem(3, "Project Browser", self.act_projectManager_ID)
+            prismMenu.AddMenuItem(4, "State Manager", self.act_stateManager_ID)
+            prismMenu.AddMenuItem(5, "Prism Settings", self.act_prismSettings_ID)
+
+            self.synthEyes.Redraw()
+
+
+    #   Receives Signal from Listener Thread
+    @err_catcher(name=__name__)
+    def handleIncomingCommand(self, msg):
+        command = msg.get("command")
+
+        match command:
+            case "saveVersion":
+                self.saveVersion()
+
+            case "saveComment":
+                self.saveComment()
+
+            case "open_ProjectBrowser":
+                self.open_ProjectBrowser()
+
+            case "open_StateManager":
+                self.open_StateManager()
+
+            case "open_PrismSettings":
+                self.open_PrismSettings()
+
+
 
 
     # @err_catcher(name=__name__)
@@ -279,7 +370,7 @@ class Prism_SynthEyes_Functions(object):
         #	Remove Import Export and Playblast buttons
         origin.b_createImport.deleteLater()
         origin.b_createExport.deleteLater()
-        origin.b_createPlayblast.deleteLater()
+        # origin.b_createPlayblast.deleteLater()
         origin.b_shotCam.deleteLater()
 
 
@@ -319,7 +410,7 @@ class Prism_SynthEyes_Functions(object):
         # origin.createState(appStates["stateType"], parent=parent, setActive=True, **appStates.get("kwargs", {}))
 
         #   States to Keep in SynthEyes
-        keepStates = ["Folder", "Synth_AddShot", "Synth_ImportMesh", "Synth_SceneExport", "Synth_Render_StMap", "Synth_ImageRender"]
+        keepStates = ["Folder", "Synth_AddShot", "Synth_ImportMesh", "Synth_SceneExport", "Synth_Render_StMap", "Synth_ImageRender", "Synth_Playblast"]
 
         #   Remove Unused States
         for state in list(origin.stateTypes.keys()):
@@ -390,9 +481,6 @@ class Prism_SynthEyes_Functions(object):
     def open_PrismSettings(self):
         self.core.prismSettings()
 
-    @err_catcher(name=__name__)
-    def exportScene(self):
-        self.handle_exportScene()
 
 
     @err_catcher(name=__name__)
@@ -406,43 +494,6 @@ class Prism_SynthEyes_Functions(object):
     @err_catcher(name=__name__)
     def testTwo(self):
         self.core.popup("IN TEST TWO")							#	TESTING
-
-
-
-        #########    DISTORT SEQUENCE TESTING    #########
-
-
-        # testPath = r"C:\\Users\\Joshua Breckeen\\Desktop\\TEST_STMAP\\TEST_STMAP_v001.0001.exr"
-
-
-        # args = [outputName]
-
-        # if stType == "redistort":
-        #     if rangeType == "sequence":
-        #         stFunct = "WriteRedistortSequence"
-        #         args.extend(["exr: <ZIP-scanline>,45", 1, 0, 0])
-        #     else:
-        #         stFunct = "WriteRedistortImage"
-
-        # elif stType == "undistort":
-        #     if rangeType == "sequence":
-        #         stFunct = "WriteUndistortSequence"
-        #         args.extend(["exr: <ZIP-scanline>,45", 1, 0, 0])
-        #     else:
-        #         stFunct = "WriteUndistortImage"
-
-    
-    #   "exr: <ZIP-scanline>,45"
-
-
-        # shots = self.synthEyes.Shots()                  #   TODO - ENSURE CORRECT SHOT
-        # shot = shots[0]
-
-        # result = shot.Call(stFunct, *args)
-
-        # result = shot.Call("WriteRedistortSequence", "exr: <ZIP-scanline>,45", 1, 1, 1)
-
-        # self.core.popup(f"result:  {result}")							#	TESTING
 
 
 
@@ -571,104 +622,7 @@ class Prism_SynthEyes_Functions(object):
 
 
 
-    @err_catcher(name=__name__)                                                 #   TESTING
-    def prismMenuTesting(self):
 
-        self.synthEyes.InitMenu()
-
-        mainMenu = self.synthEyes.MainMenu()
-        prismMenu = mainMenu.SubMenuByName("Prism")
-
-        if not prismMenu.Exists():
-            prismMenu = mainMenu.AddSubMenu(9, "Prism")
-
-            prismMenu.AddMenuItem(1, "Save Next Version", 1)
-            prismMenu.AddMenuItem(2, "Save Version with Comment", 2)
-            prismMenu.AddMenuItem(3, "Project Browser", 3)
-            prismMenu.AddMenuItem(4, "State Manager", 4)
-            prismMenu.AddMenuItem(5, "Prism Settings", 5)
-
-            # self.synthEyes.ReloadAll()
-            self.synthEyes.Redraw()
-
-
-        # last_id = self.synthEyes.core.Run("MENULAST1")
-        # print(f"***  last_id:  {last_id}")								#	TESTING
-
-        # count = prismMenu.Count()
-
-        # for i in range(1, count+1):
-        #     name = prismMenu.NameByPos(i)
-        #     mid  = prismMenu.IDByPos(i)
-
-        #     print(i, name, mid)
-        
-        # # print(f"dir prismMenu:  {dir(prismMenu)}")							#	TESTING
-
-        # act_projectB = prismMenu.SubMenuByName("Project Browser")
-        # print(f"dir act_projectB:  {dir(act_projectB)}")								#	TESTING
-
-        # print(f"***  act_projectB runcmd:  {act_projectB.runcmd}")								#	TESTING
-
-        # act_save =mainMenu.SubMenuByName("Save")
-        # print(f"dir act_save:  {dir(act_save)}")								#	TESTING
-
-        # print(f"***  act_save runcmd:  {act_save.runcmd}")								#	TESTING
-
-        # project_browser_id = prismMenu.IDByName("Project Browser")
-        # save_next_id = prismMenu.IDByName("Save Next Version")
-
-        # last_id = self.synthEyes.core.Run("MENULAST1")
-
-        # print(f"***  last_id:  {last_id}")								#	TESTING
-
-        # import time
-
-        # print("Polling for menu selection (Ctrl+C to stop)...")
-
-        # try:
-        #     while True:
-        #         last_id = self.synthEyes.core.Run("MENULAST1")  # last clicked menu ID
-        #         if last_id == project_browser_id:
-        #             print("Project Browser menu clicked!")
-        #             self.open_ProjectBrowser()
-        #         elif last_id == save_next_id:
-        #             print("Save Next Version clicked!")
-        #             self.saveNextVersion()
-
-        #         time.sleep(0.2)  # poll every 0.2 seconds
-        # except KeyboardInterrupt:
-        #     print("Polling stopped by user.")
-
-        # print(f"act_projectB.runcmd:  {act_projectB.runcmd}")
-
-        # help(act_projectB.runcmd)
-
-        # print(f"act_projectB.runcmd.__doc__: {act_projectB.runcmd.__doc__}")
-
-        # print(f"type: {type(act_projectB)}")
-
-        # print(f"class: {act_projectB.__class__}")
-
-        # print(f"prismMenu.IDByPos(1): {prismMenu.IDByPos(1)}")
-
-        # print(f"prismMenu.NameByID(1): {prismMenu.NameByID(1)}")
-
-        # print(f"dir core: {dir(self.synthEyes.core)}")
-
-        # self.synthEyes.core.Run(act_projectB.runcmd)
-
-        # actionName = "PRISM.OpenProjectBrowser"
-        # self.synthEyes.core.Run(f'REGISTERACTION {actionName}')
-
-        # act_projectB.runcmd = lambda: self.open_ProjectBrowser()
-
-        # print(f"runcmd:  {act_projectB.runcmd}")							#	TESTING
-
-        # Actions = self.synthEyes.Actions()
-
-        # for action in Actions:
-        #     print(action)
 
 
 
@@ -777,7 +731,6 @@ class Prism_SynthEyes_Functions(object):
             logger.warning(f"ERROR: Unable to delete {objType} - {uuid}")
             return False
     
-
 
     @err_catcher(name=__name__)
     def getCamNodes(self, origin=None, cur=False):
@@ -1319,6 +1272,90 @@ class Prism_SynthEyes_Functions(object):
     def sm_render_stMap_undoRenderSettings(self, origin, rSettings):            #   TODO
         pass
 
+
+
+    @err_catcher(name=__name__)
+    def sm_playblast_preExecute(self, origin):
+        warnings = []
+
+        return warnings
+
+
+    @err_catcher(name=__name__)
+    def sm_render_playblast(self, origin, stateManager, outputPath, rSettings, context):
+        camName = rSettings["currentCam"]
+        compType = rSettings["exrCompress"]
+
+        include_items = rSettings["include_Items"]
+        include_grid = rSettings["include_Grid"]
+        include_RGB = rSettings["include_RGB"]
+        include_alpha = rSettings["include_Alpha"]
+        include_depth = rSettings["include_Depth"]
+        include_burnIn = rSettings["include_Burnin"]
+
+        settingsStr = ("prvu: "
+        # settingsStr = ("imp: "
+                       f"{boolToBit(include_items)},"
+                       f"{boolToBit(include_grid)},"
+                        "1,"
+                       f"{boolToBit(include_RGB)},"
+                       f"{boolToBit(include_alpha)},"
+                       f"{boolToBit(include_depth)},"
+                       f"{boolToBit(include_burnIn)}")
+        
+        # settingsStr = "prvu: 1,1,1,1,1,0,0"
+        
+        # self.core.popup(f"settingsStr:  {settingsStr}")							#	TESTING
+
+        # stateManager.showMinimized()
+
+        # try:
+
+        shot = self.getShotFromCamName(camName)
+
+        self.synthEyes.Begin()
+
+        shot.Set("previewFile", outputPath)
+        shot.Set("previewSettings", settingsStr)
+        shot.Set("previewCompression", self.synthExrCompression[compType])
+
+        self.synthEyes.Accept("PreviewSettings")
+
+        # self.core.popup(f"previewFile:  {shot.Get("previewFile")}")							#	TESTING
+        # self.core.popup(f"previewSettings:  {shot.Get("previewSettings")}")							#	TESTING
+        # self.core.popup(f"previewCompression:  {shot.Get("previewCompression")}")							#	TESTING
+
+        self.synthEyes.Begin()
+
+        # Render
+        # RenderPreview
+        # RenderPreviewMovie
+        # RenderMovie
+        # PreviewRender
+        # PreviewMovieRender
+        # PreviewMovie
+        actID = self.synthEyes.ActionID("Persp/Preview Movie")
+
+        self.core.popup(f"actID: {actID}")                                      #    TESTING
+
+        if actID:
+            self.synthEyes.PerformActionByIDAndWait(actID)
+
+
+        # self.synthEyes.PerformActionByNameAndWait("Persp/Preview Movie")
+
+        # result = shot.Call("RenderPreviewMovie")
+
+        self.synthEyes.Accept("Playblast")
+
+        # except Exception as e:
+        #     logger.warning(f"ERROR: Unable to Render Playblast: {e}")
+        #     return False
+        
+        # finally:
+        #     stateManager.showNormal()
+
+        # return int(result) == 1
         
 
     ###################################################

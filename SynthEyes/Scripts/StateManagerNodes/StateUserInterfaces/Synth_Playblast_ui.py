@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'Synth_ImageRender.ui'
+## Form generated from reading UI file 'Synth_Playblast.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.10.1
 ##
@@ -12,15 +12,15 @@ from qtpy.QtCore import *  # type: ignore
 from qtpy.QtGui import *  # type: ignore
 from qtpy.QtWidgets import *  # type: ignore
 
-class Ui_wg_Synth_ImageRender(object):
-    def setupUi(self, wg_Synth_ImageRender):
-        if not wg_Synth_ImageRender.objectName():
-            wg_Synth_ImageRender.setObjectName(u"wg_Synth_ImageRender")
-        wg_Synth_ImageRender.resize(460, 1253)
-        self.verticalLayout = QVBoxLayout(wg_Synth_ImageRender)
+class Ui_wg_Synth_Playblast(object):
+    def setupUi(self, wg_Synth_Playblast):
+        if not wg_Synth_Playblast.objectName():
+            wg_Synth_Playblast.setObjectName(u"wg_Synth_Playblast")
+        wg_Synth_Playblast.resize(460, 1253)
+        self.verticalLayout = QVBoxLayout(wg_Synth_Playblast)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
-        self.f_name = QWidget(wg_Synth_ImageRender)
+        self.f_name = QWidget(wg_Synth_Playblast)
         self.f_name.setObjectName(u"f_name")
         self.horizontalLayout_4 = QHBoxLayout(self.f_name)
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
@@ -46,7 +46,7 @@ class Ui_wg_Synth_ImageRender(object):
 
         self.verticalLayout.addWidget(self.f_name)
 
-        self.gb_imageRender = QGroupBox(wg_Synth_ImageRender)
+        self.gb_imageRender = QGroupBox(wg_Synth_Playblast)
         self.gb_imageRender.setObjectName(u"gb_imageRender")
         self.verticalLayout_2 = QVBoxLayout(self.gb_imageRender)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
@@ -308,7 +308,7 @@ class Ui_wg_Synth_ImageRender(object):
 
         self.verticalLayout.addWidget(self.gb_imageRender)
 
-        self.gb_options = QGroupBox(wg_Synth_ImageRender)
+        self.gb_options = QGroupBox(wg_Synth_Playblast)
         self.gb_options.setObjectName(u"gb_options")
         self.gb_options.setCheckable(False)
         self.verticalLayout_5 = QVBoxLayout(self.gb_options)
@@ -463,6 +463,22 @@ class Ui_wg_Synth_ImageRender(object):
 
         self.verticalLayout_5.addLayout(self.f_exrCompression)
 
+        self.f_include1_2 = QHBoxLayout()
+        self.f_include1_2.setObjectName(u"f_include1_2")
+        self.f_include1_2.setContentsMargins(30, -1, 9, -1)
+        self.chb_include_Items = QCheckBox(self.gb_options)
+        self.chb_include_Items.setObjectName(u"chb_include_Items")
+
+        self.f_include1_2.addWidget(self.chb_include_Items)
+
+        self.chb_include_Grid = QCheckBox(self.gb_options)
+        self.chb_include_Grid.setObjectName(u"chb_include_Grid")
+
+        self.f_include1_2.addWidget(self.chb_include_Grid)
+
+
+        self.verticalLayout_5.addLayout(self.f_include1_2)
+
         self.f_include1 = QHBoxLayout()
         self.f_include1.setObjectName(u"f_include1")
         self.f_include1.setContentsMargins(30, -1, 9, -1)
@@ -482,10 +498,10 @@ class Ui_wg_Synth_ImageRender(object):
         self.f_include2 = QHBoxLayout()
         self.f_include2.setObjectName(u"f_include2")
         self.f_include2.setContentsMargins(30, -1, 9, -1)
-        self.chb_include_Mesh = QCheckBox(self.gb_options)
-        self.chb_include_Mesh.setObjectName(u"chb_include_Mesh")
+        self.chb_include_Depth = QCheckBox(self.gb_options)
+        self.chb_include_Depth.setObjectName(u"chb_include_Depth")
 
-        self.f_include2.addWidget(self.chb_include_Mesh)
+        self.f_include2.addWidget(self.chb_include_Depth)
 
         self.chb_include_Burnin = QCheckBox(self.gb_options)
         self.chb_include_Burnin.setObjectName(u"chb_include_Burnin")
@@ -498,7 +514,7 @@ class Ui_wg_Synth_ImageRender(object):
 
         self.verticalLayout.addWidget(self.gb_options)
 
-        self.gb_previous = QGroupBox(wg_Synth_ImageRender)
+        self.gb_previous = QGroupBox(wg_Synth_Playblast)
         self.gb_previous.setObjectName(u"gb_previous")
         self.gb_previous.setCheckable(False)
         self.gb_previous.setChecked(False)
@@ -510,7 +526,7 @@ class Ui_wg_Synth_ImageRender(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 409, 659))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 409, 631))
         self.verticalLayout_3 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.l_pathLast = QLabel(self.scrollAreaWidgetContents)
@@ -550,48 +566,50 @@ class Ui_wg_Synth_ImageRender(object):
         QWidget.setTabOrder(self.gb_options, self.scrollArea)
         QWidget.setTabOrder(self.scrollArea, self.b_pathLast)
 
-        self.retranslateUi(wg_Synth_ImageRender)
+        self.retranslateUi(wg_Synth_Playblast)
 
-        QMetaObject.connectSlotsByName(wg_Synth_ImageRender)
+        QMetaObject.connectSlotsByName(wg_Synth_Playblast)
     # setupUi
 
-    def retranslateUi(self, wg_Synth_ImageRender):
-        wg_Synth_ImageRender.setWindowTitle(QCoreApplication.translate("wg_Synth_ImageRender", u"Image Render", None))
-        self.l_name.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Name:", None))
-        self.l_class.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Render Sequence", None))
-        self.gb_imageRender.setTitle(QCoreApplication.translate("wg_Synth_ImageRender", u"General", None))
-        self.l_comment.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Comment:", None))
-        self.label_7.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Context:", None))
+    def retranslateUi(self, wg_Synth_Playblast):
+        wg_Synth_Playblast.setWindowTitle(QCoreApplication.translate("wg_Synth_Playblast", u"Image Render", None))
+        self.l_name.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Name:", None))
+        self.l_class.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Playblast", None))
+        self.gb_imageRender.setTitle(QCoreApplication.translate("wg_Synth_Playblast", u"General", None))
+        self.l_comment.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Comment:", None))
+        self.label_7.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Context:", None))
         self.l_context.setText("")
-        self.b_context.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Select", None))
-        self.label_2.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Identifier:", None))
+        self.b_context.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Select", None))
+        self.label_2.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Identifier:", None))
         self.l_taskName.setText("")
-        self.b_changeTask.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"change", None))
-        self.label_3.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Framerange:", None))
-        self.l_rangeEnd.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"1100", None))
-        self.l_rangeStart.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"1001", None))
-        self.l_rangeStartInfo.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Start:", None))
-        self.l_rangeEndInfo.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"End:", None))
-        self.l_outPath_2.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Master Version:", None))
-        self.l_outPath.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Location:", None))
-        self.label_8.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Version override:", None))
+        self.b_changeTask.setText(QCoreApplication.translate("wg_Synth_Playblast", u"change", None))
+        self.label_3.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Framerange:", None))
+        self.l_rangeEnd.setText(QCoreApplication.translate("wg_Synth_Playblast", u"1100", None))
+        self.l_rangeStart.setText(QCoreApplication.translate("wg_Synth_Playblast", u"1001", None))
+        self.l_rangeStartInfo.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Start:", None))
+        self.l_rangeEndInfo.setText(QCoreApplication.translate("wg_Synth_Playblast", u"End:", None))
+        self.l_outPath_2.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Master Version:", None))
+        self.l_outPath.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Location:", None))
+        self.label_8.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Version override:", None))
         self.chb_version.setText("")
-        self.b_version.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"\u25bc", None))
-        self.gb_options.setTitle(QCoreApplication.translate("wg_Synth_ImageRender", u"Render Options", None))
-        self.label.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Camera:", None))
-        self.label_4.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Resolution override:", None))
+        self.b_version.setText(QCoreApplication.translate("wg_Synth_Playblast", u"\u25bc", None))
+        self.gb_options.setTitle(QCoreApplication.translate("wg_Synth_Playblast", u"Render Options", None))
+        self.label.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Camera:", None))
+        self.label_4.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Resolution override:", None))
         self.chb_resOverride.setText("")
-        self.b_resPresets.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"\u25bc", None))
-        self.l_renderPreset.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Rendersettings preset:", None))
+        self.b_resPresets.setText(QCoreApplication.translate("wg_Synth_Playblast", u"\u25bc", None))
+        self.l_renderPreset.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Rendersettings preset:", None))
         self.chb_renderPreset.setText("")
-        self.label_6.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Format:", None))
-        self.l_exr_Compression.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"EXR Compression:", None))
-        self.chb_include_RGB.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Include RGB", None))
-        self.chb_include_Alpha.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Include Alpha", None))
-        self.chb_include_Mesh.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Include Mesh", None))
-        self.chb_include_Burnin.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Include Burn-in", None))
-        self.gb_previous.setTitle(QCoreApplication.translate("wg_Synth_ImageRender", u"Previous render", None))
-        self.l_pathLast.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"None", None))
-        self.b_pathLast.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"...", None))
+        self.label_6.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Format:", None))
+        self.l_exr_Compression.setText(QCoreApplication.translate("wg_Synth_Playblast", u"EXR Compression:", None))
+        self.chb_include_Items.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include Viewport Items", None))
+        self.chb_include_Grid.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include Grid", None))
+        self.chb_include_RGB.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include RGB", None))
+        self.chb_include_Alpha.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include Alpha", None))
+        self.chb_include_Depth.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include Depth", None))
+        self.chb_include_Burnin.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include Burn-in", None))
+        self.gb_previous.setTitle(QCoreApplication.translate("wg_Synth_Playblast", u"Previous render", None))
+        self.l_pathLast.setText(QCoreApplication.translate("wg_Synth_Playblast", u"None", None))
+        self.b_pathLast.setText(QCoreApplication.translate("wg_Synth_Playblast", u"...", None))
     # retranslateUi
 
