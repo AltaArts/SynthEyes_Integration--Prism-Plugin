@@ -80,6 +80,12 @@ from PrismUtils.Decorators import err_catcher as err_catcher
 
 from Prism_SynthEyes_Listener import PrismCommsListener
 
+from Synth_Formats import (SynthFormatNames,
+                           SynthExrCompress,
+                           SynthMovCodecs,
+                           SynthMP4Codecs,
+                           SynthMP4Qual)
+
 
 logger = logging.getLogger(__name__)
 
@@ -113,51 +119,9 @@ class Prism_SynthEyes_Functions(object):
         # self.core.registerCallback("prePlayblast", self.prePlayblast, plugin=self.plugin)
         # self.core.registerCallback("onGenerateStateNameContext", self.onGenerateStateNameContext, plugin=self.plugin)
 
-
         self.findPrismActions()
         self.createPrismMenu()
 
-        #   Dict of UI Display Names, SynthEyes Names, and Extensions
-        self.synthFormatNames = {
-            "USD  (.usda)": {
-                    "synthName": "USD ASCII Scene",
-                    "format": ".usda"
-                    },
-            "FBX  (.fbx)": {
-                    "synthName": "Filmbox FBX",
-                    "format": ".fbx"
-                    },
-            "Alembic  (.abc)": {
-                    "synthName": "Alembic 1.5+",
-                    "format": ".abc"
-                    },
-            "Blender  (.py)": {
-                    "synthName": "Blender (Python)",
-                    "format": ".py"
-                    },
-            "Maya  (.ma)": {
-                    "synthName": "Maya ASCII Updated",
-                    "format": ".ma"
-                    },
-            "BMD Fusion  (.comp)": {
-                    "synthName": "Fusion Composition",
-                    "format": ".comp"
-                    },
-            "Nuke  (.nk)": {
-                    "synthName": "Nuke (Current)",
-                    "format": ".nk"
-                    },
-           }
-        
-        self.synthExrCompression = {
-            "NONE": "exr: <None>,45",
-            "ZIP":"exr: <ZIP-block>,45",
-            "ZIPS": "exr: <ZIP-scanline>,45",
-            "DWAA": "exr: <DWAA32 Lossy>,45",
-            "DWAB": "exr: <DWAB256 Lossy>,45",
-            "RLE": "exr: <Run-length>,45",
-            "PXR24": "exr: <PXR Lossy>,45"
-            }
 
 
     @err_catcher(name=__name__)
@@ -281,7 +245,6 @@ class Prism_SynthEyes_Functions(object):
     #   Creates Custom Prism Menu in SynthEyes Main Toolbar
     @err_catcher(name=__name__)
     def createPrismMenu(self):
-
         self.synthEyes.InitMenu()
 
         mainMenu = self.synthEyes.MainMenu()
@@ -758,12 +721,12 @@ class Prism_SynthEyes_Functions(object):
     
 
     @err_catcher(name=__name__)
-    def getCamName(self, origin, handle):                           #   TODO - Make Return current or passed Camera
-        cams = self.synthEyes.Cameras()
-        if cams:
-            return cams[0].Name()
+    def getCamName(self, origin, camera):                           #   TODO - Make Return current or passed Camera
+        # cams = self.synthEyes.Cameras()
+        # if cams:
+        #     return cams[0].Name()
         
-        return None
+        return camera.Name()
     
     
     @err_catcher(name=__name__)
@@ -1161,7 +1124,7 @@ class Prism_SynthEyes_Functions(object):
     @err_catcher(name=__name__)
     def sm_sceneExport(self, origin, outputType, outputName, startFrame=None, endFrame=None, details=None):
         try:
-            synthFormatType = self.synthFormatNames[outputType]["synthName"]
+            synthFormatType = SynthFormatNames[outputType]["synthName"]
             exportPath = os.path.normpath(outputName)
 
             self.synthEyes.Export(synthFormatType, exportPath)
@@ -1187,47 +1150,64 @@ class Prism_SynthEyes_Functions(object):
     #######################################
 
 
-
+    #   Called from State Before Render
     @err_catcher(name=__name__)
     def sm_render_preExecute(self, origin):
         warnings = []
 
         return warnings
+    
+
+    #   Returns Str of Format Specific Render Settings
+    #   (from Synth_Formats.py imports)
+    @err_catcher(name=__name__)
+    def getRenderOptsStr(self, rSettings):
+        format = rSettings["format"]
+
+        if format == ".exr":
+            return SynthExrCompress[rSettings["exrCompress"]]
+        
+        elif format == ".mov":
+            return SynthMovCodecs[rSettings["movCodec"]]
+        
+        elif format == ".mp4":
+            return f"{SynthMP4Codecs[rSettings['mp4Codec']]} {SynthMP4Qual[rSettings['mp4Qual']]}"
+        
+        else:
+            return None
 
 
+    #   Renders with SynthEyes 'Save Sequence'
     @err_catcher(name=__name__)
     def sm_render_Sequence(self, origin, stateManager, outputPath, rSettings, context):
-        camName = rSettings["currentCam"]
-        compType = rSettings["exrCompress"]
-        include_RGB = rSettings["include_RGB"]
-        include_alpha = rSettings["include_Alpha"]
-        include_meshes = rSettings["include_Mesh"]
-        include_burnIn = rSettings["include_Burnin"]
+        #   Get Format Specific Render Settings
+        optStr = self.getRenderOptsStr(rSettings)
 
+        #   Make Render Include String
         settingsStr = ("imp: "
-                       f"{boolToBit(include_RGB)},"
-                       f"{boolToBit(include_alpha)},"
-                       f"{boolToBit(include_meshes)},"
-                       f"{boolToBit(include_burnIn)}")
+                       f"{boolToBit(rSettings['include_RGB'])},"
+                       f"{boolToBit(rSettings['include_Alpha'])},"
+                       f"{boolToBit(rSettings['include_Mesh'])},"
+                       f"{boolToBit(rSettings['include_Burnin'])}")
 
         stateManager.showMinimized()
 
+        self.core.popup(f"optStr: {optStr}\n"
+                        f"settingsStr:  {settingsStr}")                                      #    TESTING
+
         try:
-            shot = self.getShotFromCamName(camName)
+            shot = self.getShotFromCamName(rSettings["currentCam"])
 
+            #   Configure SynthEyes Render Settings
             self.synthEyes.Begin()
-
             shot.Set("renderFile", outputPath)
+            shot.Set("renderCompression", optStr)
             shot.Set("renderSettings", settingsStr)
-            shot.Set("renderCompression", self.synthExrCompression[compType])
-
             self.synthEyes.Accept("RenderSettings")
 
-
+            #   Run Render
             self.synthEyes.Begin()
-
             result = shot.Call("Render")
-
             self.synthEyes.Accept("Render")
 
         except Exception as e:
@@ -1237,6 +1217,7 @@ class Prism_SynthEyes_Functions(object):
         finally:
             stateManager.showNormal()
 
+        #   Return Bool of SynthEyes Int Result
         return int(result) == 1
 
 
@@ -1337,7 +1318,7 @@ class Prism_SynthEyes_Functions(object):
 
         shot.Set("previewFile", outputPath)
         shot.Set("previewSettings", settingsStr)
-        shot.Set("previewCompression", self.synthExrCompression[compType])
+        shot.Set("previewCompression", SynthExrCompress[compType])
 
         self.synthEyes.Accept("PreviewSettings")
 

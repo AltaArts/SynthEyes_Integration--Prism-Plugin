@@ -418,6 +418,10 @@ class Ui_wg_Synth_ImageRender(object):
 
         self.verticalLayout_5.addWidget(self.w_renderPreset)
 
+        self.verticalSpacer_3 = QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+
+        self.verticalLayout_5.addItem(self.verticalSpacer_3)
+
         self.w_format = QWidget(self.gb_options)
         self.w_format.setObjectName(u"w_format")
         self.horizontalLayout_6 = QHBoxLayout(self.w_format)
@@ -442,26 +446,108 @@ class Ui_wg_Synth_ImageRender(object):
 
         self.verticalLayout_5.addWidget(self.w_format)
 
-        self.f_exrCompression = QHBoxLayout()
-        self.f_exrCompression.setObjectName(u"f_exrCompression")
-        self.f_exrCompression.setContentsMargins(9, -1, 9, -1)
-        self.l_exr_Compression = QLabel(self.gb_options)
+        self.f_codecOptions_EXR = QWidget(self.gb_options)
+        self.f_codecOptions_EXR.setObjectName(u"f_codecOptions_EXR")
+        self.f_options_EXR = QHBoxLayout(self.f_codecOptions_EXR)
+        self.f_options_EXR.setObjectName(u"f_options_EXR")
+        self.f_options_EXR.setContentsMargins(9, 0, 9, 0)
+        self.l_exr_Compression = QLabel(self.f_codecOptions_EXR)
         self.l_exr_Compression.setObjectName(u"l_exr_Compression")
 
-        self.f_exrCompression.addWidget(self.l_exr_Compression)
+        self.f_options_EXR.addWidget(self.l_exr_Compression)
 
         self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.f_exrCompression.addItem(self.horizontalSpacer_4)
+        self.f_options_EXR.addItem(self.horizontalSpacer_4)
 
-        self.cb_exrCompression = QComboBox(self.gb_options)
+        self.cb_exrCompression = QComboBox(self.f_codecOptions_EXR)
         self.cb_exrCompression.setObjectName(u"cb_exrCompression")
         self.cb_exrCompression.setMinimumSize(QSize(150, 0))
 
-        self.f_exrCompression.addWidget(self.cb_exrCompression)
+        self.f_options_EXR.addWidget(self.cb_exrCompression)
 
 
-        self.verticalLayout_5.addLayout(self.f_exrCompression)
+        self.verticalLayout_5.addWidget(self.f_codecOptions_EXR)
+
+        self.f_codecOptions_MOV = QWidget(self.gb_options)
+        self.f_codecOptions_MOV.setObjectName(u"f_codecOptions_MOV")
+        self.f_options_EXR_3 = QHBoxLayout(self.f_codecOptions_MOV)
+        self.f_options_EXR_3.setObjectName(u"f_options_EXR_3")
+        self.f_options_EXR_3.setContentsMargins(9, 0, 9, 0)
+        self.l_movCodec = QLabel(self.f_codecOptions_MOV)
+        self.l_movCodec.setObjectName(u"l_movCodec")
+
+        self.f_options_EXR_3.addWidget(self.l_movCodec)
+
+        self.horizontalSpacer_17 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.f_options_EXR_3.addItem(self.horizontalSpacer_17)
+
+        self.cb_movCodec = QComboBox(self.f_codecOptions_MOV)
+        self.cb_movCodec.setObjectName(u"cb_movCodec")
+        self.cb_movCodec.setMinimumSize(QSize(150, 0))
+
+        self.f_options_EXR_3.addWidget(self.cb_movCodec)
+
+
+        self.verticalLayout_5.addWidget(self.f_codecOptions_MOV)
+
+        self.f_codecOptions_MP4 = QWidget(self.gb_options)
+        self.f_codecOptions_MP4.setObjectName(u"f_codecOptions_MP4")
+        self.f_options_EXR_4 = QHBoxLayout(self.f_codecOptions_MP4)
+        self.f_options_EXR_4.setObjectName(u"f_options_EXR_4")
+        self.f_options_EXR_4.setContentsMargins(9, 0, 9, 0)
+        self.lo_mp4Options = QVBoxLayout()
+        self.lo_mp4Options.setObjectName(u"lo_mp4Options")
+        self.lo_mp4Options1 = QHBoxLayout()
+        self.lo_mp4Options1.setObjectName(u"lo_mp4Options1")
+        self.l_mp4Codec = QLabel(self.f_codecOptions_MP4)
+        self.l_mp4Codec.setObjectName(u"l_mp4Codec")
+
+        self.lo_mp4Options1.addWidget(self.l_mp4Codec)
+
+        self.horizontalSpacer_18 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.lo_mp4Options1.addItem(self.horizontalSpacer_18)
+
+        self.cb_mp4Codec = QComboBox(self.f_codecOptions_MP4)
+        self.cb_mp4Codec.setObjectName(u"cb_mp4Codec")
+        self.cb_mp4Codec.setMinimumSize(QSize(150, 0))
+
+        self.lo_mp4Options1.addWidget(self.cb_mp4Codec)
+
+
+        self.lo_mp4Options.addLayout(self.lo_mp4Options1)
+
+        self.lo_mp4Options2 = QHBoxLayout()
+        self.lo_mp4Options2.setObjectName(u"lo_mp4Options2")
+        self.l_mp4Qual = QLabel(self.f_codecOptions_MP4)
+        self.l_mp4Qual.setObjectName(u"l_mp4Qual")
+
+        self.lo_mp4Options2.addWidget(self.l_mp4Qual)
+
+        self.horizontalSpacer_19 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.lo_mp4Options2.addItem(self.horizontalSpacer_19)
+
+        self.cb_mp4Qual = QComboBox(self.f_codecOptions_MP4)
+        self.cb_mp4Qual.setObjectName(u"cb_mp4Qual")
+        self.cb_mp4Qual.setMinimumSize(QSize(150, 0))
+
+        self.lo_mp4Options2.addWidget(self.cb_mp4Qual)
+
+
+        self.lo_mp4Options.addLayout(self.lo_mp4Options2)
+
+
+        self.f_options_EXR_4.addLayout(self.lo_mp4Options)
+
+
+        self.verticalLayout_5.addWidget(self.f_codecOptions_MP4)
+
+        self.verticalSpacer = QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+
+        self.verticalLayout_5.addItem(self.verticalSpacer)
 
         self.f_include1 = QHBoxLayout()
         self.f_include1.setObjectName(u"f_include1")
@@ -510,7 +596,7 @@ class Ui_wg_Synth_ImageRender(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 409, 659))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 409, 519))
         self.verticalLayout_3 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.l_pathLast = QLabel(self.scrollAreaWidgetContents)
@@ -586,6 +672,9 @@ class Ui_wg_Synth_ImageRender(object):
         self.chb_renderPreset.setText("")
         self.label_6.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Format:", None))
         self.l_exr_Compression.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"EXR Compression:", None))
+        self.l_movCodec.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Codec: ", None))
+        self.l_mp4Codec.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Codec: ", None))
+        self.l_mp4Qual.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Quality: ", None))
         self.chb_include_RGB.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Include RGB", None))
         self.chb_include_Alpha.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Include Alpha", None))
         self.chb_include_Mesh.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Include Mesh", None))
@@ -594,4 +683,6 @@ class Ui_wg_Synth_ImageRender(object):
         self.l_pathLast.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"None", None))
         self.b_pathLast.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"...", None))
     # retranslateUi
+
+
 

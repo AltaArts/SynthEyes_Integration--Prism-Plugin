@@ -44,6 +44,9 @@ from qtpy.QtWidgets import *
 
 from PrismUtils.Decorators import err_catcher
 
+from Synth_Formats import synthFormatNames as SynthFormatNames
+from Synth_Formats import synthExrCompress as SynthExrCompress
+
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +99,7 @@ class Synth_SceneExportClass(object):
                 idx, self.stateManager.getFrameRangeTypeToolTip(rtype), Qt.ToolTipRole
             )
 
-        outputFormats = self.synthFuncts.synthFormatNames.keys()
+        outputFormats = SynthFormatNames.keys()
 
         self.cb_outType.addItems(outputFormats)
         self.export_paths = self.core.paths.getExportProductBasePaths()
@@ -401,7 +404,7 @@ class Synth_SceneExportClass(object):
     def getOutputExt(self):
         try:
             outputType = self.getOutputType()
-            return self.synthFuncts.synthFormatNames[outputType]["format"]
+            return SynthFormatNames[outputType]["format"]
         except:
             return None
 

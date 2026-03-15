@@ -44,6 +44,10 @@ from qtpy.QtWidgets import *
 
 from PrismUtils.Decorators import err_catcher
 
+from Synth_Formats import (SynthExrCompress,
+                           SynthMovCodecs,
+                           SynthMP4Codecs,
+                           SynthMP4Qual)
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +56,7 @@ class Synth_ImageRenderClass(object):
     className = "Synth_ImageRender"
     listType = "Export"
     stateCategories = {"Render": [{"label": className, "stateType": className}]}
+
 
     @err_catcher(name=__name__)
     def setup(self, state, core, stateManager, node=None, stateData=None):
@@ -63,7 +68,6 @@ class Synth_ImageRenderClass(object):
         self.allowCustomContext = False
         self.cb_context.addItems(["From scenefile", "Custom"])
 
-        self.curCam = None
         self.renderingStarted = False
         self.cleanOutputdir = True
 
@@ -75,18 +79,21 @@ class Synth_ImageRenderClass(object):
             "Shot + 1",
             "Single Frame",
             "Custom",
-        ]
+            ]
         self.cb_rangeType.addItems(self.rangeTypes)
         for idx, rtype in enumerate(self.rangeTypes):
             self.cb_rangeType.setItemData(
                 idx, self.stateManager.getFrameRangeTypeToolTip(rtype), Qt.ToolTipRole
             )
 
+        self.curCam = None
+        self.refreshCameras()
+
         self.renderPresets = (
             self.stateManager.stateTypes["RenderSettings"].getPresets(self.core)
             if "RenderSettings" in self.stateManager.stateTypes
             else {}
-        )
+            )
         if self.renderPresets:
             self.cb_renderPreset.addItems(self.renderPresets.keys())
         else:
@@ -109,16 +116,15 @@ class Synth_ImageRenderClass(object):
         
         self.outputFormats = [
             ".exr",
+            ".mov",
+            ".mp4",
             ".png",
-            ".jpg",
-        ]
+            ]
 
         self.cb_format.addItems(self.outputFormats)
 
-        exrCompress = self.core.appPlugin.synthExrCompression.keys()
-
-        self.cb_exrCompression.addItems(exrCompress)
-
+        self.setupFormatOptions()
+        self.configFormatUI()
 
         self.resolutionPresets = self.core.projects.getResolutionPresets()
         if "Get from rendersettings" not in self.resolutionPresets:
@@ -131,9 +137,6 @@ class Synth_ImageRenderClass(object):
         self.warnPalette = QPalette()
         self.warnPalette.setColor(QPalette.Button, QColor(200, 0, 0))
         self.warnPalette.setColor(QPalette.ButtonText, QColor(255, 255, 255))
-
-        self.cb_cam.showPopupOrig = self.cb_cam.showPopup
-        self.cb_cam.showPopup = self.showCameraPopup
 
         self.setTaskWarn(True)
         self.nameChanged(state.text(0))
@@ -160,7 +163,6 @@ class Synth_ImageRenderClass(object):
         self.chb_include_Alpha.setChecked(False)
         self.chb_include_Mesh.setChecked(True)
         self.chb_include_Burnin.setChecked(False)
-
 
 
     @err_catcher(name=__name__)
@@ -198,14 +200,7 @@ class Synth_ImageRenderClass(object):
         if "endframe" in data:
             self.sp_rangeEnd.setValue(int(data["endframe"]))
         if "currentCam" in data:
-            camName = getattr(self.core.appPlugin, "getCamName", lambda x, y: "")(
-                self, data["currentCam"]
-            )
-            idx = self.cb_cam.findText(camName)
-            if idx != -1:
-                self.curCam = self.camlist[idx]
-                self.cb_cam.setCurrentIndex(idx)
-                self.stateManager.saveStatesToScene()
+            self.curCam = data["currentCam"]
         if "resoverride" in data:
             res = eval(data["resoverride"])
             self.chb_resOverride.setChecked(res[0])
@@ -231,6 +226,18 @@ class Synth_ImageRenderClass(object):
             idx = self.cb_exrCompression.findText(data["exrCompress"])
             if idx != -1:
                 self.cb_exrCompression.setCurrentIndex(idx)
+        if "movCodec" in data:
+            idx = self.cb_movCodec.findText(data["movCodec"])
+            if idx != -1:
+                self.cb_movCodec.setCurrentIndex(idx)
+        if "mp4Codec" in data:
+            idx = self.cb_mp4Codec.findText(data["mp4Codec"])
+            if idx != -1:
+                self.cb_mp4Codec.setCurrentIndex(idx)
+        if "mp4Qual" in data:
+            idx = self.cb_mp4Qual.findText(data["mp4Qual"])
+            if idx != -1:
+                self.cb_mp4Qual.setCurrentIndex(idx)
         if "include_RGB" in data:
             self.chb_include_RGB.setChecked(data["include_RGB"])
         if "include_Alpha" in data:
@@ -250,7 +257,10 @@ class Synth_ImageRenderClass(object):
                     0, Qt.CheckState(data["stateenabled"]),
                 )
 
+        self.configFormatUI()
+
         self.core.callback("onStateSettingsLoaded", self, data)
+
 
     @err_catcher(name=__name__)
     def connectEvents(self):
@@ -264,7 +274,7 @@ class Synth_ImageRenderClass(object):
         self.cb_rangeType.activated.connect(self.rangeTypeChanged)
         self.sp_rangeStart.editingFinished.connect(self.startChanged)
         self.sp_rangeEnd.editingFinished.connect(self.endChanged)
-        self.cb_cam.activated.connect(self.setCam)
+        self.cb_cam.activated.connect(self.stateManager.saveStatesToScene)
         self.chb_resOverride.stateChanged.connect(self.resOverrideChanged)
         self.sp_resWidth.editingFinished.connect(self.stateManager.saveStatesToScene)
         self.sp_resHeight.editingFinished.connect(self.stateManager.saveStatesToScene)
@@ -274,8 +284,11 @@ class Synth_ImageRenderClass(object):
         self.chb_version.stateChanged.connect(self.onVersionOverrideChanged)
         self.sp_version.editingFinished.connect(self.stateManager.saveStatesToScene)
         self.b_version.clicked.connect(self.onVersionOverrideClicked)
-        self.cb_format.activated.connect(self.stateManager.saveStatesToScene)
+        self.cb_format.activated.connect(self.configFormatUI)
         self.cb_exrCompression.activated.connect(self.stateManager.saveStatesToScene)
+        self.cb_movCodec.activated.connect(self.stateManager.saveStatesToScene)
+        self.cb_mp4Codec.activated.connect(self.stateManager.saveStatesToScene)
+        self.cb_mp4Qual.activated.connect(self.stateManager.saveStatesToScene)
         self.chb_include_RGB.stateChanged.connect(self.stateManager.saveStatesToScene)
         self.chb_include_Alpha.stateChanged.connect(self.stateManager.saveStatesToScene)
         self.chb_include_Mesh.stateChanged.connect(self.stateManager.saveStatesToScene)
@@ -393,12 +406,6 @@ class Synth_ImageRenderClass(object):
 
 
     @err_catcher(name=__name__)
-    def setCam(self, index):
-        self.curCam = self.camlist[index]
-        self.stateManager.saveStatesToScene()
-
-
-    @err_catcher(name=__name__)
     def nameChanged(self, text):
         text = self.e_name.text()
         context = {}
@@ -434,7 +441,7 @@ class Synth_ImageRenderClass(object):
 
     @err_catcher(name=__name__)
     def getFormat(self):
-        self.cb_format.currentText()
+        return self.cb_format.currentText()
 
 
     @err_catcher(name=__name__)
@@ -446,7 +453,61 @@ class Synth_ImageRenderClass(object):
             return True
 
         return False
+    
 
+    #   Populate Various Format Combos
+    @err_catcher(name=__name__)
+    def setupFormatOptions(self):
+        exrCompress = SynthExrCompress.keys()
+        self.cb_exrCompression.addItems(exrCompress)
+
+        movCodecs = SynthMovCodecs.keys()
+        self.cb_movCodec.addItems(movCodecs)
+
+        mp4Codecs = SynthMP4Codecs.keys()
+        self.cb_mp4Codec.addItems(mp4Codecs)
+
+        mp4Qual = SynthMP4Qual.keys()
+        self.cb_mp4Qual.addItems(mp4Qual)
+
+
+    #   Show/Hide Format UI
+    @err_catcher(name=__name__)
+    def configFormatUI(self, format=None):
+        #   Hide All Codec Option Widgets
+        for w in self.findChildren(QWidget):
+            if w.objectName().startswith("f_codecOptions_"):
+                w.hide()
+
+        #   Find Widget Name for Format
+        fmt = self.cb_format.currentText().upper().replace(".", "")
+        targetWidget = f"f_codecOptions_{fmt}"
+
+        #   Show the Matching Format Widget
+        widget = getattr(self, targetWidget, None)
+        if widget:
+            widget.show()
+        
+        self.stateManager.saveStatesToScene
+
+    
+    #   Returns Dict of format Options Based on Selected format
+    @err_catcher(name=__name__)
+    def getFormatOptions(self):
+        fmt = self.getFormat().lower()
+
+        if fmt == ".exr":
+            return {"exrCompress": self.cb_exrCompression.currentText()}
+        
+        elif fmt == ".mov":
+            return {"movCodec": self.cb_movCodec.currentText()}
+        
+        elif fmt == ".mp4":
+            return {"mp4Codec": self.cb_mp4Codec.currentText(),
+                    "mp4Qual": self.cb_mp4Qual.currentText()}
+        else:
+            return {}
+        
 
     @err_catcher(name=__name__)
     def getContextType(self):
@@ -667,24 +728,20 @@ class Synth_ImageRenderClass(object):
 
 
     @err_catcher(name=__name__)
-    def showCameraPopup(self):
-        self.refreshCameras()
-        self.cb_cam.showPopupOrig()
-
-    @err_catcher(name=__name__)
     def refreshCameras(self):
-        # update Cams
         self.cb_cam.clear()
-        self.camlist = camNames = []
+        self.camlist = []
 
         if not self.stateManager.standalone:
-            self.camlist = self.core.appPlugin.getCamNodes(self, cur=True)
-            camNames = [self.core.appPlugin.getCamName(self, i) for i in self.camlist]
+            camObjs = self.core.appPlugin.getCamNodes(self, cur=True)
+            self.camlist = [self.core.appPlugin.getCamName(self, i) for i in camObjs]
 
-        self.cb_cam.addItems(camNames)
+        self.cb_cam.addItems(self.camlist)
 
         if self.curCam in self.camlist:
-            self.cb_cam.setCurrentIndex(self.camlist.index(self.curCam))
+            idx = self.cb_cam.findText(self.curCam)
+            if idx != -1:
+                self.cb_cam.setCurrentIndex(idx)
         else:
             self.cb_cam.setCurrentIndex(0)
             if len(self.camlist) > 0:
@@ -692,7 +749,7 @@ class Synth_ImageRenderClass(object):
             else:
                 self.curCam = None
 
-            self.stateManager.saveStatesToScene()
+        self.stateManager.saveStatesToScene()
 
 
     @err_catcher(name=__name__)
@@ -860,11 +917,15 @@ class Synth_ImageRenderClass(object):
         if self.tasknameRequired and not identifier:
             return
 
-        extension = self.cb_format.currentText()
         context = self.getCurrentContext()
 
         if "type" not in context:
             return
+        
+        extension = self.cb_format.currentText().lower()
+        padding = ""
+        if extension not in self.core.media.videoFormats:
+            padding = ("#" * self.core.framePadding)
 
         location = self.cb_outPath.currentText()
 
@@ -877,7 +938,7 @@ class Synth_ImageRenderClass(object):
             entity=context,
             task=identifier,
             extension=extension,
-            framePadding=("#" * self.core.framePadding),
+            framePadding=padding,
             comment=self.getComment(),
             version=version,
             location=location,
@@ -919,8 +980,6 @@ class Synth_ImageRenderClass(object):
         if rangeType == "Single Frame":
             endFrame = startFrame
 
-        updateMaster = True
-
         fileName = self.core.getCurrentFileName()
         context = self.getCurrentContext()
 
@@ -929,10 +988,13 @@ class Synth_ImageRenderClass(object):
         outputName, outputPath, hVersion = self.getOutputName(useVersion="next", identifier=idf)
         expandedOutputPath = self.expandvars(outputPath)
 
-        paddingNum = self.core.framePadding
-        framePadding = "#" * paddingNum
-        paddedFrame = str(startFrame).zfill(paddingNum)
-        outputName = outputName.replace(framePadding, paddedFrame)
+        #   Change Prism "###"'s to ".001"'s
+        extension = self.cb_format.currentText().lower()
+        if extension not in self.core.media.videoFormats:
+            paddingNum = self.core.framePadding
+            framePadding = "#" * paddingNum
+            paddedFrame = str(startFrame).zfill(paddingNum)
+            outputName = outputName.replace(framePadding, paddedFrame)
 
         outLength = len(expandedOutputPath)
         if platform.system() == "Windows" and os.getenv("PRISM_IGNORE_PATH_LENGTH") != "1" and outLength > 255:
@@ -954,13 +1016,15 @@ class Synth_ImageRenderClass(object):
             "frames": frames,
             "identifier": idf,
             "currentCam": self.cb_cam.currentText(),
-            "exrCompress": self.cb_exrCompression.currentText(),
+            "format": extension,
             "include_RGB": self.chb_include_RGB.isChecked(),
             "include_Alpha": self.chb_include_Alpha.isChecked(),
             "include_Mesh": self.chb_include_Mesh.isChecked(),
             "include_Burnin": self.chb_include_Burnin.isChecked(),
             }
-
+        
+        #   Add Format Specific Options
+        rSettings.update(self.getFormatOptions())
 
         errors = []
 
@@ -983,7 +1047,6 @@ class Synth_ImageRenderClass(object):
                 details["endframe"] = endFrame
                 details["path"] = expandedOutputPath
                 details["mediaType"] = self.mediaType
-                details["exrCompress"] = self.cb_exrCompression.currentText()
                 details["include_RGB"] = self.chb_include_RGB.isChecked()
                 details["include_Alpha"] = self.chb_include_Alpha.isChecked()
                 details["include_Mesh"] = self.chb_include_Mesh.isChecked()
@@ -1040,8 +1103,6 @@ class Synth_ImageRenderClass(object):
         return expandedPath
 
 
-
-
     @err_catcher(name=__name__)
     def isUsingMasterVersion(self):
         useMaster = self.core.mediaProducts.getUseMaster()
@@ -1096,7 +1157,7 @@ class Synth_ImageRenderClass(object):
             "rangeType": str(self.cb_rangeType.currentText()),
             "startframe": self.sp_rangeStart.value(),
             "endframe": self.sp_rangeEnd.value(),
-            "currentCam": str(self.curCam),
+            "currentCam": self.cb_cam.currentText(),
             "resoverride": str(
                 [
                     self.chb_resOverride.isChecked(),
@@ -1108,8 +1169,11 @@ class Synth_ImageRenderClass(object):
             "curoutputpath": self.cb_outPath.currentText(),
             "useVersionOverride": self.chb_version.isChecked(),
             "versionOverride": self.sp_version.value(),
-            "outputFormat": self.cb_format.currentText(),
+            "outputFormat": self.getFormat(),
             "exrCompress": self.cb_exrCompression.currentText(),
+            "movCodec": self.cb_movCodec.currentText(),
+            "mp4Codec": self.cb_mp4Codec.currentText(),
+            "mp4Qual": self.cb_mp4Qual.currentText(),
             "include_RGB": self.chb_include_RGB.isChecked(),
             "include_Alpha": self.chb_include_Alpha.isChecked(),
             "include_Mesh": self.chb_include_Mesh.isChecked(),

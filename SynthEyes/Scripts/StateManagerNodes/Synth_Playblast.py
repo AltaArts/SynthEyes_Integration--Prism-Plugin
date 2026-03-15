@@ -44,6 +44,8 @@ from qtpy.QtWidgets import *
 
 from PrismUtils.Decorators import err_catcher
 
+from Synth_Formats import synthFormatNames as SynthFormatNames
+from Synth_Formats import synthExrCompress as SynthExrCompress
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +117,7 @@ class Synth_PlayblastClass(object):
 
         self.cb_format.addItems(self.outputFormats)
 
-        exrCompress = self.core.appPlugin.synthExrCompression.keys()
+        exrCompress = SynthExrCompress.keys()
 
         self.cb_exrCompression.addItems(exrCompress)
 
