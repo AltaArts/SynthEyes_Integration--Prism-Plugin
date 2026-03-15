@@ -47,7 +47,8 @@ from PrismUtils.Decorators import err_catcher
 from Synth_Formats import (SynthExrCompress,
                            SynthMovCodecs,
                            SynthMP4Codecs,
-                           SynthMP4Qual)
+                           SynthMP4Qual,
+                           SynthHasAlpha)
 
 logger = logging.getLogger(__name__)
 
@@ -274,7 +275,7 @@ class Synth_ImageRenderClass(object):
         self.cb_rangeType.activated.connect(self.rangeTypeChanged)
         self.sp_rangeStart.editingFinished.connect(self.startChanged)
         self.sp_rangeEnd.editingFinished.connect(self.endChanged)
-        self.cb_cam.activated.connect(self.stateManager.saveStatesToScene)
+        self.cb_cam.activated.connect(self.setCam)
         self.chb_resOverride.stateChanged.connect(self.resOverrideChanged)
         self.sp_resWidth.editingFinished.connect(self.stateManager.saveStatesToScene)
         self.sp_resHeight.editingFinished.connect(self.stateManager.saveStatesToScene)
@@ -286,7 +287,7 @@ class Synth_ImageRenderClass(object):
         self.b_version.clicked.connect(self.onVersionOverrideClicked)
         self.cb_format.activated.connect(self.configFormatUI)
         self.cb_exrCompression.activated.connect(self.stateManager.saveStatesToScene)
-        self.cb_movCodec.activated.connect(self.stateManager.saveStatesToScene)
+        self.cb_movCodec.activated.connect(self.configFormatUI)
         self.cb_mp4Codec.activated.connect(self.stateManager.saveStatesToScene)
         self.cb_mp4Qual.activated.connect(self.stateManager.saveStatesToScene)
         self.chb_include_RGB.stateChanged.connect(self.stateManager.saveStatesToScene)
@@ -474,6 +475,7 @@ class Synth_ImageRenderClass(object):
     #   Show/Hide Format UI
     @err_catcher(name=__name__)
     def configFormatUI(self, format=None):
+        ##  Option Widgets
         #   Hide All Codec Option Widgets
         for w in self.findChildren(QWidget):
             if w.objectName().startswith("f_codecOptions_"):
@@ -487,6 +489,33 @@ class Synth_ImageRenderClass(object):
         widget = getattr(self, targetWidget, None)
         if widget:
             widget.show()
+
+        ##  Alpha Checkbox
+        hasAlpha = False
+
+        #   Check Format
+        if fmt in SynthHasAlpha:
+            hasAlpha = True
+
+        else:
+            #   Find Codec Combo by Matching Format Name
+            codecCombo = None
+            for child in widget.findChildren(QWidget):               
+                if child.objectName().startswith("cb_"):
+                    codecCombo = child
+                    break
+
+            #   Check if Codec is Alpha Supported
+            if codecCombo:
+                codec = codecCombo.currentText()
+                hasAlpha = codec in SynthHasAlpha
+
+        #   Configure Alpha Checkbox
+        if not hasAlpha:
+            self.chb_include_Alpha.setChecked(False)
+            self.chb_include_Alpha.setDisabled(True)
+        else:
+            self.chb_include_Alpha.setDisabled(False)
         
         self.stateManager.saveStatesToScene
 
@@ -725,6 +754,13 @@ class Synth_ImageRenderClass(object):
             return True
 
         return False
+    
+
+    @err_catcher(name=__name__)
+    def setCam(self, cameraIdx): 
+        self.curCam = self.cb_cam.currentText()
+
+        self.refreshCameras()
 
 
     @err_catcher(name=__name__)
@@ -765,6 +801,7 @@ class Synth_ImageRenderClass(object):
 
         self.nameChanged(self.e_name.text())
         getattr(self.core.appPlugin, "sm_render_updateUi", lambda x: None)(self)
+
         return True
 
 

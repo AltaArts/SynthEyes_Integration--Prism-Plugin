@@ -61,8 +61,16 @@ SynthMP4Qual:dict = {
     "Preview (2 Mb/s)": "B:2000000",
     }
 
-
+SynthHasAlpha:list = [
+    "ProRes 4444",
+    "ProRes 4444XQ",
+    "EXR",
+    "PNG"
+] 
 
 
 # camera01's preview compression.
 # camera01's render compression.
+
+# native high: 'WMFC:'H264' K:0 Q:0 B:30000000'
+# native low: 'WMFC:'H264' K:0 Q:0 B:4000000'

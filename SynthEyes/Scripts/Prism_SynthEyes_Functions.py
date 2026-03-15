@@ -56,6 +56,7 @@ import json
 import zlib
 import base64
 import tempfile
+import time
 
 
 PLUGINROOT = os.path.dirname(os.path.dirname(__file__))
@@ -622,7 +623,6 @@ class Prism_SynthEyes_Functions(object):
 
     @err_catcher(name=__name__)
     def getFrameRange(self, origin):
-        # return [None, None]                                         #   TODO - FOR TESTING
         try:
             start = (self.synthEyes.AnimStart() + 1)
             end = (self.synthEyes.AnimEnd() +1)
@@ -721,11 +721,7 @@ class Prism_SynthEyes_Functions(object):
     
 
     @err_catcher(name=__name__)
-    def getCamName(self, origin, camera):                           #   TODO - Make Return current or passed Camera
-        # cams = self.synthEyes.Cameras()
-        # if cams:
-        #     return cams[0].Name()
-        
+    def getCamName(self, origin, camera):
         return camera.Name()
     
     
@@ -1188,12 +1184,11 @@ class Prism_SynthEyes_Functions(object):
                        f"{boolToBit(rSettings['include_RGB'])},"
                        f"{boolToBit(rSettings['include_Alpha'])},"
                        f"{boolToBit(rSettings['include_Mesh'])},"
-                       f"{boolToBit(rSettings['include_Burnin'])}")
+                       "<>"
+                    #    f"{boolToBit(rSettings['include_Burnin'])}"            #   TODO - Look at Burn-in
+                      )
 
         stateManager.showMinimized()
-
-        self.core.popup(f"optStr: {optStr}\n"
-                        f"settingsStr:  {settingsStr}")                                      #    TESTING
 
         try:
             shot = self.getShotFromCamName(rSettings["currentCam"])
@@ -1205,6 +1200,15 @@ class Prism_SynthEyes_Functions(object):
             shot.Set("renderSettings", settingsStr)
             self.synthEyes.Accept("RenderSettings")
 
+
+            # testComp = shot.Get("renderCompression")
+            # testSet = shot.Get("renderSettings")
+
+            # self.core.popup(f"optStr: {optStr}\n"
+            #                 f"GOT COMP:  {testComp}\n"                                   #    TESTING
+            #                 f"settingsStr:  {settingsStr}\n"                                      #    TESTING
+            #                 f"GOT SETTINGS:  {testSet}")                                      #    TESTING
+
             #   Run Render
             self.synthEyes.Begin()
             result = shot.Call("Render")
@@ -1215,7 +1219,7 @@ class Prism_SynthEyes_Functions(object):
             return False
         
         finally:
-            stateManager.showNormal()
+            QTimer.singleShot(1000, stateManager.showNormal)
 
         #   Return Bool of SynthEyes Int Result
         return int(result) == 1
