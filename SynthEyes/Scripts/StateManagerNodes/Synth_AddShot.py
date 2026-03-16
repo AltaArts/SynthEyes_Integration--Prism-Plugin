@@ -57,8 +57,6 @@ from qtpy.QtWidgets import *
 
 from PrismUtils.Decorators import err_catcher
 
-
-
 logger = logging.getLogger(__name__)
 
 #   Global Colors
@@ -69,10 +67,10 @@ COLOR_RED = QColor(130, 0, 0)
 COLOR_BLACK = QColor(0, 0, 0, 0)
 COLOR_WHITE = QColor(255, 255, 255, 255)
 
-
 #   Icon to be used for State
 scriptDir = os.path.dirname(os.path.dirname(__file__))
 STATE_ICON = os.path.join(scriptDir, "Icons", "Image.png")
+
 
 
 class Synth_AddShotClass(object):
@@ -117,11 +115,14 @@ class Synth_AddShotClass(object):
             configPath=self.core.prismIni,
         ) or stateNameTemplate
         self.e_name.setText(self.stateNameTemplate)
+
+        self.b_browse.setContextMenuPolicy(Qt.CustomContextMenu)
         
         #   Hide unused UI elements
         self.l_name.setVisible(False)
         self.e_name.setVisible(True)
         self.l_class.setVisible(True)
+        self.w_autoUpdate.setVisible(False)
 
         #   Sets colors
         self.oldPalette = self.b_importLatest.palette()
@@ -224,7 +225,6 @@ class Synth_AddShotClass(object):
             self.updateUi()
 
 
-
         ##   4. If error
         else:
             logger.warning("ERROR: Unable to Import Image.")
@@ -246,11 +246,10 @@ class Synth_AddShotClass(object):
     def connectEvents(self):
         self.e_name.textChanged.connect(self.nameChanged)
         self.e_name.editingFinished.connect(self.stateManager.saveStatesToScene)
-        self.b_browse.clicked.connect(self.browse)                     #   Select Version Button
-        self.b_browse.customContextMenuRequested.connect(self.openFolder)                       #   RCL Select Version Button
-        # self.b_importLatest.clicked.connect(self.importLatest)
-
-        self.chb_autoUpdate.stateChanged.connect(self.autoUpdateChanged)                        #   Latest Checkbox
+        self.b_browse.clicked.connect(self.browse)
+        self.b_browse.customContextMenuRequested.connect(self.openFolder)
+        self.b_importLatest.clicked.connect(self.importLatest)
+        self.chb_autoUpdate.stateChanged.connect(self.autoUpdateChanged)
         self.e_camName.editingFinished.connect(
             lambda: self.updateCamName(self.e_camName.text())
             )
@@ -350,28 +349,83 @@ class Synth_AddShotClass(object):
     #   Opens Media Chooser to select version
     @err_catcher(name=__name__)
     def browse(self):
+        title = "Change Shot Images"
+        text = ("Please Note:\n\n"
+                "Changing the Shot Images could affect\n"
+                "an existing solve.  Please save the file before changing\n"
+                "the images.\n\n\n"
+                "Would you like to continue?")
+
+        result = self.core.popupQuestion(text, title)
+
+        if result != "Yes":
+            return False
+
         currVersion = self.getCurrentVersion()
 
         if currVersion:
             #   Call the MediaWindow with the MediaId
-            self.callMediaWindow(currVersion)
+            requestResult = self.callMediaWindow(currVersion)
         else:
             #   Just call without a MediaId
-            self.callMediaWindow()
+            requestResult = self.callMediaWindow()
+
+        if requestResult == "Cancelled":
+            logger.debug("Media Import cancelled")
+            return False
+        
+        if requestResult == "Empty":
+            return False
+        
+        if not requestResult:
+            logger.warning("ERROR: Unable to Import Image from MediaBrowser.")
+            self.core.popup("Unable to Import Image from MediaBrowser.")
+            return False
+    
+        self.setImportPath(requestResult[0])
+        basefile = requestResult[0]
+        self.importData = requestResult[1]
+
+        result = self.changeShotImages(basefile, self.importData)
 
         self.updateUi()
 
 
-    @err_catcher(name=__name__)                     #   TODO
+    @err_catcher(name=__name__)
+    def importLatest(self):
+        title = "Change Shot Images"
+        text = ("Please Note:\n\n"
+                "Changing the Shot Images could affect\n"
+                "an existing solve.  Please save the file before changing\n"
+                "the images.\n\n\n"
+                "Would you like to continue?")
+
+        result = self.core.popupQuestion(text, title)
+
+        if result != "Yes":
+            return False
+
+        versionData = self.getLatestVersion(self.importData, includeMaster=True)
+        basefile = self.getFilepathFromVersion(versionData)
+        self.importData = versionData
+        self.setImportPath(basefile)
+
+        result = self.changeShotImages(basefile, self.importData)
+
+        self.updateUi()
+
+
+    @err_catcher(name=__name__)
     def openFolder(self, pos):
         path = self.getImportPath()
+
         if os.path.isfile(path):
             path = os.path.dirname(path)
 
         self.core.openFolder(path)
 
 
-    @err_catcher(name=__name__)                     #   Look at this
+    @err_catcher(name=__name__)
     def getImportPath(self):
         path = getattr(self, "importPath", "")
         if path:
@@ -381,7 +435,7 @@ class Synth_AddShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def setImportPath(self, path):                  #   Look at this
+    def setImportPath(self, path):
         self.importPath = path
         self.l_text_Current.setToolTip(path)
         self.stateManager.saveImports()
@@ -433,17 +487,27 @@ class Synth_AddShotClass(object):
 
     @err_catcher(name=__name__)
     def setToolTips(self):
+        tip = "Media Identifier of Imported Shot"
+        self.e_name.setToolTip(tip)
+
         tip = "Opens the Media Browser to select a specific version"
         self.b_browse.setToolTip(tip)
 
-        tip = ("Will import the latest version of the media.\n"
-               "This includes all AOVs, layers, and channels")
+        tip = "Will import the latest version of the media."
         self.b_importLatest.setToolTip(tip)
 
-        tip = ("Enables Auto-update function.\n\n"
-               "This will automatically import/update to\n"
-               "the most recent version of the media.")
-        self.w_autoUpdate.setToolTip(tip)
+        # tip = ("Enables Auto-update function.\n\n"
+        #        "This will automatically import/update to\n"
+        #        "the most recent version of the media.")
+        # self.w_autoUpdate.setToolTip(tip)
+
+        tip = ("Name of SynthEyes Camera for the Shot.\n\n"
+               "You may change the name and it will be\n"
+               "reflected in SynthEyes.  Also the version\n"
+               "number (if any) will be updated with changes\n"
+               " to the selected version.")
+        self.l_camName.setToolTip(tip)
+        self.e_camName.setToolTip(tip)
 
 
     #   Opens the Custom MediaBrowser window to choose import
@@ -497,7 +561,7 @@ class Synth_AddShotClass(object):
             versionData = self.getCurrentVersion()
 
         if clicked == "identifier":
-            versionData = self. getLatestVersion(self.importData, includeMaster=True)
+            versionData = self.getLatestVersion(self.importData, includeMaster=True)
 
         basefile = self.getFilepathFromVersion(versionData)
 
@@ -569,7 +633,7 @@ class Synth_AddShotClass(object):
         self.stateManager.tw_import.repaint()
 
 
-    @err_catcher(name=__name__)                     #   TODO - MAKE SURE ALL OF THIS RUNS
+    @err_catcher(name=__name__)
     def updateUi(self):
         self.updateCamName()
 
@@ -607,7 +671,6 @@ class Synth_AddShotClass(object):
 
             if latestVersionName:
                 self.stateStatus = "ok"
-
         else:
             useSS = getattr(self.core.appPlugin, "colorButtonWithStyleSheet", False)
 
@@ -635,12 +698,8 @@ class Synth_AddShotClass(object):
                 else:
                     self.b_importLatest.setPalette(self.oldPalette)
 
-
-
-
         self.nameChanged()
         self.setStateColor(self.stateStatus)
-
 
         getattr(self.core.appPlugin, "sm_import_updateUi", lambda x: None)(self)
 
@@ -684,58 +743,53 @@ class Synth_AddShotClass(object):
         self.core.callback("onStateSettingsLoaded", self, data)
 
 
-
     @err_catcher(name=__name__)
     def checkLatestVersion(self):
-        # try:
+        try:
+            path = self.getImportPath()
 
-        path = self.getImportPath()
+            curVerData = {"version": self.importData["version"], "path": path}
 
-        curVerData = {"version": self.importData["version"], "path": path}
+            latestVerDict = self.getLatestVersion(self.importData, includeMaster=True)
 
-        latestVerDict = self.getLatestVersion(self.importData, includeMaster=True)
+            lastestVerName = latestVerDict["version"]
+            lastestVerPath = latestVerDict["path"]
 
-        lastestVerName = latestVerDict["version"]
-        lastestVerPath = latestVerDict["path"]
+            if latestVerDict:
+                latestVersionData = {"version": lastestVerName, "path": lastestVerPath}
+            else:
+                latestVersionData = {}
+            
+            #   Sets Tooltips
+            curVerPath = curVerData["path"]
+            self.l_text_Current.setToolTip(curVerPath)
+            self.l_curVersion.setToolTip(curVerPath)
 
-        if latestVerDict:
-            latestVersionData = {"version": lastestVerName, "path": lastestVerPath}
-        else:
-            latestVersionData = {}
+            latestVerPath = latestVersionData["path"]
+            self.l_text_Latest.setToolTip(latestVerPath)
+            self.l_latestVersion.setToolTip(latestVerPath)
+
+            return curVerData, latestVersionData
         
-        #   Sets tooltips
-        curVerPath = curVerData["path"]
-        self.l_text_Current.setToolTip(curVerPath)
-        self.l_curVersion.setToolTip(curVerPath)
-
-        latestVerPath = latestVersionData["path"]
-        self.l_text_Latest.setToolTip(latestVerPath)
-        self.l_latestVersion.setToolTip(latestVerPath)
-
-        return curVerData, latestVersionData
-        
-        # except:
-            # logger.debug("ERROR:  Unable to get Latest Version.")
-            # return None
-    
-
+        except:
+            logger.debug("ERROR:  Unable to get Latest Version.")
+            return None
 
 
     @err_catcher(name=__name__)
     def preDelete(self, item):
+        self.core.popup("NOTE: At this time, Shots cannot be deleted from SynthEyes")
+
         # if not self.core.uiAvailable:
         #     action = "Yes"
         # else:
         #     action = "No"
           
-        self.core.popup("NOTE: At this time, Shots cannot be deleted from SynthEyes")
-
         # text = "Do you want to Delete the Shot?"
         # action = self.core.popupQuestion(text, title="Delete Shot", parent=self.stateManager)
 
         # if action == "Yes":
         #     self.synthEyes.Begin()
-
 
         #     shots = self.synthEyes.Shots()
 
@@ -750,9 +804,6 @@ class Synth_AddShotClass(object):
 
         #         if shot.uniqueID == self.shotUUID:
         #             self.synthEyes.Delete(shot)
-
-
-
 
         #     self.synthEyes.Accept("Delete Shot")
                
@@ -777,6 +828,42 @@ class Synth_AddShotClass(object):
 
         return result
     
+
+    @err_catcher(name=__name__)
+    def changeShotImages(self, baseFile, versionData):
+        baseName, extension = os.path.splitext(baseFile)
+        ext = extension.lower()
+
+        if ext not in self.core.media.supportedFormats:
+            logger.warning(f"ERROR: Filetype {ext} in not supported")
+            self.core.popup(f"ERROR: Filetype {ext} in not supported")
+            return
+
+        if extension in self.core.media.videoFormats:
+            frameCount = self.core.media.getVideoDuration(baseFile)
+
+        else:
+            mediaFiles = self.core.mediaProducts.getFilesFromContext(versionData)
+            validFiles = self.core.media.filterValidMediaFiles(mediaFiles)
+
+            if validFiles:
+                baseFile = validFiles[0]
+                seqFiles = self.core.media.detectSequence(validFiles, baseFile=baseFile)
+
+                start, end = self.core.media.getFrameRangeFromSequence(seqFiles, baseFile=baseFile)
+
+                frameCount = end - start
+
+        verStr = versionData.get("version")
+
+        camName = self.e_camName.text()
+        shot = self.synthFuncts.getShotFromCamName(camName)
+
+        result = self.synthFuncts.sm_changeShotImages(self, shot, baseFile, verStr, frameCount)
+
+        return result
+
+
 
 
     #########################
@@ -854,19 +941,16 @@ class ReadMediaDialog(QDialog):
         # Add bottom layout to window
         self.lo_main.addLayout(self.lo_bottom)
 
-        # tip = ("Double-click Identifier to Load\n"
-        #        "and Import the Latest Version.\n\n"
-        #        "Right-click on multi-selected items\n"
-        #        "to import the latest version of the multi-\n"
-        #        "selected items.")
-        # self.w_browser.tw_identifier.setToolTip(tip)
+        tip = ("Double-click Identifier to Load\n"
+               "and Import the Latest Version.")
+        self.w_browser.tw_identifier.setToolTip(tip)
 
-        # tip = ("Double-click Version to Load\n"
-        #        "the Version into the State.")
-        # self.w_browser.lw_version.setToolTip(tip)
+        tip = ("Double-click Version to Load\n"
+               "the Version into the State.")
+        self.w_browser.lw_version.setToolTip(tip)
 
-        # tip = ("Single-selection:  load the selected version into the State.")
-        # self.bb_main.setToolTip(tip)
+        tip = ("Single-selection:  load the selected version into the State.")
+        self.bb_main.setToolTip(tip)
 
 
     #   Handles clicked buttons
@@ -911,40 +995,26 @@ class ReadMediaDialog(QDialog):
             self.mediaSelected.emit(selResult)
             self.accept()
 
-        elif len(selectedItems) > 1:
-            self.handleRclImport(selectedItems)
-
-
-    #   Add custom RCL list to Identifier list
-    # @err_catcher(name=__name__)
-    # def customRclList(self, pos):
-    #     selectedItems = self.w_browser.tw_identifier.selectedItems()
-
-    #     rcmenu = QMenu(self)
-
-    #     importAct = QAction("Import into Comp", self)
-    #     importAct.triggered.connect(lambda: self.handleRclImport(selectedItems))
-    #     rcmenu.addAction(importAct)
-
-    #     rcmenu.exec_(self.w_browser.tw_identifier.mapToGlobal(pos))
+        # elif len(selectedItems) > 1:
+        #     self.handleRclImport(selectedItems)
 
 
     #   Handle import from custom RCL
-    @err_catcher(name=__name__)
-    def handleRclImport(self, selectedItems):
-        #   Close Dialogue
-        self.reject()
+    # @err_catcher(name=__name__)
+    # def handleRclImport(self, selectedItems):
+    #     #   Close Dialogue
+    #     self.reject()
 
-        #   If single item, import directly in this state
-        if len(selectedItems) == 1:
-            self.ident_dblClk(selectedItems[0])
-        #   If multiple items, call the import through the main plugin
-        elif len(selectedItems) > 1:
-            for item in selectedItems:
-                iData = item.data(0, Qt.UserRole)
-                self.fuseFuncts.addImportState(self.stateManager, "Image_Import", useUi=False, settings=iData)
-        else:
-            logger.debug("No Media Items Selected")
+    #     #   If single item, import directly in this state
+    #     if len(selectedItems) == 1:
+    #         self.ident_dblClk(selectedItems[0])
+    #     #   If multiple items, call the import through the main plugin
+    #     elif len(selectedItems) > 1:
+    #         for item in selectedItems:
+    #             iData = item.data(0, Qt.UserRole)
+    #             self.fuseFuncts.addImportState(self.stateManager, "Image_Import", useUi=False, settings=iData)
+    #     else:
+    #         logger.debug("No Media Items Selected")
 
 
     #   Sends data back to the main code to import the latest version
