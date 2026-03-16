@@ -791,13 +791,14 @@ class Synth_ImageRenderClass(object):
     @err_catcher(name=__name__)
     def updateUi(self):
         self.w_context.setHidden(not self.allowCustomContext)
+        self.w_comment.setHidden(not self.stateManager.useStateComments())
+ 
+        if not self.core.mediaProducts.getUseMaster():
+            self.w_master.setVisible(False)
+
         self.refreshContext()
         self.refreshCameras()
         self.updateRange()
-        self.w_comment.setHidden(not self.stateManager.useStateComments())
-
-        if not self.core.mediaProducts.getUseMaster():
-            self.w_master.setVisible(False)
 
         self.nameChanged(self.e_name.text())
         getattr(self.core.appPlugin, "sm_render_updateUi", lambda x: None)(self)
@@ -926,25 +927,17 @@ class Synth_ImageRenderClass(object):
 
         self.updateUi()
 
-        # if self.tasknameRequired and not self.getIdentifier():
-        #     warnings.append(["No identifier is given.", "", 3])
+        rData = {}
 
-        # if self.curCam is None or (
-        #     self.curCam != "Current View"
-        #     and not self.core.appPlugin.isNodeValid(self, self.curCam)
-        # ):
-        #     warnings.append(["No camera is selected.", "", 3])
-        # elif self.curCam == "Current View":
-        #     warnings.append(["No camera is selected.", "", 2])
+        rData["currentCam"] = self.cb_cam.currentText()
 
-        # rangeType = self.cb_rangeType.currentText()
-        # frames = self.getFrameRange(rangeType)
+        rangeType = self.cb_rangeType.currentText()
+        startFrame, endFrame = self.getFrameRange(rangeType)
 
-        # if frames is None or frames == []:
-        #     warnings.append(["Framerange is invalid.", "", 3])
+        if startFrame is None:
+            warnings.append(["Framerange is invalid.", "", 3])
 
-
-        warnings += self.core.appPlugin.sm_render_preExecute(self)
+        warnings += self.core.appPlugin.sm_render_preExecute(self, rData)
 
         return [self.state.text(0), warnings]
     

@@ -44,8 +44,11 @@ from qtpy.QtWidgets import *
 
 from PrismUtils.Decorators import err_catcher
 
-from Synth_Formats import synthFormatNames as SynthFormatNames
-from Synth_Formats import synthExrCompress as SynthExrCompress
+from Synth_Formats import (SynthFormatNames,
+                           SynthExrCompress,
+                           SynthMovCodecs,
+                           SynthMP4Codecs,
+                           SynthMP4Qual)
 
 logger = logging.getLogger(__name__)
 

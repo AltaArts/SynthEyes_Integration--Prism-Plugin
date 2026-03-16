@@ -63,15 +63,16 @@ class Synth_Render_StMapClass(object):
         self.cb_context.addItems(["From scenefile", "Custom"])
 
         self.curCam = None
-        self.renderingStarted = False
-        self.cleanOutputdir = True
+        self.refreshCameras()
 
         self.e_name.setText(state.text(0) + " - {identifier}")
 
         #   Initial State Name
         self.l_class.setText("StMap Render")
         self.setIdentifier("STMap")
+
         self.mediaType = "2drenders"
+
         self.tasknameRequired = True
 
         self.renderPresets = (
@@ -121,9 +122,6 @@ class Synth_Render_StMapClass(object):
         self.warnPalette = QPalette()
         self.warnPalette.setColor(QPalette.Button, QColor(200, 0, 0))
         self.warnPalette.setColor(QPalette.ButtonText, QColor(255, 255, 255))
-
-        self.cb_cam.showPopupOrig = self.cb_cam.showPopup
-        self.cb_cam.showPopup = self.showCameraPopup
 
         # self.setTaskWarn(True)
         self.nameChanged(state.text(0))
@@ -189,15 +187,8 @@ class Synth_Render_StMapClass(object):
             if idx != -1:
                 self.cb_renderPreset.setCurrentIndex(idx)
                 self.stateManager.saveStatesToScene()
-        if "currentcam" in data:
-            camName = getattr(self.core.appPlugin, "getCamName", lambda x, y: "")(
-                self, data["currentcam"]
-            )
-            idx = self.cb_cam.findText(camName)
-            if idx != -1:
-                self.curCam = self.camlist[idx]
-                self.cb_cam.setCurrentIndex(idx)
-                self.stateManager.saveStatesToScene()
+        if "currentCam" in data:
+            self.curCam = data["currentCam"]
         if "resoverride" in data:
             res = eval(data["resoverride"])
             self.chb_resOverride.setChecked(res[0])
@@ -340,7 +331,33 @@ class Synth_Render_StMapClass(object):
 
     @err_catcher(name=__name__)
     def setCam(self, index):
-        self.curCam = self.camlist[index]
+        self.curCam = self.cb_cam.currentText()
+
+        self.refreshCameras()
+
+
+    @err_catcher(name=__name__)
+    def refreshCameras(self):
+        self.cb_cam.clear()
+        self.camlist = []
+
+        if not self.stateManager.standalone:
+            camObjs = self.core.appPlugin.getCamNodes(self, cur=True)
+            self.camlist = [self.core.appPlugin.getCamName(self, i) for i in camObjs]
+
+        self.cb_cam.addItems(self.camlist)
+
+        if self.curCam in self.camlist:
+            idx = self.cb_cam.findText(self.curCam)
+            if idx != -1:
+                self.cb_cam.setCurrentIndex(idx)
+        else:
+            self.cb_cam.setCurrentIndex(0)
+            if len(self.camlist) > 0:
+                self.curCam = self.camlist[0]
+            else:
+                self.curCam = None
+
         self.stateManager.saveStatesToScene()
 
 
@@ -599,47 +616,19 @@ class Synth_Render_StMapClass(object):
 
 
     @err_catcher(name=__name__)
-    def showCameraPopup(self):
-        self.refreshCameras()
-        self.cb_cam.showPopupOrig()
-
-
-    @err_catcher(name=__name__)
-    def refreshCameras(self):
-        self.cb_cam.clear()
-        self.camlist = camNames = []
-
-        if not self.stateManager.standalone:
-            self.camlist = self.core.appPlugin.getCamNodes(self, cur=True)
-            camNames = [self.core.appPlugin.getCamName(self, i) for i in self.camlist]
-
-        self.cb_cam.addItems(camNames)
-
-        if self.curCam in self.camlist:
-            self.cb_cam.setCurrentIndex(self.camlist.index(self.curCam))
-        else:
-            self.cb_cam.setCurrentIndex(0)
-            if len(self.camlist) > 0:
-                self.curCam = self.camlist[0]
-            else:
-                self.curCam = None
-
-            self.stateManager.saveStatesToScene()
-
-
-    @err_catcher(name=__name__)
     def updateUi(self):
         self.w_context.setHidden(not self.allowCustomContext)
-        self.refreshContext()
-        self.refreshCameras()
-
         self.w_comment.setHidden(not self.stateManager.useStateComments())
 
         if not self.core.mediaProducts.getUseMaster():
             self.w_master.setVisible(False)
+            
+        self.refreshContext()
+        self.refreshCameras()
 
         self.nameChanged(self.e_name.text())
         getattr(self.core.appPlugin, "sm_render_updateUi", lambda x: None)(self)
+
         return True
 
 
@@ -713,27 +702,17 @@ class Synth_Render_StMapClass(object):
 
         self.updateUi()
 
-        # if self.tasknameRequired and not self.getIdentifier():
-        #     warnings.append(["No identifier is given.", "", 3])
+        rData = {}
 
-        # if self.curCam is None or (
-        #     self.curCam != "Current View"
-        #     and not self.core.appPlugin.isNodeValid(self, self.curCam)
-        # ):
-        #     warnings.append(["No camera is selected.", "", 3])
-        # elif self.curCam == "Current View":
-        #     warnings.append(["No camera is selected.", "", 2])
+        rData["currentCam"] = self.cb_cam.currentText()
 
         # rangeType = self.cb_rangeType.currentText()
-        # frames = self.getFrameRange(rangeType)
-        # if rangeType != "Expression":
-        #     frames = frames[0]
+        # startFrame, endFrame = self.getFrameRange(rangeType)
 
-        # if frames is None or frames == []:
+        # if startFrame is None:
         #     warnings.append(["Framerange is invalid.", "", 3])
 
-
-        # warnings += self.core.appPlugin.sm_render_preExecute(self)
+        # warnings += self.core.appPlugin.sm_render_stMap_preSubmit(self, rData)
 
         return [self.state.text(0), warnings]
 
@@ -984,7 +963,7 @@ class Synth_Render_StMapClass(object):
             "identifier": self.getIdentifier(),
             "renderpresetoverride": str(self.chb_renderPreset.isChecked()),
             "currentrenderpreset": self.cb_renderPreset.currentText(),
-            "currentcam": str(self.curCam),
+            "currentcam": self.cb_cam.currentText(),
             "resoverride": str(
                 [
                     self.chb_resOverride.isChecked(),

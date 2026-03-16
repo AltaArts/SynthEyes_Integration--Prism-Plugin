@@ -484,7 +484,6 @@ class Prism_SynthEyes_Functions(object):
 
 
 
-
     @err_catcher(name=__name__)                                                 #   TESTING
     def saveSynthPrefs(self):
 
@@ -736,6 +735,17 @@ class Prism_SynthEyes_Functions(object):
     
 
     @err_catcher(name=__name__)
+    def getShotFromCamera(self, shotObj):
+        try:
+            return shotObj.cam
+        
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Get Camera from Shot: {e}")
+            return None
+            
+    
+
+    @err_catcher(name=__name__)
     def getShotFromCamName(self, camName):
         camera = self.getCamFromName(camName)
 
@@ -743,6 +753,48 @@ class Prism_SynthEyes_Functions(object):
             return camera.shot
         
         return None
+    
+
+    @err_catcher(name=__name__)
+    def getShotHasDistort(self, camName):
+        try:
+            camera = self.getCamFromName(camName)
+
+            return bool(camera.Get("lensHasDistortion"))
+    
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Resolve if Lens has Distortion: {e}")
+            return False
+    
+
+    @err_catcher(name=__name__)
+    def getShotHasLensWorkflow(self, camName):
+        try:
+            shot = self.getShotFromCamName(camName)
+            lensWorkflow_raw = shot.Get("lensflowState")
+
+            if not lensWorkflow_raw:
+                return False
+
+            lensWorkflow_json = lensWorkflow_raw.replace("JSON:", "", 1)
+            lensWorkflow_data = json.loads(lensWorkflow_json)
+            workflow_num = lensWorkflow_data["workflow"]
+
+            return True if int(workflow_num) > 0 else False
+
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Resolve Lens Workflow: {e}")
+            return False
+
+
+    @err_catcher(name=__name__)
+    def getShotPreProcessor(self, shotObj):
+        try:
+            return shotObj.live
+        
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Get Shot's Image Preprocessor: {e}")
+            return False
 
 
     # @err_catcher(name=__name__)
@@ -1113,6 +1165,23 @@ class Prism_SynthEyes_Functions(object):
     def sm_export_preExecute(self, origin, startFrame, endFrame):
         warnings = []
 
+        cameras = self.getCamNodes()
+
+        for camera in cameras:
+            camName = camera.Name()
+
+            #   Check if Shot Camera was Solved with Distortion
+            hasDistor = self.getShotHasDistort(camName)
+
+            #   Check if Shot Camera has had Lens Workflow Completed
+            hasLensWorkflow = self.getShotHasLensWorkflow(camName)
+
+            if hasDistor and not hasLensWorkflow:
+                msg = (f"CAMERA   '{camName}':\n"
+                    "                appears to have solved distortion,\n"
+                    "                and the Lens Workflow script has not\n"
+                    "                been completed.")
+                warnings.append([msg, "", 2])
 
         return warnings
     
@@ -1148,8 +1217,23 @@ class Prism_SynthEyes_Functions(object):
 
     #   Called from State Before Render
     @err_catcher(name=__name__)
-    def sm_render_preExecute(self, origin):
+    def sm_render_preExecute(self, origin, rData):
         warnings = []
+
+        camName = rData["currentCam"]
+
+        #   Check if Shot Camera was Solved with Distortion
+        hasDistor = self.getShotHasDistort(camName)
+
+        #   Check if Shot Camera has had Lens Workflow Completed
+        hasLensWorkflow = self.getShotHasLensWorkflow(camName)
+
+        if hasDistor and not hasLensWorkflow:
+            msg = (f"CAMERA   '{camName}':\n"
+                   "             appears to have solved distortion,\n"
+                   "             and the Lens Workflow script has not\n"
+                   "             been completed.")
+            warnings.append([msg, "", 2])
 
         return warnings
     

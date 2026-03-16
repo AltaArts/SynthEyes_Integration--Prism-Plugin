@@ -44,8 +44,7 @@ from qtpy.QtWidgets import *
 
 from PrismUtils.Decorators import err_catcher
 
-from Synth_Formats import synthFormatNames as SynthFormatNames
-from Synth_Formats import synthExrCompress as SynthExrCompress
+from Synth_Formats import SynthFormatNames
 
 
 logger = logging.getLogger(__name__)
@@ -74,7 +73,10 @@ class Synth_SceneExportClass(object):
         self.e_name.setVisible(False)
 
         self.cb_context.addItems(["From scenefile", "Custom"])
+
         self.curCam = None
+        self.refreshCameras()
+
         self.chb_master.setChecked(os.getenv("PRISM_ENABLE_MASTER_DFT", "1") == "1")
 
         self.oldPalette = self.b_changeTask.palette()
@@ -89,8 +91,6 @@ class Synth_SceneExportClass(object):
         self.additionalSettings = []
         self.b_additionalSettings = QPushButton("Additional Settings...")
         self.b_additionalSettings.clicked.connect(self.showAdditionalSettings)
-
-        self.nodes = []
 
         self.rangeTypes = ["Scene", "Shot", "Shot + 1", "Single Frame", "Custom"]
         self.cb_rangeType.addItems(self.rangeTypes)
@@ -162,22 +162,12 @@ class Synth_SceneExportClass(object):
             self.chb_wholeScene.setChecked(eval(data["wholescene"]))
         if "additionaloptions" in data:
             self.chb_additionalOptions.setChecked(eval(data["additionaloptions"]))
-        if "currentcam" in data:
-            if not self.shotCamsInitialized:
-                self.refreshShotCameras()
-
-            camName = getattr(self.core.appPlugin, "getCamName", lambda x, y: "")(
-                self, data["currentcam"]
-            )
-            idx = self.cb_cam.findText(camName)
-            if idx != -1:
-                self.curCam = self.camlist[idx]
-                self.cb_cam.setCurrentIndex(idx)
-                self.nameChanged(self.e_name.text())
-        if "currentscamshot" in data:
-            idx = self.cb_sCamShot.findText(data["currentscamshot"])
-            if idx != -1:
-                self.cb_sCamShot.setCurrentIndex(idx)
+        if "currentCam" in data:
+            self.curCam = data["currentCam"]
+        # if "currentscamshot" in data:
+        #     idx = self.cb_sCamShot.findText(data["currentscamshot"])
+        #     if idx != -1:
+        #         self.cb_sCamShot.setCurrentIndex(idx)
         if "lastexportpath" in data:
             lePath = self.core.fixPath(data["lastexportpath"])
             self.setLastPath(lePath)
@@ -577,32 +567,19 @@ class Synth_SceneExportClass(object):
 
             self.shotCamsInitialized = True
 
+
     @err_catcher(name=__name__)
     def updateUi(self):
-        self.cb_cam.clear()
-        self.camlist = camNames = []
-        if not self.stateManager.standalone and hasattr(self.core.appPlugin, "getCamNodes"):
-            self.camlist = self.core.appPlugin.getCamNodes(self)
-            camNames = [self.core.appPlugin.getCamName(self, i) for i in self.camlist]
-
-        self.cb_cam.addItems(camNames)
-        if self.curCam in self.camlist:
-            self.cb_cam.setCurrentIndex(self.camlist.index(self.curCam))
-        else:
-            self.cb_cam.setCurrentIndex(0)
-            if len(self.camlist) > 0:
-                self.curCam = self.camlist[0]
-            else:
-                self.curCam = None
-            self.stateManager.saveStatesToScene()
+        self.w_context.setHidden(not self.allowCustomContext)
+        self.w_comment.setHidden(not self.stateManager.useStateComments())
 
         if not self.core.products.getUseMaster():
             self.w_master.setVisible(False)
 
-        self.w_context.setHidden(not self.allowCustomContext)
-        self.w_comment.setHidden(not self.stateManager.useStateComments())
         self.refreshContext()
+        self.refreshCameras()
         self.updateRange()
+
         if self.getOutputType() == "ShotCam":
             self.refreshShotCameras()
 
@@ -612,6 +589,7 @@ class Synth_SceneExportClass(object):
         showSettings = any([setting.get("visible", lambda dlg, state: True)(None, self) for setting in self.additionalSettings])
         self.b_additionalSettings.setHidden(not showSettings)
         self.nameChanged(self.e_name.text())
+
         self.core.callback("sm_export_updateUi", self)
 
 
@@ -740,9 +718,34 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def setCam(self, index):
-        self.curCam = self.camlist[index]
-        self.updateUi()
+    def setCam(self, cameraIdx): 
+        self.curCam = self.cb_cam.currentText()
+
+        self.refreshCameras()
+
+
+    @err_catcher(name=__name__)
+    def refreshCameras(self):
+        self.cb_cam.clear()
+        self.camlist = []
+
+        if not self.stateManager.standalone:
+            camObjs = self.core.appPlugin.getCamNodes(self, cur=True)
+            self.camlist = [self.core.appPlugin.getCamName(self, i) for i in camObjs]
+
+        self.cb_cam.addItems(self.camlist)
+
+        if self.curCam in self.camlist:
+            idx = self.cb_cam.findText(self.curCam)
+            if idx != -1:
+                self.cb_cam.setCurrentIndex(idx)
+        else:
+            self.cb_cam.setCurrentIndex(0)
+            if len(self.camlist) > 0:
+                self.curCam = self.camlist[0]
+            else:
+                self.curCam = None
+
         self.stateManager.saveStatesToScene()
 
 
@@ -1172,7 +1175,7 @@ class Synth_SceneExportClass(object):
                 "updateMasterVersion": self.chb_master.isChecked(),
                 "curoutputpath": self.cb_outPath.currentText(),
                 "curoutputtype": self.getOutputType(),
-                "currentcam": str(self.curCam),
+                "currentcam": self.cb_cam.currentText(),
                 "currentscamshot": self.cb_sCamShot.currentText(),
                 "lastexportpath": self.l_pathLast.text().replace("\\", "/"),
                 "stateenabled": self.core.getCheckStateValue(self.state.checkState(0)),
