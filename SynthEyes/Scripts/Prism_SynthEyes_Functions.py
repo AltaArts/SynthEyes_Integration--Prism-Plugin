@@ -1198,7 +1198,6 @@ class Prism_SynthEyes_Functions(object):
         else:
             meshName = fileName[0]
 
-
         #   Get Existing Mesh
         mesh_orig = self.getObjByUUID("mesh", data["meshUUID"])
 
@@ -1232,18 +1231,16 @@ class Prism_SynthEyes_Functions(object):
             scn = self.synthEyes.Scene()
             meshObj = scn.Call("ReadMesh", filePath)
 
-            if not meshObj:
-                self.synthEyes.Accept("Configure Import")
-                return {"result": False, "doImport": False}
-            
             self.synthEyes.Accept("Import Mesh")
 
+            if not meshObj:
+                return {"result": False, "doImport": False}
+
             #   Set Mesh Name
-            self.setObjName(mesh_orig, meshName)
+            self.setObjName(meshObj, meshName)
 
             result = meshObj.UniqID()
             doImport = True
-
 
         return {"result": result, "doImport": doImport}
         

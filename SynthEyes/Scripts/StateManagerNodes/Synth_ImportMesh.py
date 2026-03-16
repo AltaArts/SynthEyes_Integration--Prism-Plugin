@@ -104,6 +104,7 @@ class Synth_ImportMeshClass(object):
             and not self.stateManager.standalone
         ):
             importPaths = self.requestImportPaths()
+           
             if importPaths:
                 importPath = importPaths[-1]
                 if len(importPaths) > 1:
@@ -281,8 +282,8 @@ class Synth_ImportMeshClass(object):
         self.importPath = path
         self.w_currentVersion.setToolTip(path)
         self.stateManager.saveImports()
-        self.updateUi()
         self.stateManager.saveStatesToScene()
+        self.updateUi()
 
 
     @err_catcher(name=__name__)
@@ -392,7 +393,7 @@ class Synth_ImportMeshClass(object):
                     return
 
         if not impFileName:
-            self.core.popup("Invalid importpath:\n\n%s" % impFileName)
+            self.core.popup("Invalid Import Path:\n\n%s" % impFileName)
             return
 
         if not hasattr(self.core.appPlugin, "sm_import_importToApp"):
@@ -432,7 +433,9 @@ class Synth_ImportMeshClass(object):
             "scenefile": fileName,
             "importfile": impFileName,
         }
+
         self.core.callback("postImport", **kwargs)
+
         self.setImportPath(impFileName)
         self.stateManager.saveImports()
         self.updateUi()
