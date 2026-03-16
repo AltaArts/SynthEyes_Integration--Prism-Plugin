@@ -62,12 +62,12 @@ from PrismUtils.Decorators import err_catcher
 logger = logging.getLogger(__name__)
 
 #   Global Colors
-COLOR_GREEN = (0, 130, 0)
-COLOR_YELLOW = (200, 150, 0)
-COLOR_ORANGE = (150, 100, 0)
-COLOR_RED = (130, 0, 0)
-COLOR_BLACK = (0, 0, 0, 0)
-COLOR_WHITE = (255, 255, 255, 255)
+COLOR_GREEN = QColor(0, 130, 0)
+COLOR_YELLOW = QColor(200, 150, 0)
+COLOR_ORANGE = QColor(150, 100, 0)
+COLOR_RED = QColor(130, 0, 0)
+COLOR_BLACK = QColor(0, 0, 0, 0)
+COLOR_WHITE = QColor(255, 255, 255, 255)
 
 
 #   Icon to be used for State
@@ -126,8 +126,8 @@ class Synth_AddShotClass(object):
         #   Sets colors
         self.oldPalette = self.b_importLatest.palette()
         self.updatePalette = QPalette()
-        self.updatePalette.setColor(QPalette.Button, QColor(*COLOR_ORANGE))
-        self.updatePalette.setColor(QPalette.ButtonText, QColor(*COLOR_WHITE))
+        self.updatePalette.setColor(QPalette.Button, COLOR_ORANGE)
+        self.updatePalette.setColor(QPalette.ButtonText, COLOR_WHITE)
 
         font = self.l_curVersion.font()
         font.setBold(True)
@@ -146,7 +146,7 @@ class Synth_AddShotClass(object):
             logger.debug("Loaded State from saved data")
 
             self.nameChanged()
-            self.refresh()
+            self.updateUi()
 
 
         ##   2. If passed from FusFuncts. Receive importData via "settings" kwarg
@@ -212,12 +212,17 @@ class Synth_AddShotClass(object):
                 self.core.popup("Unable to Import Image from MediaBrowser.")
                 return False
         
-            self.nameChanged()
-            self.refresh()
+            self.setImportPath(requestResult[0])
+            self.importData = requestResult[1]
+
             result = self.addShot(requestResult[0], requestResult[1])
 
             if result:
                 self.shotUUID = result
+
+            self.nameChanged()
+            self.updateUi()
+
 
 
         ##   4. If error
@@ -241,10 +246,14 @@ class Synth_AddShotClass(object):
     def connectEvents(self):
         self.e_name.textChanged.connect(self.nameChanged)
         self.e_name.editingFinished.connect(self.stateManager.saveStatesToScene)
-        self.b_browse.clicked.connect(lambda: self.browse(setChecked=True))                     #   Select Version Button
+        self.b_browse.clicked.connect(self.browse)                     #   Select Version Button
         self.b_browse.customContextMenuRequested.connect(self.openFolder)                       #   RCL Select Version Button
-        self.chb_autoUpdate.stateChanged.connect(self.autoUpdateChanged)                        #   Latest Checkbox
+        # self.b_importLatest.clicked.connect(self.importLatest)
 
+        self.chb_autoUpdate.stateChanged.connect(self.autoUpdateChanged)                        #   Latest Checkbox
+        self.e_camName.editingFinished.connect(
+            lambda: self.updateCamName(self.e_camName.text())
+            )
 
 
 
@@ -340,33 +349,17 @@ class Synth_AddShotClass(object):
 
     #   Opens Media Chooser to select version
     @err_catcher(name=__name__)
-    def browse(self, setChecked=False):
-        if setChecked:
-            #   Get Currently Selected Item Data
-            selItemData = self.getCheckedItemsData()
+    def browse(self):
+        currVersion = self.getCurrentVersion()
 
-        #   Get the AOV items
-        aovItems = self.getAllItems(useChecked=False, aovs=True)
-        if aovItems:
-            #   Get the MediaId of the first AOV item
-            itemData = self.getItemData(aovItems[0])
+        if currVersion:
             #   Call the MediaWindow with the MediaId
-            self.callMediaWindow(itemData)
-
+            self.callMediaWindow(currVersion)
         else:
             #   Just call without a MediaId
             self.callMediaWindow()
 
-        self.refresh()
-
-        if setChecked:
-            #   Search for Matching New Items to Set Checked
-            for iData in selItemData:
-                newItem = self.getMatchingItemFromData(iData)
-                if newItem:
-                    self.setItemChecked(newItem, "checked")
-                    self.onCheckboxStateChanged(newItem)
-
+        self.updateUi()
 
 
     @err_catcher(name=__name__)                     #   TODO
@@ -521,7 +514,18 @@ class Synth_AddShotClass(object):
     def getFilepathFromVersion(self, versionContext):
         aovs = self.core.mediaProducts.getAOVsFromVersion(versionContext)
 
-        mediaFiles = self.core.mediaProducts.getFilesFromContext(aovs[0])
+        if aovs:
+            mediaFiles = self.core.mediaProducts.getFilesFromContext(aovs[0])
+
+        else:
+            basePath = versionContext["path"]
+            mediaFiles = [
+                os.path.join(basePath, f)
+                for f in os.listdir(basePath)
+                if os.path.isfile(os.path.join(basePath, f))
+            ]
+            mediaFiles = sorted(mediaFiles)
+
         validFiles = self.core.media.filterValidMediaFiles(mediaFiles)
 
         return validFiles[0]
@@ -531,17 +535,44 @@ class Synth_AddShotClass(object):
     @err_catcher(name=__name__)
     def setSelectedMedia(self, selResult):        
         self.selResult = selResult  # Save the selected media
+
+
+    @err_catcher(name=__name__)
+    def updateCamName(self, camName=None):
+        #   Get Shot Camera Object
+        camObj = self.synthFuncts.getCamFromShotUUID(self.shotUUID)
+
+        if not camObj:
+            return
         
+        #   If Passed a New Name, Change it
+        if camName:
+            self.synthFuncts.setObjName(camObj, camName)
 
-    #   Refreshes UI, Thumbnails, and Tooltips
+        #   Get the Camera Name and Set it in the UI
+        camName = self.synthFuncts.getCamName(self, camObj)
+        self.e_camName.setText(camName)
+
+
     @err_catcher(name=__name__)
-    def refresh(self):
-        self.updateUi()
+    def setStateColor(self, status):
+        if status == "ok":
+            statusColor = COLOR_GREEN
+        elif status == "warning":
+            statusColor = COLOR_ORANGE
+        elif status == "error":
+            statusColor = COLOR_RED
+        else:
+            statusColor = COLOR_BLACK
+
+        self.statusColor = statusColor
+        self.stateManager.tw_import.repaint()
 
 
-    #   Refreshes only the UI Text and Coloring (not Thumbnails)
-    @err_catcher(name=__name__)
+    @err_catcher(name=__name__)                     #   TODO - MAKE SURE ALL OF THIS RUNS
     def updateUi(self):
+        self.updateCamName()
+
         versions = self.checkLatestVersion()
 
         if not versions:
@@ -576,7 +607,10 @@ class Synth_AddShotClass(object):
 
             if latestVersionName:
                 self.stateStatus = "ok"
+
         else:
+            useSS = getattr(self.core.appPlugin, "colorButtonWithStyleSheet", False)
+
             if (
                 curVersionName
                 and latestVersionName
@@ -584,11 +618,29 @@ class Synth_AddShotClass(object):
                 and not curVersionName.startswith("master")
             ):
                 self.stateStatus = "warning"
+                if useSS:
+                    self.b_importLatest.setStyleSheet(
+                        "QPushButton { background-color: rgb(200,100,0); }"
+                    )
+                else:
+                    self.b_importLatest.setPalette(self.updatePalette)
             else:
                 if curVersionName and latestVersionName:
                     self.stateStatus = "ok"
 
+                if useSS:
+                    self.b_importLatest.setStyleSheet(
+                        "QPushButton { background-color: rgb(0, 130, 0); }"
+                    )
+                else:
+                    self.b_importLatest.setPalette(self.oldPalette)
+
+
+
+
         self.nameChanged()
+        self.setStateColor(self.stateStatus)
+
 
         getattr(self.core.appPlugin, "sm_import_updateUi", lambda x: None)(self)
 
@@ -635,33 +687,36 @@ class Synth_AddShotClass(object):
 
     @err_catcher(name=__name__)
     def checkLatestVersion(self):
-        try:
-            path = self.getImportPath()
-            curVerData = {"version": self.importData["version"], "path": path}
+        # try:
 
-            latestVerDict = self.getLatestVersion(self.importData, includeMaster=True)
-            lastestVerName = latestVerDict["version"]
-            lastestVerPath = latestVerDict["path"]
+        path = self.getImportPath()
 
-            if latestVerDict:
-                latestVersionData = {"version": lastestVerName, "path": lastestVerPath}
-            else:
-                latestVersionData = {}
-            
-            #   Sets tooltips
-            curVerPath = curVerData["path"]
-            self.l_text_Current.setToolTip(curVerPath)
-            self.l_curVersion.setToolTip(curVerPath)
+        curVerData = {"version": self.importData["version"], "path": path}
 
-            latestVerPath = latestVersionData["path"]
-            self.l_text_Latest.setToolTip(latestVerPath)
-            self.l_latestVersion.setToolTip(latestVerPath)
+        latestVerDict = self.getLatestVersion(self.importData, includeMaster=True)
 
-            return curVerData, latestVersionData
+        lastestVerName = latestVerDict["version"]
+        lastestVerPath = latestVerDict["path"]
+
+        if latestVerDict:
+            latestVersionData = {"version": lastestVerName, "path": lastestVerPath}
+        else:
+            latestVersionData = {}
         
-        except:
-            logger.debug("ERROR:  Unable to get Latest Version.")
-            return None
+        #   Sets tooltips
+        curVerPath = curVerData["path"]
+        self.l_text_Current.setToolTip(curVerPath)
+        self.l_curVersion.setToolTip(curVerPath)
+
+        latestVerPath = latestVersionData["path"]
+        self.l_text_Latest.setToolTip(latestVerPath)
+        self.l_latestVersion.setToolTip(latestVerPath)
+
+        return curVerData, latestVersionData
+        
+        # except:
+            # logger.debug("ERROR:  Unable to get Latest Version.")
+            # return None
     
 
 
@@ -830,7 +885,7 @@ class ReadMediaDialog(QDialog):
             self.reject()  # Close the dialog with no selection
 
 
-    #   Handles if the Import Selected buton clicked
+    #   Handles if the Import Selected button clicked
     def handelImportButton(self):
         selectedItems = self.w_browser.tw_identifier.selectedItems()
 

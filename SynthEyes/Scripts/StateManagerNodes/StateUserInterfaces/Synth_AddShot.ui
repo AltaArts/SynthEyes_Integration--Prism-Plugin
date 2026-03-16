@@ -36,7 +36,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Import Images</string>
+        <string>Synth_AddShot</string>
        </property>
       </widget>
      </item>
@@ -54,6 +54,9 @@
          <height>16777215</height>
         </size>
        </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -64,64 +67,6 @@
       </widget>
      </item>
     </layout>
-   </item>
-   <item>
-    <widget class="QWidget" name="f_name" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <property name="leftMargin">
-       <number>9</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>18</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="l_thumb">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Thumbnail</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <layout class="QVBoxLayout" name="lo_options">
-        <item>
-         <widget class="QComboBox" name="cb_taskColor"/>
-        </item>
-        <item>
-         <widget class="QPushButton" name="b_focusView">
-          <property name="text">
-           <string>Focus View</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="b_selectTools">
-          <property name="text">
-           <string>Select Tools</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </widget>
    </item>
    <item>
     <widget class="QGroupBox" name="gb_import">
@@ -339,30 +284,22 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_6">
          <item>
-          <layout class="QHBoxLayout" name="lo_importButtons">
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <property name="leftMargin">
+            <number>9</number>
+           </property>
+           <property name="rightMargin">
+            <number>9</number>
+           </property>
            <item>
-            <widget class="QPushButton" name="b_importAll">
+            <widget class="QLabel" name="l_camName">
              <property name="text">
-              <string>Import All</string>
+              <string>Camera Name:  </string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="b_importSel">
-             <property name="text">
-              <string>Import Selected</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="b_refresh">
-             <property name="focusPolicy">
-              <enum>Qt::FocusPolicy::NoFocus</enum>
-             </property>
-             <property name="text">
-              <string>Refresh</string>
-             </property>
-            </widget>
+            <widget class="QLineEdit" name="e_camName"/>
            </item>
           </layout>
          </item>
@@ -370,43 +307,17 @@
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="gb_channels">
-        <property name="title">
-         <string>Image AOV / Channels</string>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Orientation::Vertical</enum>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout_4">
-         <property name="leftMargin">
-          <number>9</number>
-         </property>
-         <property name="topMargin">
-          <number>9</number>
-         </property>
-         <property name="rightMargin">
-          <number>9</number>
-         </property>
-         <property name="bottomMargin">
-          <number>9</number>
-         </property>
-         <item>
-          <widget class="QTreeWidget" name="lw_objects">
-           <property name="selectionMode">
-            <enum>QAbstractItemView::SelectionMode::NoSelection</enum>
-           </property>
-           <property name="verticalScrollMode">
-            <enum>QAbstractItemView::ScrollMode::ScrollPerItem</enum>
-           </property>
-           <property name="horizontalScrollMode">
-            <enum>QAbstractItemView::ScrollMode::ScrollPerItem</enum>
-           </property>
-           <column>
-            <property name="text">
-             <string notr="true">1</string>
-            </property>
-           </column>
-          </widget>
-         </item>
-        </layout>
-       </widget>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
       </item>
      </layout>
     </widget>
@@ -415,7 +326,6 @@
  </widget>
  <tabstops>
   <tabstop>chb_autoUpdate</tabstop>
-  <tabstop>lw_objects</tabstop>
  </tabstops>
  <resources/>
  <connections/>

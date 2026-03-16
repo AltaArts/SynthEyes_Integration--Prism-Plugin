@@ -44,6 +44,7 @@
 ###########################################################################
 
 
+from ast import expr_context
 import os
 import sys
 import platform
@@ -715,6 +716,18 @@ class Prism_SynthEyes_Functions(object):
     
 
     @err_catcher(name=__name__)
+    def setObjName(self, synthObj, objName):
+        try:
+            self.synthEyes.Begin()
+            synthObj.SetName(objName)
+            self.synthEyes.Accept("Rename Obj")
+
+        except Exception as e:
+            logger.warning(f"ERROR:  Unable to set Synth Object's Name: {e}")
+            return False
+        
+
+    @err_catcher(name=__name__)
     def getCamNodes(self, origin=None, cur=False):
         return self.synthEyes.Cameras()
     
@@ -722,6 +735,7 @@ class Prism_SynthEyes_Functions(object):
     @err_catcher(name=__name__)
     def getCamName(self, origin, camera):
         return camera.Name()
+
     
     
     @err_catcher(name=__name__)
@@ -733,6 +747,13 @@ class Prism_SynthEyes_Functions(object):
             
         return None
     
+
+    @err_catcher(name=__name__)
+    def getCamFromShotUUID(self, shotUUID):
+        shot = self.getObjByUUID("shot", shotUUID)
+        if shot:
+            return shot.cam
+
 
     @err_catcher(name=__name__)
     def getShotFromCamera(self, shotObj):
@@ -1032,14 +1053,10 @@ class Prism_SynthEyes_Functions(object):
             try:
                 camName = f"CAMERA_{camSuffix}-{details['identifier']}_{details['version']}"
             
-                self.synthEyes.Begin()
-
                 for obj in shot.Objects():
                     if obj.Name().lower().startswith("camera"):
-                        obj.SetName(camName)
+                        self.setObjName(obj, camName)
                         break
-
-                self.synthEyes.Accept("Shot Rename")
 
             except Exception as e:
                 logger.warning(f"ERROR: Unable to Rename Shot: {e}")
@@ -1112,11 +1129,10 @@ class Prism_SynthEyes_Functions(object):
             #   Apply Original Transforms
             mesh_orig.Set("trans", meshTrans_orig)
 
-            #   Change Mesh Name
-            mesh_orig.SetName(meshName)
-
             self.synthEyes.Accept("Update Mesh")
 
+            #   Change Mesh Name
+            self.setObjName(mesh_orig, meshName)
 
             result = mesh_orig.UniqID()
             doImport = True
@@ -1133,10 +1149,10 @@ class Prism_SynthEyes_Functions(object):
                 self.synthEyes.Accept("Configure Import")
                 return {"result": False, "doImport": False}
             
-            #   Set Mesh Name
-            meshObj.SetName(meshName)
-
             self.synthEyes.Accept("Import Mesh")
+
+            #   Set Mesh Name
+            self.setObjName(mesh_orig, meshName)
 
             result = meshObj.UniqID()
             doImport = True

@@ -358,6 +358,9 @@ class Synth_Render_StMapClass(object):
             else:
                 self.curCam = None
 
+        self.core.popup(f"self.camlist:  {self.camlist}")							#	TESTING
+        self.core.popup(f"self.curCam:  {self.curCam}")							#	TESTING
+
         self.stateManager.saveStatesToScene()
 
 
@@ -956,6 +959,9 @@ class Synth_Render_StMapClass(object):
 
     @err_catcher(name=__name__)
     def getStateProps(self):
+
+        self.core.popup(f"save cam:  {self.cb_cam.currentText()}")							#	TESTING
+        
         stateProps = {
             "stateName": self.e_name.text(),
             "contextType": self.getContextType(),
