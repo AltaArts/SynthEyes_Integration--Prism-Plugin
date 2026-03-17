@@ -1,3 +1,4 @@
+## SynthEyes Format Naming
 SynthFormatNames: dict = {
     "USD  (.usda)": {
             "synthName": "USD ASCII Scene",
@@ -29,6 +30,7 @@ SynthFormatNames: dict = {
             },
     }
 
+## SynthEyes EXR 'Compression' Strings
 SynthExrCompress:dict = {
     "NONE": "exr: <None>,45",
     "ZIP":"exr: <ZIP-block>,45",
@@ -39,7 +41,7 @@ SynthExrCompress:dict = {
     "PXR24": "exr: <PXR Lossy>,45"
     }
 
-
+## SynthEyes MOV 'Compression' Strings
 SynthMovCodecs:dict = {
     "ProRes 422": "prores: <prores422>,0",
     "ProRes LT": "prores: <prores422lt>,0",
@@ -48,11 +50,15 @@ SynthMovCodecs:dict = {
     "ProRes 4444XQ": "prores: <prores4444xq>,0",
     }
 
+## SynthEyes MP4 'Compression' Strings
+#      The first part
 SynthMP4Codecs:dict = {
     "H264": "WMFC: 'H264' K:0 Q:0",
     "H265": "WMFC: 'HEVC' K:0 Q:0",
     }
 
+## SynthEyes MP4 'Compression' Strings
+#       the second part
 SynthMP4Qual:dict = {
     "High (30 Mb/s)": "B:30000000",
     "Good (15 Mb/s)": "B:15000000",
@@ -61,6 +67,7 @@ SynthMP4Qual:dict = {
     "Preview (2 Mb/s)": "B:2000000",
     }
 
+## SynthEyes Alpha Supported Formats
 SynthHasAlpha:list = [
     "ProRes 4444",
     "ProRes 4444XQ",
@@ -68,9 +75,17 @@ SynthHasAlpha:list = [
     "PNG"
 ] 
 
+## SynthEyes Image PreProcessor Subsampling Ints
+SynthSubSample:dict = {
+    "100%": 1.0,
+    "50%": 2.0,
+    "25%": 4.0
+}
 
-# camera01's preview compression.
-# camera01's render compression.
-
-# native high: 'WMFC:'H264' K:0 Q:0 B:30000000'
-# native low: 'WMFC:'H264' K:0 Q:0 B:4000000'
+## SynthEyes Image PreProcessor Subsampling Filters
+SynthInterp:dict = {
+    "Low (Bi-Linear)": 0.0,
+    "Med (Lanczos 2)": 1.0,
+    "Good (Mitchell)": 3.0,
+    "High (Lanczos 3)": 2.0
+}

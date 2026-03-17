@@ -48,7 +48,9 @@ from Synth_Formats import (SynthExrCompress,
                            SynthMovCodecs,
                            SynthMP4Codecs,
                            SynthMP4Qual,
-                           SynthHasAlpha)
+                           SynthHasAlpha,
+                           SynthSubSample,
+                           SynthInterp)
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +66,8 @@ class Synth_ImageRenderClass(object):
         self.state = state
         self.core = core
         self.stateManager = stateManager
+        self.synthFuncts = self.core.appPlugin
+
         self.canSetVersion = True
         self.customContext = None
         self.allowCustomContext = False
@@ -90,16 +94,6 @@ class Synth_ImageRenderClass(object):
         self.curCam = None
         self.refreshCameras()
 
-        self.renderPresets = (
-            self.stateManager.stateTypes["RenderSettings"].getPresets(self.core)
-            if "RenderSettings" in self.stateManager.stateTypes
-            else {}
-            )
-        if self.renderPresets:
-            self.cb_renderPreset.addItems(self.renderPresets.keys())
-        else:
-            self.w_renderPreset.setVisible(False)
-
         self.l_name.setVisible(False)
         self.e_name.setVisible(False)
 
@@ -124,12 +118,11 @@ class Synth_ImageRenderClass(object):
 
         self.cb_format.addItems(self.outputFormats)
 
+        self.cb_renderScale.addItems(SynthSubSample.keys())
+        self.cb_renderFilter.addItems(SynthInterp.keys())
+
         self.setupFormatOptions()
         self.configFormatUI()
-
-        self.resolutionPresets = self.core.projects.getResolutionPresets()
-        if "Get from rendersettings" not in self.resolutionPresets:
-            self.resolutionPresets.append("Get from rendersettings")
 
         self.loadDefaults()
         self.connectEvents()
@@ -160,6 +153,9 @@ class Synth_ImageRenderClass(object):
         if idx != -1:
             self.cb_exrCompression.setCurrentIndex(idx)
 
+        self.chb_scaleOverride.setChecked(False)
+        self.onScaleOvrChanged()
+
         self.chb_include_RGB.setChecked(True)
         self.chb_include_Alpha.setChecked(False)
         self.chb_include_Mesh.setChecked(True)
@@ -183,14 +179,6 @@ class Synth_ImageRenderClass(object):
             self.e_name.setText(data["stateName"])
         elif "statename" in data:
             self.e_name.setText(data["statename"] + " - {identifier}")
-        if "renderpresetoverride" in data:
-            res = eval(data["renderpresetoverride"])
-            self.chb_renderPreset.setChecked(res)
-        if "currentrenderpreset" in data:
-            idx = self.cb_renderPreset.findText(data["currentrenderpreset"])
-            if idx != -1:
-                self.cb_renderPreset.setCurrentIndex(idx)
-                self.stateManager.saveStatesToScene()
         if "rangeType" in data:
             idx = self.cb_rangeType.findText(data["rangeType"])
             if idx != -1:
@@ -202,11 +190,6 @@ class Synth_ImageRenderClass(object):
             self.sp_rangeEnd.setValue(int(data["endframe"]))
         if "currentCam" in data:
             self.curCam = data["currentCam"]
-        if "resoverride" in data:
-            res = eval(data["resoverride"])
-            self.chb_resOverride.setChecked(res[0])
-            self.sp_resWidth.setValue(res[1])
-            self.sp_resHeight.setValue(res[2])
         if "masterVersion" in data:
             idx = self.cb_master.findText(data["masterVersion"])
             if idx != -1:
@@ -223,6 +206,21 @@ class Synth_ImageRenderClass(object):
             idx = self.cb_format.findText(data["outputFormat"])
             if idx != -1:
                 self.cb_format.setCurrentIndex(idx)
+
+        if "scaleOvr" in data:
+            self.chb_scaleOverride.setChecked(data["scaleOvr"])
+            self.onScaleOvrChanged()
+
+        if "renderScale" in data:
+            idx = self.cb_renderScale.findText(data["renderScale"])
+            if idx != -1:
+                self.cb_renderScale.setCurrentIndex(idx)
+
+        if "renderFilter" in data:
+            idx = self.cb_renderFilter.findText(data["renderFilter"])
+            if idx != -1:
+                self.cb_renderFilter.setCurrentIndex(idx)
+
         if "exrCompress" in data:
             idx = self.cb_exrCompression.findText(data["exrCompress"])
             if idx != -1:
@@ -270,22 +268,19 @@ class Synth_ImageRenderClass(object):
         self.cb_context.activated.connect(self.onContextTypeChanged)
         self.b_context.clicked.connect(self.selectContextClicked)
         self.b_changeTask.clicked.connect(self.changeTask)
-        self.chb_renderPreset.stateChanged.connect(self.presetOverrideChanged)
-        self.cb_renderPreset.activated.connect(self.stateManager.saveStatesToScene)
         self.cb_rangeType.activated.connect(self.rangeTypeChanged)
         self.sp_rangeStart.editingFinished.connect(self.startChanged)
         self.sp_rangeEnd.editingFinished.connect(self.endChanged)
         self.cb_cam.activated.connect(self.setCam)
-        self.chb_resOverride.stateChanged.connect(self.resOverrideChanged)
-        self.sp_resWidth.editingFinished.connect(self.stateManager.saveStatesToScene)
-        self.sp_resHeight.editingFinished.connect(self.stateManager.saveStatesToScene)
-        self.b_resPresets.clicked.connect(self.showResPresets)
         self.cb_master.activated.connect(self.stateManager.saveStatesToScene)
         self.cb_outPath.activated.connect(self.stateManager.saveStatesToScene)
         self.chb_version.stateChanged.connect(self.onVersionOverrideChanged)
         self.sp_version.editingFinished.connect(self.stateManager.saveStatesToScene)
         self.b_version.clicked.connect(self.onVersionOverrideClicked)
         self.cb_format.activated.connect(self.configFormatUI)
+        self.chb_scaleOverride.clicked.connect(self.onScaleOvrChanged)
+        self.cb_renderScale.activated.connect(self.stateManager.saveStatesToScene)
+        self.cb_renderFilter.activated.connect(self.stateManager.saveStatesToScene)
         self.cb_exrCompression.activated.connect(self.stateManager.saveStatesToScene)
         self.cb_movCodec.activated.connect(self.configFormatUI)
         self.cb_mp4Codec.activated.connect(self.stateManager.saveStatesToScene)
@@ -539,6 +534,16 @@ class Synth_ImageRenderClass(object):
         
 
     @err_catcher(name=__name__)
+    def onScaleOvrChanged(self, checked=None):
+        enabled = self.chb_scaleOverride.isChecked()
+
+        self.cb_renderScale.setEnabled(enabled)
+        self.cb_renderFilter.setEnabled(enabled)
+
+        self.stateManager.saveStatesToScene
+        
+
+    @err_catcher(name=__name__)
     def getContextType(self):
         contextType = self.cb_context.currentText()
         return contextType
@@ -605,43 +610,43 @@ class Synth_ImageRenderClass(object):
             self.stateManager.saveStatesToScene()
 
 
-    @err_catcher(name=__name__)
-    def presetOverrideChanged(self, checked):
-        self.cb_renderPreset.setEnabled(checked)
-        self.stateManager.saveStatesToScene()
+    # @err_catcher(name=__name__)
+    # def presetOverrideChanged(self, checked):
+    #     self.cb_renderPreset.setEnabled(checked)
+    #     self.stateManager.saveStatesToScene()
 
 
-    @err_catcher(name=__name__)
-    def resOverrideChanged(self, checked):
-        self.sp_resWidth.setEnabled(checked)
-        self.sp_resHeight.setEnabled(checked)
-        self.b_resPresets.setEnabled(checked)
+    # @err_catcher(name=__name__)
+    # def resOverrideChanged(self, checked):
+    #     self.sp_resWidth.setEnabled(checked)
+    #     self.sp_resHeight.setEnabled(checked)
+    #     self.b_resPresets.setEnabled(checked)
 
-        self.stateManager.saveStatesToScene()
+    #     self.stateManager.saveStatesToScene()
 
 
-    @err_catcher(name=__name__)
-    def showResPresets(self):
-        pmenu = QMenu(self)
+    # @err_catcher(name=__name__)
+    # def showResPresets(self):
+    #     pmenu = QMenu(self)
 
-        for preset in self.resolutionPresets:
-            pAct = QAction(preset, self)
-            res = self.getResolution(preset)
-            if not res:
-                continue
+    #     for preset in self.resolutionPresets:
+    #         pAct = QAction(preset, self)
+    #         res = self.getResolution(preset)
+    #         if not res:
+    #             continue
 
-            pwidth, pheight = res
+    #         pwidth, pheight = res
 
-            pAct.triggered.connect(
-                lambda x=None, v=pwidth: self.sp_resWidth.setValue(v)
-            )
-            pAct.triggered.connect(
-                lambda x=None, v=pheight: self.sp_resHeight.setValue(v)
-            )
-            pAct.triggered.connect(lambda: self.stateManager.saveStatesToScene())
-            pmenu.addAction(pAct)
+    #         pAct.triggered.connect(
+    #             lambda x=None, v=pwidth: self.sp_resWidth.setValue(v)
+    #         )
+    #         pAct.triggered.connect(
+    #             lambda x=None, v=pheight: self.sp_resHeight.setValue(v)
+    #         )
+    #         pAct.triggered.connect(lambda: self.stateManager.saveStatesToScene())
+    #         pmenu.addAction(pAct)
 
-        pmenu.exec_(QCursor.pos())
+    #     pmenu.exec_(QCursor.pos())
 
 
     @err_catcher(name=__name__)
@@ -1047,6 +1052,9 @@ class Synth_ImageRenderClass(object):
             "identifier": idf,
             "currentCam": self.cb_cam.currentText(),
             "format": extension,
+            "scaleOverride": self.chb_scaleOverride.isChecked(),
+            "renderScale": self.cb_renderScale.currentText(),
+            "renderFilter": self.cb_renderFilter.currentText(),
             "include_RGB": self.chb_include_RGB.isChecked(),
             "include_Alpha": self.chb_include_Alpha.isChecked(),
             "include_Mesh": self.chb_include_Mesh.isChecked(),
@@ -1059,9 +1067,16 @@ class Synth_ImageRenderClass(object):
         self.l_pathLast.setText(rSettings["outputName"])
         self.l_pathLast.setToolTip(rSettings["outputName"])
 
+        #   Capture Current Settings
+        oData = self.synthFuncts.sm_render_preRender(self, self.cb_cam.currentText())
+
         errors = []
 
+        #   Execute Render
         result = self.core.appPlugin.sm_render_Sequence(self, self.stateManager, rSettings["outputName"], rSettings, context)
+
+        #   Restore Settings
+        self.synthFuncts.sm_render_postRender(self, self.cb_cam.currentText(), oData)
 
         if result:
             try:
@@ -1080,6 +1095,9 @@ class Synth_ImageRenderClass(object):
                 details["endframe"] = endFrame
                 details["path"] = expandedOutputPath
                 details["mediaType"] = self.mediaType
+                details["Scale Override"] = self.chb_scaleOverride.isChecked()
+                details["Render Scale"] = self.cb_renderScale.currentText()
+                details["Scaling Filter"] = self.cb_renderFilter.currentText()
                 details["include_RGB"] = self.chb_include_RGB.isChecked()
                 details["include_Alpha"] = self.chb_include_Alpha.isChecked()
                 details["include_Mesh"] = self.chb_include_Mesh.isChecked()
@@ -1185,24 +1203,22 @@ class Synth_ImageRenderClass(object):
             "contextType": self.getContextType(),
             "customContext": self.customContext,
             "identifier": self.getIdentifier(),
-            "renderpresetoverride": str(self.chb_renderPreset.isChecked()),
-            "currentrenderpreset": self.cb_renderPreset.currentText(),
             "rangeType": str(self.cb_rangeType.currentText()),
             "startframe": self.sp_rangeStart.value(),
             "endframe": self.sp_rangeEnd.value(),
             "currentCam": self.cb_cam.currentText(),
-            "resoverride": str(
-                [
-                    self.chb_resOverride.isChecked(),
-                    self.sp_resWidth.value(),
-                    self.sp_resHeight.value(),
-                ]
-            ),
             "masterVersion": self.cb_master.currentText(),
             "curoutputpath": self.cb_outPath.currentText(),
             "useVersionOverride": self.chb_version.isChecked(),
             "versionOverride": self.sp_version.value(),
             "outputFormat": self.getFormat(),
+
+            "scaleOvr": self.chb_scaleOverride.isChecked(),
+
+            "renderScale": self.cb_renderScale.currentText(),
+
+            "renderFilter": self.cb_renderFilter.currentText(),
+
             "exrCompress": self.cb_exrCompression.currentText(),
             "movCodec": self.cb_movCodec.currentText(),
             "mp4Codec": self.cb_mp4Codec.currentText(),
