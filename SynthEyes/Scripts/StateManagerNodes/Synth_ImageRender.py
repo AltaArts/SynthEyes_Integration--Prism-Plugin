@@ -1056,6 +1056,9 @@ class Synth_ImageRenderClass(object):
         #   Add Format Specific Options
         rSettings.update(self.getFormatOptions())
 
+        self.l_pathLast.setText(rSettings["outputName"])
+        self.l_pathLast.setToolTip(rSettings["outputName"])
+
         errors = []
 
         result = self.core.appPlugin.sm_render_Sequence(self, self.stateManager, rSettings["outputName"], rSettings, context)

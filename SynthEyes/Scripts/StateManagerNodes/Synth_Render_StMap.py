@@ -358,9 +358,6 @@ class Synth_Render_StMapClass(object):
             else:
                 self.curCam = None
 
-        self.core.popup(f"self.camlist:  {self.camlist}")							#	TESTING
-        self.core.popup(f"self.curCam:  {self.curCam}")							#	TESTING
-
         self.stateManager.saveStatesToScene()
 
 
@@ -843,6 +840,9 @@ class Synth_Render_StMapClass(object):
                 "identifier": stName,
                 "currentCam": self.cb_cam.currentText()
                 }
+            
+            self.l_pathLast.setText(rSettings["outputName"])
+            self.l_pathLast.setToolTip(rSettings["outputName"])
 
             result = self.core.appPlugin.sm_render_stMap(self, stType, rangeType, rSettings["outputName"], rSettings, context)
 
@@ -959,9 +959,6 @@ class Synth_Render_StMapClass(object):
 
     @err_catcher(name=__name__)
     def getStateProps(self):
-
-        self.core.popup(f"save cam:  {self.cb_cam.currentText()}")							#	TESTING
-        
         stateProps = {
             "stateName": self.e_name.text(),
             "contextType": self.getContextType(),

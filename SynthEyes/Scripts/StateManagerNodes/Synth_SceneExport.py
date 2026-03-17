@@ -980,6 +980,7 @@ class Synth_SceneExportClass(object):
             )
 
             outputName += ".abc"
+
             self.setLastPath(outputName)
 
             useMaster = self.core.products.getUseMaster()
@@ -1113,8 +1114,6 @@ class Synth_SceneExportClass(object):
                 logger.debug("exported to: %s" % outputName)
                 self.setLastPath(outputName)
                 self.stateManager.saveStatesToScene()
-
-
 
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
