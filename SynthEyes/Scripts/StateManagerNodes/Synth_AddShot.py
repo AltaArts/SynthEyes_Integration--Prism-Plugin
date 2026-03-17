@@ -611,7 +611,8 @@ class Synth_AddShotClass(object):
         
         #   If Passed a New Name, Change it
         if camName:
-            self.synthFuncts.setObjName(camObj, camName)
+            with self.synthFuncts.UNDO_BLOCK("Rename Camera"):
+                self.synthFuncts.setObjName(camObj, camName)
 
         #   Get the Camera Name and Set it in the UI
         camName = self.synthFuncts.getCamName(self, camObj)

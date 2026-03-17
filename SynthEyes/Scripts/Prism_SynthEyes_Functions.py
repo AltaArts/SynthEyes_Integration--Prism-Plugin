@@ -55,6 +55,8 @@ import zlib
 import base64
 import tempfile
 import re
+from contextlib import contextmanager
+
 
 
 PLUGINROOT = os.path.dirname(os.path.dirname(__file__))
@@ -122,7 +124,6 @@ class Prism_SynthEyes_Functions(object):
 
         self.findPrismActions()
         self.createPrismMenu()
-
 
 
     @err_catcher(name=__name__)
@@ -490,35 +491,6 @@ class Prism_SynthEyes_Functions(object):
     def testTwo(self):
         self.core.popup("IN TEST TWO")							#	TESTING
 
-        shots = self.synthEyes.Shots()
-
-        shot = shots[0]
-
-        pProc = self.getShotPreProcessor(shot)
-        self.core.popup(f"pProc:  {pProc}")							#	TESTING
-
-        subsample = pProc.Get("subsample")
-        self.core.popup(f"subsample:  {subsample}")							#	TESTING
-
-        interpolation = pProc.Get("interpolation")
-        self.core.popup(f"interpolation:  {interpolation}")							#	TESTING
-
-        scaleStr = "25%"
-        filterStr = "High (Lanczos 3)"
-
-
-        #   Sets Output Scaling and Scale Filter
-        self.setOutputRez_U(shot, scaleStr, filterStr)
-
-        self.core.popup("SET")							#	TESTING
-
-
-        subsample = pProc.Get("subsample")
-        self.core.popup(f"subsample:  {subsample}")							#	TESTING
-
-        interpolation = pProc.Get("interpolation")
-        self.core.popup(f"interpolation:  {interpolation}")							#	TESTING
-
 
 
 
@@ -649,21 +621,45 @@ class Prism_SynthEyes_Functions(object):
 
     ###################################################
     ##                  Synth Stuff                  ##
-    ##                                               ##
-    ##      Note:  Methods with '_U' are protected   ##
-    ##             in Synth UnDo Blocks              ##
     ###################################################
 
 
 
+    #   Context Wrapper for SynthEyes Undo Blocks
+    @contextmanager
+    def UNDO_BLOCK(self, undoName:str) -> None:
+        startedHere = False
+
+        if not self.synthEyes.InUndo():
+            self.synthEyes.Begin()
+            startedHere = True
+
+        try:
+            yield
+
+        except Exception as e:
+            logger.warning(f"UNDO FAILED: {undoName} - {e}")
+
+            if startedHere:
+                try:
+                    self.synthEyes.Cancel()
+                except Exception as cancel_err:
+                    logger.critical(f"UNDO CANCEL FAILED: {cancel_err}")
+            raise
+
+        else:
+            if startedHere:
+                self.synthEyes.Accept(undoName)
+
+
     #   Returns SynthEyes Version
     @err_catcher(name=__name__)
-    def getAppVersion(self, origin):
+    def getAppVersion(self, origin) -> str:
         return self.synthEyes.Version()
 
 
     @err_catcher(name=__name__)
-    def getFrameRange(self, origin):
+    def getFrameRange(self, origin) -> tuple[int, int]:
         try:
             start = (self.synthEyes.AnimStart() + 1)
             end = (self.synthEyes.AnimEnd() +1)
@@ -675,19 +671,18 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def getCurrentFrame(self):
+    def getCurrentFrame(self) -> int:
         try:
             currentFrame = self.synthEyes.Frame()
             return currentFrame
+        
         except Exception as e:
             logger.warning(f"ERROR: Unable to Get Current Frame from SynthEyes: {e}")
             return None
 
 
     @err_catcher(name=__name__)
-    def setFrameRange_U(self, origin, startFrame, endFrame):
-        self.synthEyes.Begin()
-
+    def setFrameRange(self, origin, startFrame:int, endFrame:int) -> None:
         try:
             self.synthEyes.SetAnimStart(startFrame)
             self.synthEyes.SetAnimEnd(endFrame)
@@ -696,12 +691,9 @@ class Prism_SynthEyes_Functions(object):
         except Exception as e:
             logger.warning(f"ERROR: Unable to Set Framerange in SynthEyes: {e}")
 
-        finally:
-            self.synthEyes.Accept("Set Frame Range")
-
 
     @err_catcher(name=__name__)
-    def getObjByUUID(self, objType:str, uuid:str) -> bool:
+    def getObjByUUID(self, objType:str, uuid:str) -> object:
         try:
             match objType:
                 case "shot":
@@ -727,9 +719,7 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def deleteObjByUUID_U(self, objType:str, uuid:str) -> bool:
-        self.synthEyes.Begin()
-
+    def deleteObjByUUID(self, objType:str, uuid:str) -> bool:
         try:
             match objType:
                 case "shot":
@@ -755,38 +745,31 @@ class Prism_SynthEyes_Functions(object):
         except Exception as e:
             logger.warning(f"ERROR: Unable to delete {objType} - {uuid}\n{e}")
             return False
-        
-        finally:
-            self.synthEyes.Accept("Delete Object")
     
 
     @err_catcher(name=__name__)
-    def setObjName_U(self, synthObj, objName):
-        self.synthEyes.Begin()
-
+    def setObjName(self, synthObj:object, objName:str) -> bool:
         try:
             synthObj.SetName(objName)
+            return True
 
         except Exception as e:
             logger.warning(f"ERROR:  Unable to set Synth Object's Name: {e}")
             return False
-        
-        finally:
-            self.synthEyes.Accept("Rename Obj")
 
 
     @err_catcher(name=__name__)
-    def getCamNodes(self, origin=None, cur=False):
+    def getCamNodes(self, origin=None, cur:bool=False) -> list[object]:
         return self.synthEyes.Cameras()
     
 
     @err_catcher(name=__name__)
-    def getCamName(self, origin, camera):
+    def getCamName(self, origin, camera:object) -> str:
         return camera.Name()
     
     
     @err_catcher(name=__name__)
-    def getCamFromName(self, camName):
+    def getCamFromName(self, camName:str) -> object:
         cameras = self.getCamNodes()
         for cam in cameras:
             if cam.Name() == camName:
@@ -796,23 +779,24 @@ class Prism_SynthEyes_Functions(object):
     
 
     @err_catcher(name=__name__)
-    def getCamFromShot(self, shot):
+    def getCamFromShot(self, shot:object) -> object:
         try:
             return shot.Get("cam")
+        
         except Exception as e:
             logger.warning(f"ERROR: Uanble to get Camera from Hot: {e}")
             return None
             
 
     @err_catcher(name=__name__)
-    def getCamFromShotUUID(self, shotUUID):
+    def getCamFromShotUUID(self, shotUUID:str) -> object:
         shot = self.getObjByUUID("shot", shotUUID)
         if shot:
             return shot.cam
 
 
     @err_catcher(name=__name__)
-    def getShotFromCamera(self, shotObj):
+    def getShotFromCamera(self, shotObj:object) -> object:
         try:
             return shotObj.cam
         
@@ -822,7 +806,7 @@ class Prism_SynthEyes_Functions(object):
     
 
     @err_catcher(name=__name__)
-    def getShotFromCamName(self, camName):
+    def getShotFromCamName(self, camName:str) -> object:
         camera = self.getCamFromName(camName)
         if camera:
             return camera.shot
@@ -831,7 +815,7 @@ class Prism_SynthEyes_Functions(object):
     
 
     @err_catcher(name=__name__)
-    def getShotHasDistort(self, camName):
+    def getShotHasDistort(self, camName:str) -> bool:
         try:
             camera = self.getCamFromName(camName)
 
@@ -843,7 +827,7 @@ class Prism_SynthEyes_Functions(object):
     
 
     @err_catcher(name=__name__)
-    def getShotHasLensWorkflow(self, camName):
+    def getShotHasLensWorkflow(self, camName:str) -> bool:
         try:
             shot = self.getShotFromCamName(camName)
             lensWorkflow_raw = shot.Get("lensflowState")
@@ -863,19 +847,17 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def getShotPreProcessor(self, shotObj):
+    def getShotPreProcessor(self, shotObj:object) -> object:
         try:
             return shotObj.live
         
         except Exception as e:
             logger.warning(f"ERROR: Unable to Get Shot's Image Preprocessor: {e}")
-            return False
+            return None
         
 
     @err_catcher(name=__name__)
-    def changeShotImages_U(self, shot, newPath, frameCount):
-        self.synthEyes.Begin()
-
+    def changeShotImages(self, shot:object, newPath:str, frameCount:int) -> bool:
         try:
             #   Change Image Path Name
             shot.Set("nm", newPath)
@@ -883,22 +865,18 @@ class Prism_SynthEyes_Functions(object):
         except Exception as e:
             logger.warning(f"ERROR: Unable to Change Short Images: {e}")
             return False
-        
-        finally:
-            self.synthEyes.Accept("Change Image")
 
         #   Update Frame Count
-        self.setShotFrameCount_U(shot, frameCount)
+        self.setShotFrameCount(shot, frameCount)
         
         #   Flush Old Image Cache
         shot.Call("Flush")
 
         return True
-        
 
 
     @err_catcher(name=__name__)
-    def getShotFrameCount(self, shot):
+    def getShotFrameCount(self, shot:object) -> int:
         try:
             return shot.Get("frameCount")
         
@@ -908,74 +886,84 @@ class Prism_SynthEyes_Functions(object):
         
 
     @err_catcher(name=__name__)
-    def setShotFrameCount_U(self, shot, frameCount):
-        self.synthEyes.Begin()
-
+    def setShotFrameCount(self, shot:object, frameCount:int) -> bool:
         try:
-            result = shot.set("frameCount", frameCount)
+            result = shot.Set("frameCount", frameCount)
             return result
         
         except Exception as e:
             logger.warning(f"ERROR: Unable to Set Shot's Frame Count: {e}")
-            return None
-        
-        finally:
-            self.synthEyes.Accept("Set Frame Count")
+            return False
         
 
     @err_catcher(name=__name__)
-    def getOutputRez(self, shot):
+    def getOutputRez(self, shot:object) -> float:
         try:
             pProc = self.getShotPreProcessor(shot)
+            if not pProc:
+                return 1.0
+            
             return pProc.Get("subsample")
         
         except Exception as e:
             logger.warning(f"ERROR: Unable to Get Shot's Image Sampling: {e}")
-            return None
+            return 1.0
         
 
     @err_catcher(name=__name__)
-    def getOutputSampleFilter(self, shot):
+    def setOutputRez(self, shot:object, scaleStr:str=None, scaleCode:float=None) -> None:
         try:
             pProc = self.getShotPreProcessor(shot)
-            return pProc.Get("interpolation")
-        
-        except Exception as e:
-            logger.warning(f"ERROR: Unable to Get Shot's Sampling Filter: {e}")
-            return None
-        
+            if not pProc:
+                return
 
-    @err_catcher(name=__name__)
-    def setOutputRez_U(self, shot, scaleStr, filterStr):
-        pProc = self.getShotPreProcessor(shot)
-        if not pProc:
-            logger.warning("ERROR: Unable to Get Shot's Image Preprocessor.")
-            return
-        
-        self.synthEyes.Begin()
-
-        try:
             #   Get SynthEyes Settings Code
-            scaleInt = SynthSubSample[scaleStr]
+            if scaleStr:
+                scaleCode = SynthSubSample[scaleStr]
+
             #   Set Subsample Value        
-            pProc.Set("subsample", scaleInt)
+            pProc.Set("subsample", scaleCode)
 
         except Exception as e:
             logger.warning(f"ERROR: Unable to Set Shot's Image Sampling: {e}")
             return
         
+
+    @err_catcher(name=__name__)
+    def getOutputSampleFilter(self, shot:object) -> float:
+        try:
+            pProc = self.getShotPreProcessor(shot)
+            if not pProc:
+                return 0.0
+            
+            return pProc.Get("interpolation")
+        
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Get Shot's Sampling Filter: {e}")
+            return 0.0
+        
+
+    @err_catcher(name=__name__)
+    def setOutputSampleFilter(self, shot:object, filterStr:str=None, filterCode:float=None) -> None:
+        pProc = self.getShotPreProcessor(shot)
+        if not pProc:
+            logger.warning("ERROR: Unable to Get Shot's Image Preprocessor.")
+            return
+        
         try:
             #   Get SynthEyes Settings Code
-            filterInt = SynthInterp[filterStr]
+            if filterStr:
+                filterCode = SynthInterp[filterStr]
+
             #   Set Subsample Filter
-            pProc.Set("interpolation", filterInt)
+            pProc.Set("interpolation", filterCode)
             
         except Exception as e:
             logger.warning(f"ERROR: Unable to Set Shot's Sampling Filter: {e}")
             return
 
-        finally:
-            self.synthEyes.Accept("Change Image Scaling")
+
+
 
 
     # @err_catcher(name=__name__)
@@ -1217,7 +1205,8 @@ class Prism_SynthEyes_Functions(object):
             
                 for obj in shot.Objects():
                     if obj.Name().lower().startswith("camera"):
-                        self.setObjName_U(obj, camName)
+                        with self.UNDO_BLOCK("Rename Camera"):
+                            self.setObjName(obj, camName)
                         break
 
             except Exception as e:
@@ -1245,7 +1234,8 @@ class Prism_SynthEyes_Functions(object):
     @err_catcher(name=__name__)
     def sm_changeShotImages(self, origin, shot, newPath, verStr, frameCount):
         #   Change Images in SynthEyes
-        result = self.changeShotImages_U(shot, newPath, frameCount)
+        with self.UNDO_BLOCK("Change Shot Images"):
+            result = self.changeShotImages(shot, newPath, frameCount)
 
         if result:
             #   Attempts to Rename Camera with New Version
@@ -1261,7 +1251,8 @@ class Prism_SynthEyes_Functions(object):
                     newCamName = re.sub(rf"v\d{{{verPadding}}}", verStr, currCamName)
 
                 if newCamName:
-                    self.setObjName_U(camera, newCamName)
+                    with self.UNDO_BLOCK("Rename Camera"):                    
+                        self.setObjName(camera, newCamName)
                 
                 return True
             
@@ -1308,41 +1299,35 @@ class Prism_SynthEyes_Functions(object):
 
         ##   Update Existing Mesh
         if update and mesh_orig:
-
-            self.synthEyes.Begin()
-
             #   Capture Original Mesh Transforms
             meshTrans_orig = mesh_orig.trans
 
-            #   Load Mesh from New Filepath
-            mesh_orig.Call("ReadMesh", impFileName)
+            with self.UNDO_BLOCK("Update Mesh"):
+                #   Load Mesh from New Filepath
+                mesh_orig.Call("ReadMesh", impFileName)
+                #   Apply Original Transforms
+                mesh_orig.Set("trans", meshTrans_orig)
 
-            #   Apply Original Transforms
-            mesh_orig.Set("trans", meshTrans_orig)
-
-            self.synthEyes.Accept("Update Mesh")
-
-            #   Change Mesh Name
-            self.setObjName_U(mesh_orig, meshName)
+            with self.UNDO_BLOCK("Rename Mesh"):
+                #   Change Mesh Name
+                self.setObjName(mesh_orig, meshName)
 
             result = mesh_orig.UniqID()
             doImport = True
 
         ##   Create New Mesh
         else:
-            self.synthEyes.Begin()
-
-            #   Create New Mesh from Filepath
-            scn = self.synthEyes.Scene()
-            meshObj = scn.Call("ReadMesh", filePath)
-
-            self.synthEyes.Accept("Import Mesh")
+            with self.UNDO_BLOCK("Import Mesh"):
+                #   Create New Mesh from Filepath
+                scn = self.synthEyes.Scene()
+                meshObj = scn.Call("ReadMesh", filePath)
 
             if not meshObj:
                 return {"result": False, "doImport": False}
 
-            #   Set Mesh Name
-            self.setObjName_U(meshObj, meshName)
+            with self.UNDO_BLOCK("Rename Mesh"):
+                #   Set Mesh Name
+                self.setObjName(meshObj, meshName)
 
             result = meshObj.UniqID()
             doImport = True
@@ -1354,7 +1339,9 @@ class Prism_SynthEyes_Functions(object):
     def sm_import_preDelete(self, origin, delData:dict):
         try:
             uuid = delData["meshUUID"]
-            self.deleteObjByUUID_U("mesh", uuid)
+
+            with self.UNDO_BLOCK("Delete Mesh"):
+                self.deleteObjByUUID("mesh", uuid)
 
         except Exception as e:
             logger.warning(e)
@@ -1451,9 +1438,9 @@ class Prism_SynthEyes_Functions(object):
         shot = self.getShotFromCamName(cameraName)
 
         oData = {}
-
         oData["orig_renderScale"] = self.getOutputRez(shot)
-        oData["renderFilter"] = self.getOutputSampleFilter(shot)
+        oData["orig_renderFilter"] = self.getOutputSampleFilter(shot)
+
         return oData
     
 
@@ -1497,20 +1484,20 @@ class Prism_SynthEyes_Functions(object):
             shot = self.getShotFromCamName(rSettings["currentCam"])
 
             #   Configure SynthEyes Render Settings
-            self.synthEyes.Begin()
-            shot.Set("renderFile", outputPath)
-            shot.Set("renderCompression", optStr)
-            shot.Set("renderSettings", settingsStr)
-            self.synthEyes.Accept("RenderSettings")
+            with self.UNDO_BLOCK("Set RenderSettings"):
+                shot.Set("renderFile", outputPath)
+                shot.Set("renderCompression", optStr)
+                shot.Set("renderSettings", settingsStr)
 
             if rSettings["scaleOverride"]:
                 #   Sets Output Scaling and Scale Filter
-                self.setOutputRez_U(shot, rSettings["renderScale"], rSettings["renderFilter"])
+                with self.UNDO_BLOCK("Scale Image"):
+                    self.setOutputRez(shot, scaleStr=rSettings["renderScale"])
+                    self.setOutputSampleFilter(shot, filterStr=rSettings["renderFilter"])
 
             #   Run Render
-            self.synthEyes.Begin()
-            result = shot.Call("Render")
-            self.synthEyes.Accept("Render")
+            with self.UNDO_BLOCK("Render"):
+                result = shot.Call("Render")
 
         except Exception as e:
             logger.warning(f"ERROR: Unable to Render Image Sequence: {e}")
@@ -1527,7 +1514,9 @@ class Prism_SynthEyes_Functions(object):
     def sm_render_postRender(self, origin, cameraName, oData):
         shot = self.getShotFromCamName(cameraName)
 
-        self.setOutputRez_U(shot, oData["orig_renderScale"], oData["renderFilter"])
+        with self.UNDO_BLOCK("Restore Image Scale"):
+            self.setOutputRez(shot, scaleCode=oData["orig_renderScale"])
+            self.setOutputSampleFilter(shot, filterCode=oData["orig_renderFilter"])
 
 
     #   Sanity Check Before State Execution
@@ -1574,7 +1563,8 @@ class Prism_SynthEyes_Functions(object):
     
         shot = self.getShotFromCamName(rSettings["currentCam"])
 
-        result = shot.Call(stFunct, *args)
+        with self.UNDO_BLOCK("Render StMaps"):
+            result = shot.Call(stFunct, *args)
   
         return int(result) == 1
 
@@ -1724,8 +1714,9 @@ class Prism_SynthEyes_Functions(object):
     def getIndexNote(self):
         note = self.getNoteByNumber(1000)
 
-        if not note:
-            note = self.createIndexNote()
+        # if not note:
+        #     with self.UNDO_BLOCK("Create Index Note"):
+        #         note = self.createIndexNote()
 
         return note
 
@@ -1760,9 +1751,10 @@ class Prism_SynthEyes_Functions(object):
     def sm_saveStates(self, origin=None, buf=None):
         data = json.loads(buf)
 
-        self.synthEyes.Begin()
-
         index_note = self.getIndexNote()
+        if not index_note:
+            with self.UNDO_BLOCK("Create Index Note"):
+                index_note = self.createIndexNote()
 
         old_index = json.loads(index_note.text)
         old_notes = set(old_index.get("notes", []))
@@ -1775,10 +1767,11 @@ class Prism_SynthEyes_Functions(object):
 
             note = self.getNoteByNumber(number)
 
-            if not note:
-                note = self.createStateNote(number)
+            with self.UNDO_BLOCK("Create State Note"):
+                if not note:
+                    note = self.createStateNote(number)
 
-            note.text = self.compressState(state)
+                note.text = self.compressState(state)
 
         #   Remove Unused Notes
         new_notes = set(note_numbers)
@@ -1787,11 +1780,11 @@ class Prism_SynthEyes_Functions(object):
         for number in to_delete:
             note = self.getNoteByNumber(number)
             if note:
-                self.synthEyes.Delete(note)
+                with self.UNDO_BLOCK("Delete Note:"):
+                    self.synthEyes.Delete(note)
 
-        index_note.text = json.dumps({"notes": note_numbers})
-
-        self.synthEyes.Accept("Write Prism States")
+        with self.UNDO_BLOCK("Write Index Note"):
+            index_note.text = json.dumps({"notes": note_numbers})
 
 
     #   Called to Retrieve State Data
@@ -1807,7 +1800,6 @@ class Prism_SynthEyes_Functions(object):
         states = []
 
         for number in index["notes"]:
-
             note = self.getNoteByNumber(number)
 
             if note and note.text:
@@ -1824,21 +1816,20 @@ class Prism_SynthEyes_Functions(object):
         index_note = self.getNoteByNumber(1000)
 
         if not index_note:
-            index_note = self.createIndexNote()
+            with self.UNDO_BLOCK("Create Index Note"):
+                index_note = self.createIndexNote()
 
         index = json.loads(index_note.text)
 
         for number in index.get("notes", []):
-
             note = self.getNoteByNumber(number)
 
             if note:
-                self.synthEyes.Delete(note)
+                with self.UNDO_BLOCK("Delete Note"):
+                    self.synthEyes.Delete(note)
 
-        index_note.text = json.dumps({"notes": []})
-
-        self.synthEyes.Accept("Cleared Prism States")
-
+        with self.UNDO_BLOCK("Write Index Note"):
+            index_note.text = json.dumps({"notes": []})
 
 
 
