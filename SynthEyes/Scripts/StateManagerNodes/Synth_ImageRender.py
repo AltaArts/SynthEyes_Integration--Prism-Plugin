@@ -72,9 +72,6 @@ class Synth_ImageRenderClass(object):
         self.allowCustomContext = False
         self.cb_context.addItems(["From scenefile", "Custom"])
 
-        # self.renderingStarted = False
-        # self.cleanOutputdir = True
-
         self.e_name.setText(state.text(0) + " - {identifier}")
 
         self.rangeTypes = [
@@ -204,21 +201,17 @@ class Synth_ImageRenderClass(object):
             idx = self.cb_format.findText(data["outputFormat"])
             if idx != -1:
                 self.cb_format.setCurrentIndex(idx)
-
         if "scaleOvr" in data:
             self.chb_scaleOverride.setChecked(data["scaleOvr"])
             self.onScaleOvrChanged()
-
         if "renderScale" in data:
             idx = self.cb_renderScale.findText(data["renderScale"])
             if idx != -1:
                 self.cb_renderScale.setCurrentIndex(idx)
-
         if "renderFilter" in data:
             idx = self.cb_renderFilter.findText(data["renderFilter"])
             if idx != -1:
                 self.cb_renderFilter.setCurrentIndex(idx)
-
         if "exrCompress" in data:
             idx = self.cb_exrCompression.findText(data["exrCompress"])
             if idx != -1:
@@ -243,7 +236,6 @@ class Synth_ImageRenderClass(object):
             self.chb_include_Mesh.setChecked(data["include_Mesh"])
         if "include_Burnin" in data:
             self.chb_include_Burnin.setChecked(data["include_Burnin"])
-
         if "lastexportpath" in data:
             lePath = self.core.fixPath(data["lastexportpath"])
             self.l_pathLast.setText(lePath)
@@ -314,6 +306,7 @@ class Synth_ImageRenderClass(object):
 
         self.updateUi()
 
+
     @err_catcher(name=__name__)
     def getLastPathOptions(self):
         path = self.l_pathLast.text()
@@ -346,6 +339,7 @@ class Synth_ImageRenderClass(object):
             })
 
         return options
+
 
     @err_catcher(name=__name__)
     def openInMediaBrowser(self, path):
@@ -648,7 +642,6 @@ class Synth_ImageRenderClass(object):
             self.core.popup("No versions exists in the current context.", severity="info")
 
 
-
     @err_catcher(name=__name__)
     def setRangeType(self, rangeType):
         idx = self.cb_rangeType.findText(rangeType)
@@ -812,7 +805,7 @@ class Synth_ImageRenderClass(object):
             self.l_rangeEnd.setText(end)
 
 
-    @err_catcher(name=__name__)                     #   TODO
+    @err_catcher(name=__name__)
     def getFrameRange(self, rangeType):
         startFrame = None
         endFrame = None
@@ -1022,15 +1015,15 @@ class Synth_ImageRenderClass(object):
         self.l_pathLast.setToolTip(rSettings["outputName"])
 
         #   Capture Current Settings
-        oData = self.synthFuncts.sm_render_preRender(self, self.cb_cam.currentText())
-
-        errors = []
+        rSettings = self.synthFuncts.sm_render_preRender(self, rSettings)
 
         #   Execute Render
-        result = self.core.appPlugin.sm_render_Sequence(self, self.stateManager, rSettings["outputName"], rSettings, context)
+        result = self.core.appPlugin.sm_render_Sequence(self, self.stateManager, rSettings["outputName"], rSettings)
 
         #   Restore Settings
-        self.synthFuncts.sm_render_postRender(self, self.cb_cam.currentText(), oData)
+        self.synthFuncts.sm_render_postRender(self, rSettings)
+
+        errors = []
 
         if result:
             try:

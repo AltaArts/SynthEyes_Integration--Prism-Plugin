@@ -525,6 +525,11 @@ class Synth_ImportMeshClass(object):
         self.updateMeshName()
 
         versions = self.checkLatestVersion()
+
+        if not versions:
+            logger.debug("Skipped setting Latest Version Status")
+            return
+
         if versions:
             curVersion, latestVersion = versions
         else:
@@ -545,22 +550,24 @@ class Synth_ImportMeshClass(object):
         self.l_curVersion.setText(curVersionName or "-")
         self.l_latestVersion.setText(latestVersionName or "-")
 
-        status = "error"
+        self.stateStatus = "error"
+
         if self.chb_autoUpdate.isChecked():
             if curVersionName and latestVersionName and curVersionName != latestVersionName:
                 self.importLatest(refreshUi=False)
 
             if latestVersionName:
-                status = "ok"
+                self.stateStatus = "ok"
         else:
             useSS = getattr(self.core.appPlugin, "colorButtonWithStyleSheet", False)
+
             if (
                 curVersionName
                 and latestVersionName
                 and curVersionName != latestVersionName
                 and not curVersionName.startswith("master")
             ):
-                status = "warning"
+                self.stateStatus = "warning"
                 if useSS:
                     self.b_importLatest.setStyleSheet(
                         "QPushButton { background-color: rgb(200,100,0); }"
@@ -569,17 +576,18 @@ class Synth_ImportMeshClass(object):
                     self.b_importLatest.setPalette(self.updatePalette)
             else:
                 if curVersionName and latestVersionName:
-                    status = "ok"
-                elif self.nodes:
-                    status = "ok"
+                    self.stateStatus = "ok"
 
                 if useSS:
-                    self.b_importLatest.setStyleSheet("")
+                    self.b_importLatest.setStyleSheet(
+                        "QPushButton { background-color: rgb(0, 130, 0); }"
+                    )
                 else:
                     self.b_importLatest.setPalette(self.oldPalette)
 
         self.nameChanged()
-        self.setStateColor(status)
+        self.setStateColor(self.stateStatus)
+
         getattr(self.core.appPlugin, "sm_import_updateUi", lambda x: None)(self)
 
 
