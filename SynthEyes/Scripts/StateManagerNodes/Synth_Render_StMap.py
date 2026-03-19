@@ -931,6 +931,8 @@ class Synth_Render_StMapClass(object):
 
     @err_catcher(name=__name__)
     def executeState(self, parent, useVersion="next"):
+        currentCam = self.cb_cam.currentText()
+
         rangeType = self.cb_rangeType.currentText()
         frames = self.getFrameRange(rangeType)
         startFrame = frames[0]
@@ -971,9 +973,10 @@ class Synth_Render_StMapClass(object):
 
         errors = []
 
-        ##  DISABLED - SynthEyes does not appear to rescale the UnDistort Images  ##
-        #   Capture Current Settings
-        oData = self.synthFuncts.sm_render_preRender_stMap(self, self.cb_cam.currentText())
+        #   Capture Current and Set Custom Settings
+        rData = {}
+        rData["exrUVMcmp"] = SynthExrCompress[self.cb_exrCompression.currentText()]
+        rData = self.synthFuncts.sm_render_preRender_stMap(self, currentCam, rData)
 
         for stType in idfs.keys():
             stName = idfs[stType]
@@ -1014,7 +1017,7 @@ class Synth_Render_StMapClass(object):
                 "endFrame": frame_end,
                 "frames": frames,
                 "identifier": stName,
-                "currentCam": self.cb_cam.currentText(),
+                "currentCam": currentCam,
                 "format": extension,
                 "scaleOverride": False,
                 # "scaleOverride": self.chb_scaleOverride.isChecked(),  # DISABLED
@@ -1060,9 +1063,8 @@ class Synth_Render_StMapClass(object):
             else:
                 errors.append(f"{stName}: Render Error")
 
-        ##  DISABLED - SynthEyes does not appear to rescale the UnDistort Images  ##
-        #   Restore Settings
-        # self.synthFuncts.sm_render_postRender_stMap(self, self.cb_cam.currentText(), oData)
+        #   Restore Original Settings
+        self.synthFuncts.sm_render_postRender_stMap(self, currentCam, rData)
 
         if not errors:
             kwargs = {

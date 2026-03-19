@@ -1587,57 +1587,25 @@ class Prism_SynthEyes_Functions(object):
             warnings.append([msg, "", 2])
 
         return warnings
-    
 
 
-    #   Called Before Render to Capture Current Settings
+    #   Called Before Render to Capture Current and Set Custom Settings
     @err_catcher(name=__name__)
-    def sm_render_preRender_stMap(self, origin, cameraName):
-        pass
-
-    # exrUVMcmp
-    # FindPrefFromName
-        # exrFormat = self.synthEyes.GetPrefFromName("EXR cmpr")
-        # prefIdx = self.synthEyes.FindPrefFromName("EXR cmpr")
-
-        # self.core.popup(f"prefIdx:  {prefIdx}")							#	TESTING
-
-        # prefdesc = self.synthEyes.PrefDescription(prefIdx)
-
-        # self.core.popup(f"prefdesc:  {prefdesc}")							#	TESTING
-
-        prefData = self.synthEyes.GetPrefFromVar("exrUVMcmp")
-
-        
-        # prefData = self.synthEyes.GetPrefFromIndex(prefIdx)
-        print(f"prefData:  {prefData}")							#	TESTING
-
-        self.core.popup(f"prefData:  {prefData}")							#	TESTING
-
-        # synthStr = SynthExrCompress["RLE"]
-
-        # self.synthEyes.BeginPref()
-        # self.synthEyes.SetPrefFromIndex(prefIdx, synthStr)
-        # self.synthEyes.AcceptPref()
-
-        # prefData = self.synthEyes.GetPrefFromIndex(prefIdx)
-        # self.core.popup(f"prefData:  {prefData}")							#	TESTING
-
-
-
-        return {}
-
+    def sm_render_preRender_stMap(self, origin, cameraName, rData):
 
         ##  DISABLED - SynthEyes does not appear to rescale the UnDistort Images  ##
         # shot = self.getShotFromCamName(cameraName)
-        # oData = {}
-        # oData["orig_renderScale"] = self.getOutputRez(shot)
-        # oData["orig_renderFilter"] = self.getOutputSampleFilter(shot)
-        # return oData
+        # rData["orig_renderScale"] = self.getOutputRez(shot)
+        # rData["orig_renderFilter"] = self.getOutputSampleFilter(shot)
+        
+        #   EXR Compression Format
+        rData["orig_exrUVMcmp"] = self.synthEyes.GetPrefFromVar("exrUVMcmp")
 
+        self.synthEyes.BeginPref()
+        self.synthEyes.SetPrefFromVar("exrUVMcmp", rData["exrUVMcmp"])
+        self.synthEyes.AcceptPref()
 
-
-    
+        return rData
 
 
     @err_catcher(name=__name__)
@@ -1686,17 +1654,16 @@ class Prism_SynthEyes_Functions(object):
         #         self.setOutputSampleFilter(shot, filterStr=rSettings["renderFilter"])
 
 
-        # with self.UNDO_BLOCK("Render StMaps"):
-        #     result = shot.Call(stFunct, *args)
+        with self.UNDO_BLOCK("Render StMaps"):
+            result = shot.Call(stFunct, *args)
   
         result = 1
         return int(result) == 1
 
 
+    #   Called after Render to Restore Original Settings
     @err_catcher(name=__name__)
-    def sm_render_postRender_stMap(self, origin, cameraName, oData):
-        pass
-
+    def sm_render_postRender_stMap(self, origin, cameraName, rData):
         ##  DISABLED - SynthEyes does not appear to rescale the UnDistort Images  ##
         # shot = self.getShotFromCamName(cameraName)
         # with self.UNDO_BLOCK("Restore Image Scale"):
@@ -1704,7 +1671,10 @@ class Prism_SynthEyes_Functions(object):
         #     self.setOutputSampleFilter(shot, filterCode=oData["orig_renderFilter"])
 
 
-
+        #   EXR Compression Format
+        self.synthEyes.BeginPref()
+        self.synthEyes.SetPrefFromVar("exrUVMcmp", rData["orig_exrUVMcmp"])
+        self.synthEyes.AcceptPref()
 
 
 
