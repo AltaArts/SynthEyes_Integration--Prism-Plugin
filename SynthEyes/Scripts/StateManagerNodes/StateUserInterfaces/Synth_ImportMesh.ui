@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>340</width>
+    <width>339</width>
     <height>600</height>
    </rect>
   </property>
@@ -310,9 +310,24 @@
       <item>
        <widget class="QGroupBox" name="gb_options">
         <property name="title">
-         <string>Options</string>
+         <string>Import:</string>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout_6"/>
+        <layout class="QVBoxLayout" name="verticalLayout_6">
+         <item>
+          <layout class="QHBoxLayout" name="f_meshName">
+           <item>
+            <widget class="QLabel" name="l_meshName">
+             <property name="text">
+              <string>Mesh Name:  </string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="e_meshName"/>
+           </item>
+          </layout>
+         </item>
+        </layout>
        </widget>
       </item>
       <item>

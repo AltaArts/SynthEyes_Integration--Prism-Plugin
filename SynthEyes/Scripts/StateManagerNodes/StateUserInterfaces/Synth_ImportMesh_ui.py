@@ -16,7 +16,7 @@ class Ui_wg_Synth_ImportMesh(object):
     def setupUi(self, wg_Synth_ImportMesh):
         if not wg_Synth_ImportMesh.objectName():
             wg_Synth_ImportMesh.setObjectName(u"wg_Synth_ImportMesh")
-        wg_Synth_ImportMesh.resize(340, 600)
+        wg_Synth_ImportMesh.resize(339, 600)
         self.verticalLayout = QVBoxLayout(wg_Synth_ImportMesh)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
@@ -167,6 +167,21 @@ class Ui_wg_Synth_ImportMesh(object):
         self.gb_options.setObjectName(u"gb_options")
         self.verticalLayout_6 = QVBoxLayout(self.gb_options)
         self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.f_meshName = QHBoxLayout()
+        self.f_meshName.setObjectName(u"f_meshName")
+        self.l_meshName = QLabel(self.gb_options)
+        self.l_meshName.setObjectName(u"l_meshName")
+
+        self.f_meshName.addWidget(self.l_meshName)
+
+        self.e_meshName = QLineEdit(self.gb_options)
+        self.e_meshName.setObjectName(u"e_meshName")
+
+        self.f_meshName.addWidget(self.e_meshName)
+
+
+        self.verticalLayout_6.addLayout(self.f_meshName)
+
 
         self.verticalLayout_2.addWidget(self.gb_options)
 
@@ -199,6 +214,7 @@ class Ui_wg_Synth_ImportMesh(object):
         self.b_browse.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"Browse", None))
         self.b_importLatest.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"Import latest Version", None))
         self.b_import.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"Re-Import", None))
-        self.gb_options.setTitle(QCoreApplication.translate("wg_Synth_ImportMesh", u"Options", None))
+        self.gb_options.setTitle(QCoreApplication.translate("wg_Synth_ImportMesh", u"Import:", None))
+        self.l_meshName.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"Mesh Name:  ", None))
     # retranslateUi
 

@@ -43,6 +43,12 @@ from qtpy.QtWidgets import *
 
 from PrismUtils.Decorators import err_catcher
 
+from Synth_Formats import (SynthExrCompress,
+                           SynthMovCodecs,
+                           SynthMP4Codecs,
+                           SynthMP4Qual,
+                           SynthSubSample,
+                           SynthInterp)
 
 logger = logging.getLogger(__name__)
 
@@ -57,34 +63,33 @@ class Synth_Render_StMapClass(object):
         self.state = state
         self.core = core
         self.stateManager = stateManager
+        self.synthFuncts = self.core.appPlugin
+
         self.canSetVersion = True
         self.customContext = None
         self.allowCustomContext = False
         self.cb_context.addItems(["From scenefile", "Custom"])
 
-        self.curCam = None
-        self.refreshCameras()
+        # self.renderingStarted = False
+        # self.cleanOutputdir = True
 
         self.e_name.setText(state.text(0) + " - {identifier}")
 
-        #   Initial State Name
-        self.l_class.setText("StMap Render")
-        self.setIdentifier("STMap")
-
-        self.mediaType = "2drenders"
-
-        self.tasknameRequired = True
-
-        self.renderPresets = (
-            self.stateManager.stateTypes["RenderSettings"].getPresets(self.core)
-            if "RenderSettings" in self.stateManager.stateTypes
-            else {}
+        self.rangeTypes = [
+            "Scene",
+            "Shot",
+            "Shot + 1",
+            "Single Frame",
+            "Custom",
+            ]
+        self.cb_rangeType.addItems(self.rangeTypes)
+        for idx, rtype in enumerate(self.rangeTypes):
+            self.cb_rangeType.setItemData(
+                idx, self.stateManager.getFrameRangeTypeToolTip(rtype), Qt.ToolTipRole
             )
-        
-        if self.renderPresets:
-            self.cb_renderPreset.addItems(self.renderPresets.keys())
-        else:
-            self.w_renderPreset.setVisible(False)
+
+        self.curCam = None
+        self.refreshCameras()
 
         self.l_name.setVisible(False)
         self.e_name.setVisible(False)
@@ -99,23 +104,35 @@ class Synth_Render_StMapClass(object):
         if len(self.product_paths) < 2:
             self.w_outPath.setVisible(False)
 
+        #   Initial State Name
+        self.l_class.setText("StMap Render")
+        self.setIdentifier("STMap")
+
+        self.mediaType = "2drenders"
+        self.tasknameRequired = True
+
         self.outputFormats = [
             ".exr",
             ".dpx",
             ".png",
             ".sgi",
-            ".tiff"
+            ".tiff",
+            ".mov",
+            "mp4"
         ]
 
         self.cb_format.addItems(self.outputFormats)
 
-        self.resolutionPresets = self.core.projects.getResolutionPresets()
-        if "Get from rendersettings" not in self.resolutionPresets:
-            self.resolutionPresets.append("Get from rendersettings")
+        self.cb_renderScale.addItems(SynthSubSample.keys())
+        self.cb_renderFilter.addItems(SynthInterp.keys())
 
-        self.chb_undistort.setChecked(True)
-        self.chb_redistort.setChecked(True)
+        ##  DISABLED - SynthEyes does not appear to rescale the UnDistort Images  ##
+        self.f_renderScale.setVisible(False)
+        self.f_renderFilter.setVisible(False)
 
+        self.setupFormatOptions()
+        self.configFormatUI()
+        self.loadDefaults()
         self.connectEvents()
 
         self.oldPalette = self.b_changeTask.palette()
@@ -123,7 +140,7 @@ class Synth_Render_StMapClass(object):
         self.warnPalette.setColor(QPalette.Button, QColor(200, 0, 0))
         self.warnPalette.setColor(QPalette.ButtonText, QColor(255, 255, 255))
 
-        # self.setTaskWarn(True)
+        self.setTaskWarn(True)
         self.nameChanged(state.text(0))
 
         self.core.callback("onStateStartup", self)
@@ -134,6 +151,22 @@ class Synth_Render_StMapClass(object):
             self.loadData(stateData)
         else:
             self.initializeContextBasedSettings()
+
+
+    @err_catcher(name=__name__)
+    def loadDefaults(self):
+        self.cb_format.setCurrentIndex(0)
+
+        idx = self.cb_exrCompression.findText("ZIP")
+        if idx != -1:
+            self.cb_exrCompression.setCurrentIndex(idx)
+
+        self.chb_scaleOverride.setChecked(False)
+        self.onScaleOvrChanged()
+
+        self.chb_undistort.setChecked(True)
+        self.chb_redistort.setChecked(True)
+
 
 
     @err_catcher(name=__name__)
@@ -179,21 +212,17 @@ class Synth_Render_StMapClass(object):
             self.e_name.setText(data["stateName"])
         elif "statename" in data:
             self.e_name.setText(data["statename"] + " - {identifier}")
-        if "renderpresetoverride" in data:
-            res = eval(data["renderpresetoverride"])
-            self.chb_renderPreset.setChecked(res)
-        if "currentrenderpreset" in data:
-            idx = self.cb_renderPreset.findText(data["currentrenderpreset"])
+        if "rangeType" in data:
+            idx = self.cb_rangeType.findText(data["rangeType"])
             if idx != -1:
-                self.cb_renderPreset.setCurrentIndex(idx)
-                self.stateManager.saveStatesToScene()
+                self.cb_rangeType.setCurrentIndex(idx)
+                self.updateRange()
+        if "startframe" in data:
+            self.sp_rangeStart.setValue(int(data["startframe"]))
+        if "endframe" in data:
+            self.sp_rangeEnd.setValue(int(data["endframe"]))
         if "currentCam" in data:
             self.curCam = data["currentCam"]
-        if "resoverride" in data:
-            res = eval(data["resoverride"])
-            self.chb_resOverride.setChecked(res[0])
-            self.sp_resWidth.setValue(res[1])
-            self.sp_resHeight.setValue(res[2])
         if "masterVersion" in data:
             idx = self.cb_master.findText(data["masterVersion"])
             if idx != -1:
@@ -202,10 +231,43 @@ class Synth_Render_StMapClass(object):
             idx = self.cb_outPath.findText(data["curoutputpath"])
             if idx != -1:
                 self.cb_outPath.setCurrentIndex(idx)
+        if "useVersionOverride" in data:
+            self.chb_version.setChecked(data["useVersionOverride"])
+        if "versionOverride" in data:
+            self.sp_version.setValue(data["versionOverride"])
         if "outputFormat" in data:
             idx = self.cb_format.findText(data["outputFormat"])
             if idx != -1:
                 self.cb_format.setCurrentIndex(idx)
+        if "scaleOvr" in data:
+            self.chb_scaleOverride.setChecked(data["scaleOvr"])
+            self.onScaleOvrChanged()
+
+        if "renderScale" in data:
+            idx = self.cb_renderScale.findText(data["renderScale"])
+            if idx != -1:
+                self.cb_renderScale.setCurrentIndex(idx)
+
+        if "renderFilter" in data:
+            idx = self.cb_renderFilter.findText(data["renderFilter"])
+            if idx != -1:
+                self.cb_renderFilter.setCurrentIndex(idx)
+        if "exrCompress" in data:
+            idx = self.cb_exrCompression.findText(data["exrCompress"])
+            if idx != -1:
+                self.cb_exrCompression.setCurrentIndex(idx)
+        if "movCodec" in data:
+            idx = self.cb_movCodec.findText(data["movCodec"])
+            if idx != -1:
+                self.cb_movCodec.setCurrentIndex(idx)
+        if "mp4Codec" in data:
+            idx = self.cb_mp4Codec.findText(data["mp4Codec"])
+            if idx != -1:
+                self.cb_mp4Codec.setCurrentIndex(idx)
+        if "mp4Qual" in data:
+            idx = self.cb_mp4Qual.findText(data["mp4Qual"])
+            if idx != -1:
+                self.cb_mp4Qual.setCurrentIndex(idx)
         if "output_undistort" in data:
             self.chb_undistort.setChecked(data["output_undistort"])
         if "output_redistort" in data:
@@ -214,10 +276,6 @@ class Synth_Render_StMapClass(object):
             renderType = (data["renderType"] == "single")
             self.rb_renderType_single.setChecked(renderType)
             self.rb_renderType_seq.setChecked( not renderType)
-        if "useVersionOverride" in data:
-            self.chb_version.setChecked(data["useVersionOverride"])
-        if "versionOverride" in data:
-            self.sp_version.setValue(data["versionOverride"])
         if "lastexportpath" in data:
             lePath = self.core.fixPath(data["lastexportpath"])
             self.l_pathLast.setText(lePath)
@@ -238,19 +296,24 @@ class Synth_Render_StMapClass(object):
         self.cb_context.activated.connect(self.onContextTypeChanged)
         self.b_context.clicked.connect(self.selectContextClicked)
         self.b_changeTask.clicked.connect(self.changeTask)
-        self.chb_renderPreset.stateChanged.connect(self.presetOverrideChanged)
-        self.cb_renderPreset.activated.connect(self.stateManager.saveStatesToScene)
+        self.cb_rangeType.activated.connect(self.rangeTypeChanged)
+        self.sp_rangeStart.editingFinished.connect(self.startChanged)
+        self.sp_rangeEnd.editingFinished.connect(self.endChanged)
         self.cb_cam.activated.connect(self.setCam)
-        self.chb_resOverride.stateChanged.connect(self.resOverrideChanged)
-        self.sp_resWidth.editingFinished.connect(self.stateManager.saveStatesToScene)
-        self.sp_resHeight.editingFinished.connect(self.stateManager.saveStatesToScene)
-        self.b_resPresets.clicked.connect(self.showResPresets)
         self.cb_master.activated.connect(self.stateManager.saveStatesToScene)
         self.cb_outPath.activated.connect(self.stateManager.saveStatesToScene)
-        self.cb_format.activated.connect(self.stateManager.saveStatesToScene)
         self.chb_version.stateChanged.connect(self.onVersionOverrideChanged)
         self.sp_version.editingFinished.connect(self.stateManager.saveStatesToScene)
         self.b_version.clicked.connect(self.onVersionOverrideClicked)
+        self.cb_format.activated.connect(self.configFormatUI)
+        self.chb_scaleOverride.clicked.connect(self.onScaleOvrChanged)
+        self.cb_renderScale.activated.connect(self.stateManager.saveStatesToScene)
+        self.cb_renderFilter.activated.connect(self.stateManager.saveStatesToScene)
+        self.cb_exrCompression.activated.connect(self.stateManager.saveStatesToScene)
+        self.cb_movCodec.activated.connect(self.configFormatUI)
+        self.cb_mp4Codec.activated.connect(self.stateManager.saveStatesToScene)
+        self.cb_mp4Qual.activated.connect(self.stateManager.saveStatesToScene)
+
         self.b_pathLast.clicked.connect(lambda: self.stateManager.showLastPathMenu(self))
 
 
@@ -330,33 +393,23 @@ class Synth_Render_StMapClass(object):
 
 
     @err_catcher(name=__name__)
-    def setCam(self, index):
-        self.curCam = self.cb_cam.currentText()
-
-        self.refreshCameras()
+    def rangeTypeChanged(self, state):
+        self.updateUi()
+        self.stateManager.saveStatesToScene()
 
 
     @err_catcher(name=__name__)
-    def refreshCameras(self):
-        self.cb_cam.clear()
-        self.camlist = []
+    def startChanged(self):
+        if self.sp_rangeStart.value() > self.sp_rangeEnd.value():
+            self.sp_rangeEnd.setValue(self.sp_rangeStart.value())
 
-        if not self.stateManager.standalone:
-            camObjs = self.core.appPlugin.getCamNodes(self, cur=True)
-            self.camlist = [self.core.appPlugin.getCamName(self, i) for i in camObjs]
+        self.stateManager.saveStatesToScene()
 
-        self.cb_cam.addItems(self.camlist)
 
-        if self.curCam in self.camlist:
-            idx = self.cb_cam.findText(self.curCam)
-            if idx != -1:
-                self.cb_cam.setCurrentIndex(idx)
-        else:
-            self.cb_cam.setCurrentIndex(0)
-            if len(self.camlist) > 0:
-                self.curCam = self.camlist[0]
-            else:
-                self.curCam = None
+    @err_catcher(name=__name__)
+    def endChanged(self):
+        if self.sp_rangeEnd.value() < self.sp_rangeStart.value():
+            self.sp_rangeStart.setValue(self.sp_rangeEnd.value())
 
         self.stateManager.saveStatesToScene()
 
@@ -398,7 +451,7 @@ class Synth_Render_StMapClass(object):
 
     @err_catcher(name=__name__)
     def getFormat(self):
-        self.cb_format.currentText()
+        return self.cb_format.currentText()
 
 
     @err_catcher(name=__name__)
@@ -410,6 +463,83 @@ class Synth_Render_StMapClass(object):
             return True
 
         return False
+
+
+    #   Populate Various Format Combos
+    @err_catcher(name=__name__)
+    def setupFormatOptions(self):
+        exrCompress = SynthExrCompress.keys()
+        self.cb_exrCompression.addItems(exrCompress)
+
+        movCodecs = SynthMovCodecs.keys()
+        self.cb_movCodec.addItems(movCodecs)
+
+        mp4Codecs = SynthMP4Codecs.keys()
+        self.cb_mp4Codec.addItems(mp4Codecs)
+
+        mp4Qual = SynthMP4Qual.keys()
+        self.cb_mp4Qual.addItems(mp4Qual)
+
+
+    #   Show/Hide Format UI
+    @err_catcher(name=__name__)
+    def configFormatUI(self, format=None):
+        ##  Option Widgets
+        #   Hide All Codec Option Widgets
+        for w in self.findChildren(QWidget):
+            if w.objectName().startswith("f_codecOptions_"):
+                w.hide()
+
+        #   Find Widget Name for Format
+        format = self.cb_format.currentText()
+
+        if format in self.core.media.videoFormats:
+            isVid = True
+        else:
+            isVid = False
+
+        fmt = format.upper().replace(".", "")
+        targetWidget = f"f_codecOptions_{fmt}"
+
+        #   Show the Matching Format Widget
+        widget = getattr(self, targetWidget, None)
+        if widget:
+            widget.show()
+
+
+        self.rb_renderType_seq.setChecked(isVid)
+        self.rb_renderType_single.setEnabled(not isVid)
+
+
+        self.stateManager.saveStatesToScene
+
+
+    #   Returns Dict of format Options Based on Selected format
+    @err_catcher(name=__name__)
+    def getFormatOptions(self):
+        fmt = self.getFormat().lower()
+
+        if fmt == ".exr":
+            return {"exrCompress": self.cb_exrCompression.currentText()}
+        
+        elif fmt == ".mov":
+            return {"movCodec": self.cb_movCodec.currentText()}
+        
+        elif fmt == ".mp4":
+            return {"mp4Codec": self.cb_mp4Codec.currentText(),
+                    "mp4Qual": self.cb_mp4Qual.currentText()}
+        else:
+            return {}
+        
+
+    @err_catcher(name=__name__)
+    def onScaleOvrChanged(self, checked=None):
+        enabled = self.chb_scaleOverride.isChecked()
+
+        self.cb_renderScale.setEnabled(enabled)
+        self.cb_renderFilter.setEnabled(enabled)
+
+        self.stateManager.saveStatesToScene
 
 
     @err_catcher(name=__name__)
@@ -481,45 +611,6 @@ class Synth_Render_StMapClass(object):
 
 
     @err_catcher(name=__name__)
-    def presetOverrideChanged(self, checked):
-        self.cb_renderPreset.setEnabled(checked)
-        self.stateManager.saveStatesToScene()
-
-
-    @err_catcher(name=__name__)
-    def resOverrideChanged(self, checked):
-        self.sp_resWidth.setEnabled(checked)
-        self.sp_resHeight.setEnabled(checked)
-        self.b_resPresets.setEnabled(checked)
-
-        self.stateManager.saveStatesToScene()
-
-
-    @err_catcher(name=__name__)
-    def showResPresets(self):
-        pmenu = QMenu(self)
-
-        for preset in self.resolutionPresets:
-            pAct = QAction(preset, self)
-            res = self.getResolution(preset)
-            if not res:
-                continue
-
-            pwidth, pheight = res
-
-            pAct.triggered.connect(
-                lambda x=None, v=pwidth: self.sp_resWidth.setValue(v)
-            )
-            pAct.triggered.connect(
-                lambda x=None, v=pheight: self.sp_resHeight.setValue(v)
-            )
-            pAct.triggered.connect(lambda: self.stateManager.saveStatesToScene())
-            pmenu.addAction(pAct)
-
-        pmenu.exec_(QCursor.pos())
-
-
-    @err_catcher(name=__name__)
     def onVersionOverrideChanged(self, checked):
         self.sp_version.setEnabled(checked)
         self.sp_version.lineEdit().setHidden(not checked)
@@ -557,6 +648,17 @@ class Synth_Render_StMapClass(object):
             pmenu.exec_(QCursor.pos())
         else:
             self.core.popup("No versions exists in the current context.", severity="info")
+
+
+    @err_catcher(name=__name__)
+    def setRangeType(self, rangeType):
+        idx = self.cb_rangeType.findText(rangeType)
+        if idx != -1:
+            self.cb_rangeType.setCurrentIndex(idx)
+            self.updateRange()
+            return True
+
+        return False
 
 
     @err_catcher(name=__name__)
@@ -616,15 +718,48 @@ class Synth_Render_StMapClass(object):
 
 
     @err_catcher(name=__name__)
+    def setCam(self, cameraIdx): 
+        self.curCam = self.cb_cam.currentText()
+
+        self.refreshCameras()
+
+
+    @err_catcher(name=__name__)
+    def refreshCameras(self):
+        self.cb_cam.clear()
+        self.camlist = []
+
+        if not self.stateManager.standalone:
+            camObjs = self.core.appPlugin.getCamNodes(self, cur=True)
+            self.camlist = [self.core.appPlugin.getCamName(self, i) for i in camObjs]
+
+        self.cb_cam.addItems(self.camlist)
+
+        if self.curCam in self.camlist:
+            idx = self.cb_cam.findText(self.curCam)
+            if idx != -1:
+                self.cb_cam.setCurrentIndex(idx)
+        else:
+            self.cb_cam.setCurrentIndex(0)
+            if len(self.camlist) > 0:
+                self.curCam = self.camlist[0]
+            else:
+                self.curCam = None
+
+        self.stateManager.saveStatesToScene()
+
+
+    @err_catcher(name=__name__)
     def updateUi(self):
         self.w_context.setHidden(not self.allowCustomContext)
         self.w_comment.setHidden(not self.stateManager.useStateComments())
-
+ 
         if not self.core.mediaProducts.getUseMaster():
             self.w_master.setVisible(False)
-            
+
         self.refreshContext()
         self.refreshCameras()
+        self.updateRange()
 
         self.nameChanged(self.e_name.text())
         getattr(self.core.appPlugin, "sm_render_updateUi", lambda x: None)(self)
@@ -658,6 +793,24 @@ class Synth_Render_StMapClass(object):
             del context["user"]
 
         return context
+
+
+    @err_catcher(name=__name__)
+    def updateRange(self):
+        rangeType = self.cb_rangeType.currentText()
+        isCustom = rangeType == "Custom"
+        self.l_rangeStart.setVisible(not isCustom)
+        self.l_rangeEnd.setVisible(not isCustom)
+        self.sp_rangeStart.setVisible(isCustom)
+        self.sp_rangeEnd.setVisible(isCustom)
+        self.w_frameRangeValues.setVisible(True)
+
+        if not isCustom:
+            frange = self.getFrameRange(rangeType=rangeType)
+            start = str(int(frange[0])) if frange[0] is not None else "-"
+            end = str(int(frange[1])) if frange[1] is not None else "-"
+            self.l_rangeStart.setText(start)
+            self.l_rangeEnd.setText(end)
 
 
     #   Return STMap Render Type (single or image sequence)
@@ -706,13 +859,13 @@ class Synth_Render_StMapClass(object):
 
         rData["currentCam"] = self.cb_cam.currentText()
 
-        # rangeType = self.cb_rangeType.currentText()
-        # startFrame, endFrame = self.getFrameRange(rangeType)
+        rangeType = self.cb_rangeType.currentText()
+        startFrame, endFrame = self.getFrameRange(rangeType)
 
-        # if startFrame is None:
-        #     warnings.append(["Framerange is invalid.", "", 3])
+        if startFrame is None:
+            warnings.append(["Framerange is invalid.", "", 3])
 
-        # warnings += self.core.appPlugin.sm_render_stMap_preSubmit(self, rData)
+        warnings += self.core.appPlugin.sm_render_stMap_preSubmit(self, rData)
 
         return [self.state.text(0), warnings]
 
@@ -722,20 +875,20 @@ class Synth_Render_StMapClass(object):
         if self.tasknameRequired and not identifier:
             return
 
-        extension = self.cb_format.currentText()
         context = self.getCurrentContext()
 
         if "type" not in context:
             return
+        
+        extension = self.cb_format.currentText()
 
-        if rangeType == "sequence":
+        if rangeType == "sequence" and extension not in self.core.media.videoFormats:
             singleFrame = False
-            framePadding = "#" * self.core.framePadding
+            framePadding = ("#" * self.core.framePadding)
         else:
             singleFrame = True
             framePadding = ""
 
-            
         location = self.cb_outPath.currentText()
 
         if self.chb_version.isChecked():
@@ -778,10 +931,21 @@ class Synth_Render_StMapClass(object):
 
     @err_catcher(name=__name__)
     def executeState(self, parent, useVersion="next"):
+        rangeType = self.cb_rangeType.currentText()
+        frames = self.getFrameRange(rangeType)
+        startFrame = frames[0]
+        endFrame = frames[1]
+
+        if frames is None or frames == [] or frames[0] is None:
+            return [self.state.text(0) + ": error - Framerange is invalid"]
+
+        if rangeType == "Single Frame":
+            endFrame = startFrame
+
+
         fileName = self.core.getCurrentFileName()
         context = self.getCurrentContext()
         ident_base = self.getIdentifier()
-
 
         idfs = {}
         if self.chb_undistort.isChecked():
@@ -807,11 +971,23 @@ class Synth_Render_StMapClass(object):
 
         errors = []
 
+        ##  DISABLED - SynthEyes does not appear to rescale the UnDistort Images  ##
+        #   Capture Current Settings
+        oData = self.synthFuncts.sm_render_preRender_stMap(self, self.cb_cam.currentText())
+
         for stType in idfs.keys():
             stName = idfs[stType]
 
             outputName, outputPath, hVersion = self.getOutputName(useVersion="next", identifier=stName, rangeType=rangeType)
             expandedOutputPath = self.expandvars(outputPath)
+
+            #   Change Prism "###"'s to ".001"'s
+            extension = self.cb_format.currentText().lower()
+            if extension not in self.core.media.videoFormats:
+                paddingNum = self.core.framePadding
+                framePadding = "#" * paddingNum
+                paddedFrame = str(startFrame).zfill(paddingNum)
+                outputName = outputName.replace(framePadding, paddedFrame)
 
             outLength = len(expandedOutputPath)
             if platform.system() == "Windows" and os.getenv("PRISM_IGNORE_PATH_LENGTH") != "1" and outLength > 255:
@@ -838,12 +1014,21 @@ class Synth_Render_StMapClass(object):
                 "endFrame": frame_end,
                 "frames": frames,
                 "identifier": stName,
-                "currentCam": self.cb_cam.currentText()
+                "currentCam": self.cb_cam.currentText(),
+                "format": extension,
+                "scaleOverride": False,
+                # "scaleOverride": self.chb_scaleOverride.isChecked(),  # DISABLED
+                "renderScale": self.cb_renderScale.currentText(),
+                "renderFilter": self.cb_renderFilter.currentText(),
                 }
+            
+            #   Add Format Specific Options
+            rSettings.update(self.getFormatOptions())
             
             self.l_pathLast.setText(rSettings["outputName"])
             self.l_pathLast.setToolTip(rSettings["outputName"])
 
+        #   Execute Render
             result = self.core.appPlugin.sm_render_stMap(self, stType, rangeType, rSettings["outputName"], rSettings, context)
 
             if result:
@@ -874,6 +1059,10 @@ class Synth_Render_StMapClass(object):
                     errors.append(f"{stName}: Master Error")
             else:
                 errors.append(f"{stName}: Render Error")
+
+        ##  DISABLED - SynthEyes does not appear to rescale the UnDistort Images  ##
+        #   Restore Settings
+        # self.synthFuncts.sm_render_postRender_stMap(self, self.cb_cam.currentText(), oData)
 
         if not errors:
             kwargs = {
@@ -964,24 +1153,25 @@ class Synth_Render_StMapClass(object):
             "contextType": self.getContextType(),
             "customContext": self.customContext,
             "identifier": self.getIdentifier(),
-            "renderpresetoverride": str(self.chb_renderPreset.isChecked()),
-            "currentrenderpreset": self.cb_renderPreset.currentText(),
-            "currentcam": self.cb_cam.currentText(),
-            "resoverride": str(
-                [
-                    self.chb_resOverride.isChecked(),
-                    self.sp_resWidth.value(),
-                    self.sp_resHeight.value(),
-                ]
-            ),
+            "rangeType": str(self.cb_rangeType.currentText()),
+            "startframe": self.sp_rangeStart.value(),
+            "endframe": self.sp_rangeEnd.value(),
+            "currentCam": self.cb_cam.currentText(),
             "masterVersion": self.cb_master.currentText(),
             "curoutputpath": self.cb_outPath.currentText(),
+            "useVersionOverride": self.chb_version.isChecked(),
+            "versionOverride": self.sp_version.value(),
             "outputFormat": str(self.cb_format.currentText()),
+            "scaleOvr": self.chb_scaleOverride.isChecked(),
+            "renderScale": self.cb_renderScale.currentText(),
+            "renderFilter": self.cb_renderFilter.currentText(),
+            "exrCompress": self.cb_exrCompression.currentText(),
+            "movCodec": self.cb_movCodec.currentText(),
+            "mp4Codec": self.cb_mp4Codec.currentText(),
+            "mp4Qual": self.cb_mp4Qual.currentText(),
             "output_undistort": self.chb_undistort.isChecked(),
             "output_redistort": self.chb_redistort.isChecked(),
             "renderType": ("single" if self.rb_renderType_single.isChecked() else "sequence"),
-            "useVersionOverride": self.chb_version.isChecked(),
-            "versionOverride": self.sp_version.value(),
             "lastexportpath": self.l_pathLast.text().replace("\\", "/"),
             "stateenabled": self.core.getCheckStateValue(self.state.checkState(0)),
             }

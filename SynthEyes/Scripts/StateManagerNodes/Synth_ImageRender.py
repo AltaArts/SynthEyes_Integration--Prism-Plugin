@@ -33,7 +33,6 @@
 
 
 import os
-import sys
 import time
 import platform
 import logging
@@ -73,8 +72,8 @@ class Synth_ImageRenderClass(object):
         self.allowCustomContext = False
         self.cb_context.addItems(["From scenefile", "Custom"])
 
-        self.renderingStarted = False
-        self.cleanOutputdir = True
+        # self.renderingStarted = False
+        # self.cleanOutputdir = True
 
         self.e_name.setText(state.text(0) + " - {identifier}")
 
@@ -123,7 +122,6 @@ class Synth_ImageRenderClass(object):
 
         self.setupFormatOptions()
         self.configFormatUI()
-
         self.loadDefaults()
         self.connectEvents()
 
@@ -610,45 +608,6 @@ class Synth_ImageRenderClass(object):
             self.stateManager.saveStatesToScene()
 
 
-    # @err_catcher(name=__name__)
-    # def presetOverrideChanged(self, checked):
-    #     self.cb_renderPreset.setEnabled(checked)
-    #     self.stateManager.saveStatesToScene()
-
-
-    # @err_catcher(name=__name__)
-    # def resOverrideChanged(self, checked):
-    #     self.sp_resWidth.setEnabled(checked)
-    #     self.sp_resHeight.setEnabled(checked)
-    #     self.b_resPresets.setEnabled(checked)
-
-    #     self.stateManager.saveStatesToScene()
-
-
-    # @err_catcher(name=__name__)
-    # def showResPresets(self):
-    #     pmenu = QMenu(self)
-
-    #     for preset in self.resolutionPresets:
-    #         pAct = QAction(preset, self)
-    #         res = self.getResolution(preset)
-    #         if not res:
-    #             continue
-
-    #         pwidth, pheight = res
-
-    #         pAct.triggered.connect(
-    #             lambda x=None, v=pwidth: self.sp_resWidth.setValue(v)
-    #         )
-    #         pAct.triggered.connect(
-    #             lambda x=None, v=pheight: self.sp_resHeight.setValue(v)
-    #         )
-    #         pAct.triggered.connect(lambda: self.stateManager.saveStatesToScene())
-    #         pmenu.addAction(pAct)
-
-    #     pmenu.exec_(QCursor.pos())
-
-
     @err_catcher(name=__name__)
     def onVersionOverrideChanged(self, checked):
         self.sp_version.setEnabled(checked)
@@ -688,10 +647,6 @@ class Synth_ImageRenderClass(object):
         else:
             self.core.popup("No versions exists in the current context.", severity="info")
 
-
-    @err_catcher(name=__name__)
-    def getRangeType(self):
-        return self.cb_rangeType.currentText()
 
 
     @err_catcher(name=__name__)
@@ -857,7 +812,7 @@ class Synth_ImageRenderClass(object):
             self.l_rangeEnd.setText(end)
 
 
-    @err_catcher(name=__name__)
+    @err_catcher(name=__name__)                     #   TODO
     def getFrameRange(self, rangeType):
         startFrame = None
         endFrame = None
@@ -1017,7 +972,6 @@ class Synth_ImageRenderClass(object):
 
         fileName = self.core.getCurrentFileName()
         context = self.getCurrentContext()
-
         idf = self.getIdentifier()
 
         outputName, outputPath, hVersion = self.getOutputName(useVersion="next", identifier=idf)
@@ -1212,13 +1166,9 @@ class Synth_ImageRenderClass(object):
             "useVersionOverride": self.chb_version.isChecked(),
             "versionOverride": self.sp_version.value(),
             "outputFormat": self.getFormat(),
-
             "scaleOvr": self.chb_scaleOverride.isChecked(),
-
             "renderScale": self.cb_renderScale.currentText(),
-
             "renderFilter": self.cb_renderFilter.currentText(),
-
             "exrCompress": self.cb_exrCompression.currentText(),
             "movCodec": self.cb_movCodec.currentText(),
             "mp4Codec": self.cb_mp4Codec.currentText(),

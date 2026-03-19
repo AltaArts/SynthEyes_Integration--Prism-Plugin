@@ -16,7 +16,7 @@ class Ui_wg_Synth_Render_StMap(object):
     def setupUi(self, wg_Synth_Render_StMap):
         if not wg_Synth_Render_StMap.objectName():
             wg_Synth_Render_StMap.setObjectName(u"wg_Synth_Render_StMap")
-        wg_Synth_Render_StMap.resize(400, 657)
+        wg_Synth_Render_StMap.resize(427, 884)
         self.verticalLayout = QVBoxLayout(wg_Synth_Render_StMap)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 9, 0, 9)
@@ -142,133 +142,74 @@ class Ui_wg_Synth_Render_StMap(object):
 
         self.verticalLayout_2.addWidget(self.f_taskname)
 
-        self.w_format = QWidget(self.gb_imageRender)
-        self.w_format.setObjectName(u"w_format")
-        self.horizontalLayout_6 = QHBoxLayout(self.w_format)
-        self.horizontalLayout_6.setSpacing(0)
-        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
-        self.horizontalLayout_6.setContentsMargins(9, 0, 9, 0)
-        self.l_format = QLabel(self.w_format)
-        self.l_format.setObjectName(u"l_format")
+        self.f_frame = QWidget(self.gb_imageRender)
+        self.f_frame.setObjectName(u"f_frame")
+        self.f_range = QHBoxLayout(self.f_frame)
+        self.f_range.setObjectName(u"f_range")
+        self.f_range.setContentsMargins(9, -1, 9, -1)
+        self.l_framerange = QLabel(self.f_frame)
+        self.l_framerange.setObjectName(u"l_framerange")
 
-        self.horizontalLayout_6.addWidget(self.l_format)
+        self.f_range.addWidget(self.l_framerange)
 
-        self.horizontalSpacer_12 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.horizontalSpacer_16 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.horizontalLayout_6.addItem(self.horizontalSpacer_12)
+        self.f_range.addItem(self.horizontalSpacer_16)
 
-        self.cb_format = QComboBox(self.w_format)
-        self.cb_format.setObjectName(u"cb_format")
-        self.cb_format.setMinimumSize(QSize(150, 0))
+        self.cb_rangeType = QComboBox(self.f_frame)
+        self.cb_rangeType.setObjectName(u"cb_rangeType")
+        self.cb_rangeType.setMinimumSize(QSize(150, 0))
 
-        self.horizontalLayout_6.addWidget(self.cb_format)
-
-
-        self.verticalLayout_2.addWidget(self.w_format)
-
-        self.f_cam = QWidget(self.gb_imageRender)
-        self.f_cam.setObjectName(u"f_cam")
-        self.horizontalLayout_2 = QHBoxLayout(self.f_cam)
-        self.horizontalLayout_2.setSpacing(0)
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.horizontalLayout_2.setContentsMargins(9, 0, 9, 0)
-        self.l_camera = QLabel(self.f_cam)
-        self.l_camera.setObjectName(u"l_camera")
-
-        self.horizontalLayout_2.addWidget(self.l_camera)
-
-        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_2.addItem(self.horizontalSpacer)
-
-        self.cb_cam = QComboBox(self.f_cam)
-        self.cb_cam.setObjectName(u"cb_cam")
-        self.cb_cam.setMinimumSize(QSize(150, 0))
-
-        self.horizontalLayout_2.addWidget(self.cb_cam)
+        self.f_range.addWidget(self.cb_rangeType)
 
 
-        self.verticalLayout_2.addWidget(self.f_cam)
+        self.verticalLayout_2.addWidget(self.f_frame)
 
-        self.f_resolution = QWidget(self.gb_imageRender)
-        self.f_resolution.setObjectName(u"f_resolution")
-        self.horizontalLayout_9 = QHBoxLayout(self.f_resolution)
-        self.horizontalLayout_9.setSpacing(6)
-        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
-        self.horizontalLayout_9.setContentsMargins(9, 0, 9, 0)
-        self.l_rezOverride = QLabel(self.f_resolution)
-        self.l_rezOverride.setObjectName(u"l_rezOverride")
-        self.l_rezOverride.setEnabled(True)
+        self.w_frameRangeValues = QWidget(self.gb_imageRender)
+        self.w_frameRangeValues.setObjectName(u"w_frameRangeValues")
+        self.gridLayout = QGridLayout(self.w_frameRangeValues)
+        self.gridLayout.setObjectName(u"gridLayout")
+        self.gridLayout.setContentsMargins(9, -1, 9, -1)
+        self.l_rangeStart = QLabel(self.w_frameRangeValues)
+        self.l_rangeStart.setObjectName(u"l_rangeStart")
 
-        self.horizontalLayout_9.addWidget(self.l_rezOverride)
+        self.gridLayout.addWidget(self.l_rangeStart, 0, 2, 1, 1)
 
-        self.horizontalSpacer_9 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.sp_rangeStart = QSpinBox(self.w_frameRangeValues)
+        self.sp_rangeStart.setObjectName(u"sp_rangeStart")
+        self.sp_rangeStart.setMaximum(99999)
+        self.sp_rangeStart.setValue(1000)
 
-        self.horizontalLayout_9.addItem(self.horizontalSpacer_9)
+        self.gridLayout.addWidget(self.sp_rangeStart, 0, 3, 1, 1)
 
-        self.chb_resOverride = QCheckBox(self.f_resolution)
-        self.chb_resOverride.setObjectName(u"chb_resOverride")
+        self.l_end = QLabel(self.w_frameRangeValues)
+        self.l_end.setObjectName(u"l_end")
 
-        self.horizontalLayout_9.addWidget(self.chb_resOverride)
+        self.gridLayout.addWidget(self.l_end, 1, 0, 1, 1)
 
-        self.sp_resWidth = QSpinBox(self.f_resolution)
-        self.sp_resWidth.setObjectName(u"sp_resWidth")
-        self.sp_resWidth.setEnabled(False)
-        self.sp_resWidth.setMinimum(1)
-        self.sp_resWidth.setMaximum(99999)
-        self.sp_resWidth.setValue(1280)
+        self.sp_rangeEnd = QSpinBox(self.w_frameRangeValues)
+        self.sp_rangeEnd.setObjectName(u"sp_rangeEnd")
+        self.sp_rangeEnd.setMaximum(99999)
+        self.sp_rangeEnd.setValue(1001)
 
-        self.horizontalLayout_9.addWidget(self.sp_resWidth)
+        self.gridLayout.addWidget(self.sp_rangeEnd, 1, 3, 1, 1)
 
-        self.sp_resHeight = QSpinBox(self.f_resolution)
-        self.sp_resHeight.setObjectName(u"sp_resHeight")
-        self.sp_resHeight.setEnabled(False)
-        self.sp_resHeight.setMinimum(1)
-        self.sp_resHeight.setMaximum(99999)
-        self.sp_resHeight.setValue(720)
+        self.l_rangeEnd = QLabel(self.w_frameRangeValues)
+        self.l_rangeEnd.setObjectName(u"l_rangeEnd")
 
-        self.horizontalLayout_9.addWidget(self.sp_resHeight)
+        self.gridLayout.addWidget(self.l_rangeEnd, 1, 2, 1, 1)
 
-        self.b_resPresets = QPushButton(self.f_resolution)
-        self.b_resPresets.setObjectName(u"b_resPresets")
-        self.b_resPresets.setEnabled(False)
-        self.b_resPresets.setMinimumSize(QSize(23, 23))
-        self.b_resPresets.setMaximumSize(QSize(23, 23))
-        self.b_resPresets.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.l_start = QLabel(self.w_frameRangeValues)
+        self.l_start.setObjectName(u"l_start")
 
-        self.horizontalLayout_9.addWidget(self.b_resPresets)
+        self.gridLayout.addWidget(self.l_start, 0, 0, 1, 1)
+
+        self.horizontalSpacer_17 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout.addItem(self.horizontalSpacer_17, 0, 1, 1, 1)
 
 
-        self.verticalLayout_2.addWidget(self.f_resolution)
-
-        self.w_renderPreset = QWidget(self.gb_imageRender)
-        self.w_renderPreset.setObjectName(u"w_renderPreset")
-        self.horizontalLayout_14 = QHBoxLayout(self.w_renderPreset)
-        self.horizontalLayout_14.setObjectName(u"horizontalLayout_14")
-        self.horizontalLayout_14.setContentsMargins(-1, 0, -1, 0)
-        self.l_renderPreset = QLabel(self.w_renderPreset)
-        self.l_renderPreset.setObjectName(u"l_renderPreset")
-
-        self.horizontalLayout_14.addWidget(self.l_renderPreset)
-
-        self.horizontalSpacer_7 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_14.addItem(self.horizontalSpacer_7)
-
-        self.chb_renderPreset = QCheckBox(self.w_renderPreset)
-        self.chb_renderPreset.setObjectName(u"chb_renderPreset")
-
-        self.horizontalLayout_14.addWidget(self.chb_renderPreset)
-
-        self.cb_renderPreset = QComboBox(self.w_renderPreset)
-        self.cb_renderPreset.setObjectName(u"cb_renderPreset")
-        self.cb_renderPreset.setEnabled(False)
-        self.cb_renderPreset.setMinimumSize(QSize(150, 0))
-
-        self.horizontalLayout_14.addWidget(self.cb_renderPreset)
-
-
-        self.verticalLayout_2.addWidget(self.w_renderPreset)
+        self.verticalLayout_2.addWidget(self.w_frameRangeValues)
 
         self.w_master = QWidget(self.gb_imageRender)
         self.w_master.setObjectName(u"w_master")
@@ -276,10 +217,10 @@ class Ui_wg_Synth_Render_StMap(object):
         self.horizontalLayout_17.setSpacing(0)
         self.horizontalLayout_17.setObjectName(u"horizontalLayout_17")
         self.horizontalLayout_17.setContentsMargins(9, 0, 9, 0)
-        self.l_outPath_2 = QLabel(self.w_master)
-        self.l_outPath_2.setObjectName(u"l_outPath_2")
+        self.l_master = QLabel(self.w_master)
+        self.l_master.setObjectName(u"l_master")
 
-        self.horizontalLayout_17.addWidget(self.l_outPath_2)
+        self.horizontalLayout_17.addWidget(self.l_master)
 
         self.horizontalSpacer_28 = QSpacerItem(113, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
@@ -362,55 +303,229 @@ class Ui_wg_Synth_Render_StMap(object):
 
         self.verticalLayout.addWidget(self.gb_imageRender)
 
-        self.gb_mapTypes = QGroupBox(wg_Synth_Render_StMap)
-        self.gb_mapTypes.setObjectName(u"gb_mapTypes")
-        self.verticalLayout_5 = QVBoxLayout(self.gb_mapTypes)
-        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
-        self.verticalLayout_5.setContentsMargins(9, 9, 9, 9)
-        self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.horizontalLayout.setContentsMargins(9, -1, 9, -1)
-        self.horizontalSpacer_11 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout.addItem(self.horizontalSpacer_11)
-
-        self.chb_undistort = QCheckBox(self.gb_mapTypes)
-        self.chb_undistort.setObjectName(u"chb_undistort")
-
-        self.horizontalLayout.addWidget(self.chb_undistort)
-
-        self.horizontalSpacer_14 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout.addItem(self.horizontalSpacer_14)
-
-        self.chb_redistort = QCheckBox(self.gb_mapTypes)
-        self.chb_redistort.setObjectName(u"chb_redistort")
-
-        self.horizontalLayout.addWidget(self.chb_redistort)
-
-        self.horizontalSpacer_13 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout.addItem(self.horizontalSpacer_13)
-
-
-        self.verticalLayout_5.addLayout(self.horizontalLayout)
-
-
-        self.verticalLayout.addWidget(self.gb_mapTypes)
-
-        self.gb_outputTypes = QGroupBox(wg_Synth_Render_StMap)
-        self.gb_outputTypes.setObjectName(u"gb_outputTypes")
-        self.verticalLayout_14 = QVBoxLayout(self.gb_outputTypes)
+        self.gb_options = QGroupBox(wg_Synth_Render_StMap)
+        self.gb_options.setObjectName(u"gb_options")
+        self.verticalLayout_14 = QVBoxLayout(self.gb_options)
         self.verticalLayout_14.setObjectName(u"verticalLayout_14")
         self.verticalLayout_14.setContentsMargins(9, 9, 9, 9)
-        self.horizontalLayout_3 = QHBoxLayout()
+        self.f_cam = QWidget(self.gb_options)
+        self.f_cam.setObjectName(u"f_cam")
+        self.horizontalLayout_2 = QHBoxLayout(self.f_cam)
+        self.horizontalLayout_2.setSpacing(0)
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.horizontalLayout_2.setContentsMargins(9, 0, 9, 0)
+        self.l_camera = QLabel(self.f_cam)
+        self.l_camera.setObjectName(u"l_camera")
+
+        self.horizontalLayout_2.addWidget(self.l_camera)
+
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_2.addItem(self.horizontalSpacer)
+
+        self.cb_cam = QComboBox(self.f_cam)
+        self.cb_cam.setObjectName(u"cb_cam")
+        self.cb_cam.setMinimumSize(QSize(150, 0))
+
+        self.horizontalLayout_2.addWidget(self.cb_cam)
+
+
+        self.verticalLayout_14.addWidget(self.f_cam)
+
+        self.f_renderScale = QWidget(self.gb_options)
+        self.f_renderScale.setObjectName(u"f_renderScale")
+        self.horizontalLayout_14 = QHBoxLayout(self.f_renderScale)
+        self.horizontalLayout_14.setObjectName(u"horizontalLayout_14")
+        self.horizontalLayout_14.setContentsMargins(-1, 0, -1, 0)
+        self.l_renderScale = QLabel(self.f_renderScale)
+        self.l_renderScale.setObjectName(u"l_renderScale")
+
+        self.horizontalLayout_14.addWidget(self.l_renderScale)
+
+        self.horizontalSpacer_7 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_14.addItem(self.horizontalSpacer_7)
+
+        self.chb_scaleOverride = QCheckBox(self.f_renderScale)
+        self.chb_scaleOverride.setObjectName(u"chb_scaleOverride")
+
+        self.horizontalLayout_14.addWidget(self.chb_scaleOverride)
+
+        self.horizontalSpacer_9 = QSpacerItem(10, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_14.addItem(self.horizontalSpacer_9)
+
+        self.cb_renderScale = QComboBox(self.f_renderScale)
+        self.cb_renderScale.setObjectName(u"cb_renderScale")
+        self.cb_renderScale.setEnabled(False)
+        self.cb_renderScale.setMinimumSize(QSize(150, 0))
+
+        self.horizontalLayout_14.addWidget(self.cb_renderScale)
+
+
+        self.verticalLayout_14.addWidget(self.f_renderScale)
+
+        self.f_renderFilter = QWidget(self.gb_options)
+        self.f_renderFilter.setObjectName(u"f_renderFilter")
+        self.horizontalLayout_15 = QHBoxLayout(self.f_renderFilter)
+        self.horizontalLayout_15.setObjectName(u"horizontalLayout_15")
+        self.horizontalLayout_15.setContentsMargins(-1, 0, -1, 0)
+        self.l_renderFilter = QLabel(self.f_renderFilter)
+        self.l_renderFilter.setObjectName(u"l_renderFilter")
+
+        self.horizontalLayout_15.addWidget(self.l_renderFilter)
+
+        self.horizontalSpacer_15 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_15.addItem(self.horizontalSpacer_15)
+
+        self.cb_renderFilter = QComboBox(self.f_renderFilter)
+        self.cb_renderFilter.setObjectName(u"cb_renderFilter")
+        self.cb_renderFilter.setEnabled(False)
+        self.cb_renderFilter.setMinimumSize(QSize(150, 0))
+
+        self.horizontalLayout_15.addWidget(self.cb_renderFilter)
+
+
+        self.verticalLayout_14.addWidget(self.f_renderFilter)
+
+        self.verticalSpacer = QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+
+        self.verticalLayout_14.addItem(self.verticalSpacer)
+
+        self.w_format = QWidget(self.gb_options)
+        self.w_format.setObjectName(u"w_format")
+        self.horizontalLayout_6 = QHBoxLayout(self.w_format)
+        self.horizontalLayout_6.setSpacing(0)
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.horizontalLayout_6.setContentsMargins(9, 0, 9, 0)
+        self.l_format = QLabel(self.w_format)
+        self.l_format.setObjectName(u"l_format")
+
+        self.horizontalLayout_6.addWidget(self.l_format)
+
+        self.horizontalSpacer_12 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_6.addItem(self.horizontalSpacer_12)
+
+        self.cb_format = QComboBox(self.w_format)
+        self.cb_format.setObjectName(u"cb_format")
+        self.cb_format.setMinimumSize(QSize(150, 0))
+
+        self.horizontalLayout_6.addWidget(self.cb_format)
+
+
+        self.verticalLayout_14.addWidget(self.w_format)
+
+        self.f_codecOptions_EXR = QWidget(self.gb_options)
+        self.f_codecOptions_EXR.setObjectName(u"f_codecOptions_EXR")
+        self.horizontalLayout_5 = QHBoxLayout(self.f_codecOptions_EXR)
+        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
+        self.horizontalLayout_5.setContentsMargins(9, -1, 9, -1)
+        self.l_exr_Compression = QLabel(self.f_codecOptions_EXR)
+        self.l_exr_Compression.setObjectName(u"l_exr_Compression")
+
+        self.horizontalLayout_5.addWidget(self.l_exr_Compression)
+
+        self.horizontalSpacer_18 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_5.addItem(self.horizontalSpacer_18)
+
+        self.cb_exrCompression = QComboBox(self.f_codecOptions_EXR)
+        self.cb_exrCompression.setObjectName(u"cb_exrCompression")
+        self.cb_exrCompression.setMinimumSize(QSize(150, 0))
+
+        self.horizontalLayout_5.addWidget(self.cb_exrCompression)
+
+
+        self.verticalLayout_14.addWidget(self.f_codecOptions_EXR)
+
+        self.f_codecOptions_MOV = QWidget(self.gb_options)
+        self.f_codecOptions_MOV.setObjectName(u"f_codecOptions_MOV")
+        self.horizontalLayout_7 = QHBoxLayout(self.f_codecOptions_MOV)
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.horizontalLayout_7.setContentsMargins(9, -1, 9, -1)
+        self.l_movCodec = QLabel(self.f_codecOptions_MOV)
+        self.l_movCodec.setObjectName(u"l_movCodec")
+
+        self.horizontalLayout_7.addWidget(self.l_movCodec)
+
+        self.horizontalSpacer_19 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_7.addItem(self.horizontalSpacer_19)
+
+        self.cb_movCodec = QComboBox(self.f_codecOptions_MOV)
+        self.cb_movCodec.setObjectName(u"cb_movCodec")
+        self.cb_movCodec.setMinimumSize(QSize(150, 0))
+
+        self.horizontalLayout_7.addWidget(self.cb_movCodec)
+
+
+        self.verticalLayout_14.addWidget(self.f_codecOptions_MOV)
+
+        self.f_codecOptions_MP4 = QWidget(self.gb_options)
+        self.f_codecOptions_MP4.setObjectName(u"f_codecOptions_MP4")
+        self.verticalLayout_4 = QVBoxLayout(self.f_codecOptions_MP4)
+        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.lo_mp4Codec = QWidget(self.f_codecOptions_MP4)
+        self.lo_mp4Codec.setObjectName(u"lo_mp4Codec")
+        self.horizontalLayout_8 = QHBoxLayout(self.lo_mp4Codec)
+        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
+        self.horizontalLayout_8.setContentsMargins(9, -1, 9, -1)
+        self.l_mp4Codec = QLabel(self.lo_mp4Codec)
+        self.l_mp4Codec.setObjectName(u"l_mp4Codec")
+
+        self.horizontalLayout_8.addWidget(self.l_mp4Codec)
+
+        self.horizontalSpacer_20 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_8.addItem(self.horizontalSpacer_20)
+
+        self.cb_mp4Codec = QComboBox(self.lo_mp4Codec)
+        self.cb_mp4Codec.setObjectName(u"cb_mp4Codec")
+        self.cb_mp4Codec.setMinimumSize(QSize(150, 0))
+
+        self.horizontalLayout_8.addWidget(self.cb_mp4Codec)
+
+
+        self.verticalLayout_4.addWidget(self.lo_mp4Codec)
+
+        self.lo_mp4Qual = QWidget(self.f_codecOptions_MP4)
+        self.lo_mp4Qual.setObjectName(u"lo_mp4Qual")
+        self.horizontalLayout_9 = QHBoxLayout(self.lo_mp4Qual)
+        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
+        self.horizontalLayout_9.setContentsMargins(9, -1, 9, -1)
+        self.l_mp4Qual = QLabel(self.lo_mp4Qual)
+        self.l_mp4Qual.setObjectName(u"l_mp4Qual")
+
+        self.horizontalLayout_9.addWidget(self.l_mp4Qual)
+
+        self.horizontalSpacer_21 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_9.addItem(self.horizontalSpacer_21)
+
+        self.cb_mp4Qual = QComboBox(self.lo_mp4Qual)
+        self.cb_mp4Qual.setObjectName(u"cb_mp4Qual")
+        self.cb_mp4Qual.setMinimumSize(QSize(150, 0))
+
+        self.horizontalLayout_9.addWidget(self.cb_mp4Qual)
+
+
+        self.verticalLayout_4.addWidget(self.lo_mp4Qual)
+
+
+        self.verticalLayout_14.addWidget(self.f_codecOptions_MP4)
+
+        self.f_renderType = QWidget(self.gb_options)
+        self.f_renderType.setObjectName(u"f_renderType")
+        self.horizontalLayout_3 = QHBoxLayout(self.f_renderType)
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.horizontalLayout_3.setContentsMargins(9, -1, 9, -1)
         self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_3.addItem(self.horizontalSpacer_4)
 
-        self.rb_renderType_single = QRadioButton(self.gb_outputTypes)
+        self.rb_renderType_single = QRadioButton(self.f_renderType)
         self.rb_renderType_single.setObjectName(u"rb_renderType_single")
         self.rb_renderType_single.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.rb_renderType_single.setChecked(True)
@@ -421,7 +536,7 @@ class Ui_wg_Synth_Render_StMap(object):
 
         self.horizontalLayout_3.addItem(self.horizontalSpacer_2)
 
-        self.rb_renderType_seq = QRadioButton(self.gb_outputTypes)
+        self.rb_renderType_seq = QRadioButton(self.f_renderType)
         self.rb_renderType_seq.setObjectName(u"rb_renderType_seq")
         self.rb_renderType_seq.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
 
@@ -432,10 +547,48 @@ class Ui_wg_Synth_Render_StMap(object):
         self.horizontalLayout_3.addItem(self.horizontalSpacer_6)
 
 
-        self.verticalLayout_14.addLayout(self.horizontalLayout_3)
+        self.verticalLayout_14.addWidget(self.f_renderType)
 
 
-        self.verticalLayout.addWidget(self.gb_outputTypes)
+        self.verticalLayout.addWidget(self.gb_options)
+
+        self.gb_mapTypes = QGroupBox(wg_Synth_Render_StMap)
+        self.gb_mapTypes.setObjectName(u"gb_mapTypes")
+        self.verticalLayout_5 = QVBoxLayout(self.gb_mapTypes)
+        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
+        self.verticalLayout_5.setContentsMargins(9, 9, 9, 9)
+        self.widget = QWidget(self.gb_mapTypes)
+        self.widget.setObjectName(u"widget")
+        self.horizontalLayout = QHBoxLayout(self.widget)
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.horizontalLayout.setContentsMargins(9, -1, 9, -1)
+        self.horizontalSpacer_11 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_11)
+
+        self.chb_undistort = QCheckBox(self.widget)
+        self.chb_undistort.setObjectName(u"chb_undistort")
+
+        self.horizontalLayout.addWidget(self.chb_undistort)
+
+        self.horizontalSpacer_14 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_14)
+
+        self.chb_redistort = QCheckBox(self.widget)
+        self.chb_redistort.setObjectName(u"chb_redistort")
+
+        self.horizontalLayout.addWidget(self.chb_redistort)
+
+        self.horizontalSpacer_13 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_13)
+
+
+        self.verticalLayout_5.addWidget(self.widget)
+
+
+        self.verticalLayout.addWidget(self.gb_mapTypes)
 
         self.gb_previous = QGroupBox(wg_Synth_Render_StMap)
         self.gb_previous.setObjectName(u"gb_previous")
@@ -449,7 +602,7 @@ class Ui_wg_Synth_Render_StMap(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 349, 123))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 376, 115))
         self.verticalLayout_3 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.l_pathLast = QLabel(self.scrollAreaWidgetContents)
@@ -474,12 +627,9 @@ class Ui_wg_Synth_Render_StMap(object):
         QWidget.setTabOrder(self.e_name, self.b_context)
         QWidget.setTabOrder(self.b_context, self.cb_context)
         QWidget.setTabOrder(self.cb_context, self.cb_cam)
-        QWidget.setTabOrder(self.cb_cam, self.chb_resOverride)
-        QWidget.setTabOrder(self.chb_resOverride, self.sp_resWidth)
-        QWidget.setTabOrder(self.sp_resWidth, self.sp_resHeight)
-        QWidget.setTabOrder(self.sp_resHeight, self.chb_renderPreset)
-        QWidget.setTabOrder(self.chb_renderPreset, self.cb_renderPreset)
-        QWidget.setTabOrder(self.cb_renderPreset, self.cb_master)
+        QWidget.setTabOrder(self.cb_cam, self.chb_scaleOverride)
+        QWidget.setTabOrder(self.chb_scaleOverride, self.cb_renderScale)
+        QWidget.setTabOrder(self.cb_renderScale, self.cb_master)
         QWidget.setTabOrder(self.cb_master, self.cb_outPath)
         QWidget.setTabOrder(self.cb_outPath, self.cb_format)
         QWidget.setTabOrder(self.cb_format, self.scrollArea)
@@ -502,24 +652,31 @@ class Ui_wg_Synth_Render_StMap(object):
         self.l_identifier.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Identifier:", None))
         self.l_taskName.setText("")
         self.b_changeTask.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"change", None))
-        self.l_format.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Format:", None))
-        self.l_camera.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Camera:", None))
-        self.l_rezOverride.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Resolution override:", None))
-        self.chb_resOverride.setText("")
-        self.b_resPresets.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"\u25bc", None))
-        self.l_renderPreset.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Rendersettings preset:", None))
-        self.chb_renderPreset.setText("")
-        self.l_outPath_2.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Master Version:", None))
+        self.l_framerange.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Framerange:", None))
+        self.l_rangeStart.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"1000", None))
+        self.l_end.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"End:", None))
+        self.l_rangeEnd.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"1001", None))
+        self.l_start.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Start:", None))
+        self.l_master.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Master Version:", None))
         self.l_outPath.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Location:", None))
         self.label_8.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Version override:", None))
         self.chb_version.setText("")
         self.b_version.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"\u25bc", None))
+        self.gb_options.setTitle(QCoreApplication.translate("wg_Synth_Render_StMap", u"Render Options", None))
+        self.l_camera.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Camera:", None))
+        self.l_renderScale.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Output Scale Overide: ", None))
+        self.chb_scaleOverride.setText("")
+        self.l_renderFilter.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Scaling Filter: ", None))
+        self.l_format.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Format:", None))
+        self.l_exr_Compression.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"EXR Compression:", None))
+        self.l_movCodec.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Codec: ", None))
+        self.l_mp4Codec.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Codec: ", None))
+        self.l_mp4Qual.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Quality: ", None))
+        self.rb_renderType_single.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Single Image  ", None))
+        self.rb_renderType_seq.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Sequence  ", None))
         self.gb_mapTypes.setTitle(QCoreApplication.translate("wg_Synth_Render_StMap", u"Map Types", None))
         self.chb_undistort.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Un-Distort", None))
         self.chb_redistort.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Re-Distort", None))
-        self.gb_outputTypes.setTitle(QCoreApplication.translate("wg_Synth_Render_StMap", u"Output Type", None))
-        self.rb_renderType_single.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Single Image  ", None))
-        self.rb_renderType_seq.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Sequence  ", None))
         self.gb_previous.setTitle(QCoreApplication.translate("wg_Synth_Render_StMap", u"Previous render", None))
         self.l_pathLast.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"None", None))
         self.b_pathLast.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"...", None))

@@ -65,6 +65,14 @@ class Synth_ImportMeshClass(object):
         openProductsBrowser=True,
         settings=None,
     ):
+        
+        #   Checks if the ATTR Already Exists and Assigns if Not
+        self.core = getattr(self, "core", core)
+        self.state = getattr(self, "state", state)
+        self.stateManager = getattr(self, "stateManager", stateManager)
+        self.synthFuncts = getattr(self, "synthFuncts", self.core.appPlugin)
+        self.synthEyes = self.synthFuncts.synthEyes
+
         self.state = state
         self.stateMode = "Synth_ImportMesh"
 
@@ -193,48 +201,37 @@ class Synth_ImportMeshClass(object):
         self.b_import.clicked.connect(lambda: self.importObject(update=True))
         self.b_importLatest.clicked.connect(self.importLatest)
         self.chb_autoUpdate.stateChanged.connect(self.autoUpdateChanged)
+        self.e_meshName.editingFinished.connect(
+            lambda: self.updateMeshName(self.e_meshName.text())
+            )
 
 
+    #   Set State Name and Icon
     @err_catcher(name=__name__)
     def nameChanged(self, text=None):
-        text = self.e_name.text()
-        cacheData = self.core.paths.getCachePathData(self.getImportPath())
-        if cacheData.get("type") == "asset":
-            cacheData["entity"] = os.path.basename(cacheData.get("asset_path", ""))
-        elif cacheData.get("type") == "shot":
-            shotName = self.core.entities.getShotName(cacheData)
-            if shotName:
-                cacheData["entity"] = shotName
+        name = self.e_name.text()
 
-        num = 0
-        self.core.callback("onGenerateStateNameContext", self, cacheData)
-        try:
-            if "{#}" in text:
-                while True:
-                    cacheData["#"] = num or ""
-                    name = text.format(**cacheData)
-                    for state in self.stateManager.states:
-                        if state.ui.listType != "Import":
-                            continue
-
-                        if state is self.state:
-                            continue
-
-                        if state.text(0) == name:
-                            num += 1
-                            break
-                    else:
-                        break
-            else:
-                name = text.format(**cacheData)
-
-        except Exception as e:
+        if text:
             name = text
+        else:
+            try:
+                impFileName = self.getImportPath()
+                impFileName = os.path.normpath(impFileName)
+                productData = self.core.products.getProductDataFromFilepath(impFileName)
+                name = productData['product']
 
+            except Exception as e:
+                name = text
+
+        #   Set the name for the State list
+        self.e_name.setText(name)
         self.state.setText(0, name)
-        
+
         #   Add icon to State name
         self.state.setIcon(0, QIcon(STATE_ICON))
+
+        self.stateManager.saveImports()
+        self.stateManager.saveStatesToScene()
 
 
     @err_catcher(name=__name__)
@@ -489,6 +486,26 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
+    def updateMeshName(self, meshName=None):
+        #   Get Shot Camera Object
+        meshObj = self.synthFuncts.getObjByUUID("mesh", self.meshUUID)
+
+        if not meshObj:
+            return
+        
+        #   If Passed a New Name, Change it
+        if meshName:
+            with self.synthFuncts.UNDO_BLOCK("Rename Mesh"):
+                self.synthFuncts.setObjName(meshObj, meshName)
+
+        #   Get the Camera Name and Set it in the UI
+        meshName = self.synthFuncts.getObjName(self, meshObj)
+        self.e_meshName.setText(meshName)
+
+
+
+
+    @err_catcher(name=__name__)
     def setStateColor(self, status):
         if status == "ok":
             statusColor = QColor(0, 130, 0)
@@ -505,6 +522,8 @@ class Synth_ImportMeshClass(object):
 
     @err_catcher(name=__name__)
     def updateUi(self):
+        self.updateMeshName()
+
         versions = self.checkLatestVersion()
         if versions:
             curVersion, latestVersion = versions
@@ -562,6 +581,33 @@ class Synth_ImportMeshClass(object):
         self.nameChanged()
         self.setStateColor(status)
         getattr(self.core.appPlugin, "sm_import_updateUi", lambda x: None)(self)
+
+
+    @err_catcher(name=__name__)
+    def setToolTips(self):
+        tip = "Product Name of Imported Mesh"
+        self.e_name.setToolTip(tip)
+
+        tip = "Opens the Product Browser to select a specific version"
+        self.b_browse.setToolTip(tip)
+
+        tip = "Will import the latest version of the Mesh."
+        self.b_importLatest.setToolTip(tip)
+
+        # tip = ("Enables Auto-update function.\n\n"
+        #        "This will automatically import/update to\n"
+        #        "the most recent version of the media.")
+        # self.w_autoUpdate.setToolTip(tip)
+
+        tip = ("Name of SynthEyes Mesh for the Import.\n\n"
+               "You may change the name and it will be\n"
+               "reflected in SynthEyes.  Also the version\n"
+               "number (if any) will be updated with changes\n"
+               " to the selected version.")
+        self.l_meshName.setToolTip(tip)
+        self.e_meshName.setToolTip(tip)
+
+
 
 
     @err_catcher(name=__name__)

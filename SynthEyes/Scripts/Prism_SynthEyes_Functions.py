@@ -628,6 +628,13 @@ class Prism_SynthEyes_Functions(object):
     #   Context Wrapper for SynthEyes Undo Blocks
     @contextmanager
     def UNDO_BLOCK(self, undoName:str) -> None:
+        '''Context Manager for SynthEyes Undo blocks.\n
+           This takes the place of a .Begin()->.Accept()\n
+           block.\n\n
+           example:\n
+               with self.UNDO_BLOCK("Create Mesh):
+                   self.synthEyes.CreateNew("mesh)'''
+        
         startedHere = False
 
         if not self.synthEyes.InUndo():
@@ -746,6 +753,11 @@ class Prism_SynthEyes_Functions(object):
             logger.warning(f"ERROR: Unable to delete {objType} - {uuid}\n{e}")
             return False
     
+
+    @err_catcher(name=__name__)
+    def getObjName(self, origin, obj:object) -> str:
+        return obj.Name()
+
 
     @err_catcher(name=__name__)
     def setObjName(self, synthObj:object, objName:str) -> bool:
@@ -1144,6 +1156,36 @@ class Prism_SynthEyes_Functions(object):
 
 
     #######################################
+    ##             Helpers               ##   
+    #######################################
+
+
+    #   Finds and Changes the Version Suffix (_v001, _v002, _master)
+    @err_catcher(name=__name__)
+    def updateNameVersion(self, currentName:str, newVerStr:str) -> str:
+        verPadding = self.core.versionPadding
+
+        pattern = rf"(_v\d{{{verPadding}}}|_master)"
+        matches = list(re.finditer(pattern, currentName))
+
+        if matches and newVerStr:
+            last_match = matches[-1]
+            start, end = last_match.span()
+
+            newName = (
+                currentName[:start]
+                + f"_{newVerStr}"
+                + currentName[end:]
+            )
+
+            return newName
+
+        else:
+            return None
+    
+
+
+    #######################################
     ##               Shots               ##   
     #######################################
    
@@ -1240,20 +1282,14 @@ class Prism_SynthEyes_Functions(object):
         if result:
             #   Attempts to Rename Camera with New Version
             try:
-                newCamName = None
-                verPadding = self.core.versionPadding
                 camera = self.getCamFromShot(shot)
-                currCamName = self.getCamName(self, camera)
+                camName_curr = self.getCamName(self, camera)
 
-                version_match = re.search(rf"v\d{{{verPadding}}}", currCamName)
-
-                if version_match and verStr:
-                    newCamName = re.sub(rf"v\d{{{verPadding}}}", verStr, currCamName)
-
-                if newCamName:
+                camName_new = self.updateNameVersion(camName_curr, verStr)
+                if camName_new:
                     with self.UNDO_BLOCK("Rename Camera"):                    
-                        self.setObjName(camera, newCamName)
-                
+                        self.setObjName(camera, camName_new)
+
                 return True
             
             except Exception as e:
@@ -1285,38 +1321,46 @@ class Prism_SynthEyes_Functions(object):
         
         filePath = os.path.normpath(impFileName)
 
-        #   Create Mesh Name
-        if data:
-            try:
-                meshName = f"{data['product']}_{data['version']}"
-            except:
-                pass
-        else:
-            meshName = fileName[0]
-
         #   Get Existing Mesh
         mesh_orig = self.getObjByUUID("mesh", data["meshUUID"])
 
         ##   Update Existing Mesh
         if update and mesh_orig:
-            #   Capture Original Mesh Transforms
+
+            #   Capture Original Mesh Data
+            meshName_curr = self.getObjName(self, mesh_orig)
             meshTrans_orig = mesh_orig.trans
 
             with self.UNDO_BLOCK("Update Mesh"):
                 #   Load Mesh from New Filepath
                 mesh_orig.Call("ReadMesh", impFileName)
+
                 #   Apply Original Transforms
                 mesh_orig.Set("trans", meshTrans_orig)
 
-            with self.UNDO_BLOCK("Rename Mesh"):
-                #   Change Mesh Name
-                self.setObjName(mesh_orig, meshName)
+            #   Change Mesh Name
+            meshName_new = self.updateNameVersion(meshName_curr, data['version'])
+            if not meshName_new:
+                meshName_new = meshName_curr
+
+            if meshName_new:
+                with self.UNDO_BLOCK("Rename Mesh"):
+                    self.setObjName(mesh_orig, meshName_new)
 
             result = mesh_orig.UniqID()
             doImport = True
 
         ##   Create New Mesh
         else:
+            #   Create Mesh Name
+            if data:
+                try:
+                    meshName = f"{data['product']}_{data['version']}"
+                except:
+                    pass
+            else:
+                meshName = fileName[0]
+
             with self.UNDO_BLOCK("Import Mesh"):
                 #   Create New Mesh from Filepath
                 scn = self.synthEyes.Scene()
@@ -1519,10 +1563,81 @@ class Prism_SynthEyes_Functions(object):
             self.setOutputSampleFilter(shot, filterCode=oData["orig_renderFilter"])
 
 
+
+
+
     #   Sanity Check Before State Execution
     @err_catcher(name=__name__)
-    def sm_render_stMap_preSubmit(self, origin, rSettings):            #   TODO
+    def sm_render_stMap_preSubmit(self, origin, rData):            #   TODO
+        warnings = []
+
+        camName = rData["currentCam"]
+
+        #   Check if Shot Camera was Solved with Distortion
+        hasDistor = self.getShotHasDistort(camName)
+
+        #   Check if Shot Camera has had Lens Workflow Completed
+        hasLensWorkflow = self.getShotHasLensWorkflow(camName)
+
+        if hasDistor and not hasLensWorkflow:
+            msg = (f"CAMERA   '{camName}':\n"
+                   "             appears to have solved distortion,\n"
+                   "             and the Lens Workflow script has not\n"
+                   "             been completed.")
+            warnings.append([msg, "", 2])
+
+        return warnings
+    
+
+
+    #   Called Before Render to Capture Current Settings
+    @err_catcher(name=__name__)
+    def sm_render_preRender_stMap(self, origin, cameraName):
         pass
+
+    # exrUVMcmp
+    # FindPrefFromName
+        # exrFormat = self.synthEyes.GetPrefFromName("EXR cmpr")
+        # prefIdx = self.synthEyes.FindPrefFromName("EXR cmpr")
+
+        # self.core.popup(f"prefIdx:  {prefIdx}")							#	TESTING
+
+        # prefdesc = self.synthEyes.PrefDescription(prefIdx)
+
+        # self.core.popup(f"prefdesc:  {prefdesc}")							#	TESTING
+
+        prefData = self.synthEyes.GetPrefFromVar("exrUVMcmp")
+
+        
+        # prefData = self.synthEyes.GetPrefFromIndex(prefIdx)
+        print(f"prefData:  {prefData}")							#	TESTING
+
+        self.core.popup(f"prefData:  {prefData}")							#	TESTING
+
+        # synthStr = SynthExrCompress["RLE"]
+
+        # self.synthEyes.BeginPref()
+        # self.synthEyes.SetPrefFromIndex(prefIdx, synthStr)
+        # self.synthEyes.AcceptPref()
+
+        # prefData = self.synthEyes.GetPrefFromIndex(prefIdx)
+        # self.core.popup(f"prefData:  {prefData}")							#	TESTING
+
+
+
+        return {}
+
+
+        ##  DISABLED - SynthEyes does not appear to rescale the UnDistort Images  ##
+        # shot = self.getShotFromCamName(cameraName)
+        # oData = {}
+        # oData["orig_renderScale"] = self.getOutputRez(shot)
+        # oData["orig_renderFilter"] = self.getOutputSampleFilter(shot)
+        # return oData
+
+
+
+    
 
 
     @err_catcher(name=__name__)
@@ -1563,15 +1678,39 @@ class Prism_SynthEyes_Functions(object):
     
         shot = self.getShotFromCamName(rSettings["currentCam"])
 
-        with self.UNDO_BLOCK("Render StMaps"):
-            result = shot.Call(stFunct, *args)
+        ##  DISABLED - SynthEyes does not appear to rescale the UnDistort Images  ##
+        # if rSettings["scaleOverride"]:
+        #     #   Sets Output Scaling and Scale Filter
+        #     with self.UNDO_BLOCK("Scale Image"):
+        #         self.setOutputRez(shot, scaleStr=rSettings["renderScale"])
+        #         self.setOutputSampleFilter(shot, filterStr=rSettings["renderFilter"])
+
+
+        # with self.UNDO_BLOCK("Render StMaps"):
+        #     result = shot.Call(stFunct, *args)
   
+        result = 1
         return int(result) == 1
 
 
     @err_catcher(name=__name__)
-    def sm_render_stMap_undoRenderSettings(self, origin, rSettings):            #   TODO
+    def sm_render_postRender_stMap(self, origin, cameraName, oData):
         pass
+
+        ##  DISABLED - SynthEyes does not appear to rescale the UnDistort Images  ##
+        # shot = self.getShotFromCamName(cameraName)
+        # with self.UNDO_BLOCK("Restore Image Scale"):
+        #     self.setOutputRez(shot, scaleCode=oData["orig_renderScale"])
+        #     self.setOutputSampleFilter(shot, filterCode=oData["orig_renderFilter"])
+
+
+
+
+
+
+    # @err_catcher(name=__name__)
+    # def sm_render_stMap_undoRenderSettings(self, origin, rSettings):            #   TODO
+    #     pass
 
 
 
