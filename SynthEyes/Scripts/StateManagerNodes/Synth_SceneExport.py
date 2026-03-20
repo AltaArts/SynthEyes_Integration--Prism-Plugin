@@ -804,7 +804,7 @@ class Synth_SceneExportClass(object):
         if startFrame is None:
             warnings.append(["Framerange is invalid.", "", 3])
 
-        warnings += self.synthFuncts.sm_export_preExecute(self, startFrame, endFrame)
+        warnings += self.synthFuncts.sm_sceneExport_preExecute(self, startFrame, endFrame)
 
         return [self.state.text(0), warnings]
     
@@ -1076,6 +1076,8 @@ class Synth_SceneExportClass(object):
             details["version"] = hVersion
             details["sourceScene"] = fileName
             details["product"] = self.getProductname()
+            details["startFrame"] = startFrame
+            details["endFrame"] = endFrame
             details["comment"] = self.getComment()
 
             if startFrame != endFrame:
@@ -1093,6 +1095,11 @@ class Synth_SceneExportClass(object):
 
             outputType = self.cb_outType.currentText()
 
+            rSettings = details.copy()
+
+            #   Capture Current and Config New Settings
+            rSettings = self.synthFuncts.sm_pre_sceneExport(self, rSettings)
+
             try:
                 submitResult = None
 
@@ -1100,8 +1107,6 @@ class Synth_SceneExportClass(object):
                     self,
                     outputType,
                     outputName=outputName,
-                    startFrame=startFrame,
-                    endFrame=endFrame,
                     details=details
                 )
 
@@ -1111,9 +1116,13 @@ class Synth_SceneExportClass(object):
                 if outputName.startswith("Canceled"):
                     return [self.state.text(0) + " - error: %s" % outputName]
 
+                #   Restore Orignial Settings
+                self.synthFuncts.sm_post_sceneExport(self, rSettings)
+
                 logger.debug("exported to: %s" % outputName)
                 self.setLastPath(outputName)
                 self.stateManager.saveStatesToScene()
+
 
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()

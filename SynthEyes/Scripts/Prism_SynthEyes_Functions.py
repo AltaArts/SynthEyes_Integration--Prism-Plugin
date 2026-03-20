@@ -491,7 +491,9 @@ class Prism_SynthEyes_Functions(object):
     def testTwo(self):
         self.core.popup("IN TEST TWO")							#	TESTING
 
-
+        with self.UNDO_BLOCK("test"):
+            self.synthEyes.SetAnimStart(51)
+            self.synthEyes.SetAnimEnd(100)
 
 
     @err_catcher(name=__name__)                                                 #   TESTING
@@ -665,6 +667,8 @@ class Prism_SynthEyes_Functions(object):
         return self.synthEyes.Version()
 
 
+    ##  FRAMES  ##
+
     @err_catcher(name=__name__)
     def getCurrentFrame(self) -> int:
         try:
@@ -673,6 +677,16 @@ class Prism_SynthEyes_Functions(object):
         
         except Exception as e:
             logger.warning(f"ERROR: Unable to Get Current Frame from SynthEyes: {e}")
+            return None
+        
+
+    @err_catcher(name=__name__)
+    def setCurrentFrame(self, frame:int) -> None:
+        try:
+            self.synthEyes.SetFrame(frame - 1)
+        
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Set Current Frame to SynthEyes: {e}")
             return None
 
 
@@ -692,16 +706,45 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def setFrameRange(self, origin, shot:object, startFrame:int, endFrame:int) -> None:
+    def setFrameRange(self, origin, startFrame:int, endFrame:int, shot:object=None) -> None:
         try:
-            shot.Set("start", startFrame - 1)
-            shot.Set("stop", endFrame - 1)
+            if not shot:
+                shot = self.synthEyes.Shots()[0]
+
+            with self.UNDO_BLOCK("Set Framerange"):
+                shot.Set("start", startFrame - 1)
+                shot.Set("stop", endFrame - 1)
+                self.synthEyes.SetAnimStart(startFrame)
+                self.synthEyes.SetAnimEnd(endFrame)
             
             logger.debug("Updated Framerange in SynthEyes")
 
         except Exception as e:
             logger.warning(f"ERROR: Unable to Set Framerange in SynthEyes: {e}")
 
+
+    @err_catcher(name=__name__)
+    def getShotFrameCount(self, shot:object) -> int:
+        try:
+            return shot.Get("frameCount")
+        
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Get Shot's Frame Count: {e}")
+            return None
+        
+
+    @err_catcher(name=__name__)
+    def setShotFrameCount(self, shot:object, frameCount:int) -> bool:
+        try:
+            result = shot.Set("frameCount", frameCount)
+            return result
+        
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Set Shot's Frame Count: {e}")
+            return False
+
+
+    ##  OBJECTS  ##
 
     @err_catcher(name=__name__)
     def getObjByUUID(self, objType:str, uuid:str) -> object:
@@ -774,6 +817,8 @@ class Prism_SynthEyes_Functions(object):
             return False
 
 
+    ##  CAMERAS  ##
+
     @err_catcher(name=__name__)
     def getCamNodes(self, origin=None, cur:bool=False) -> list[object]:
         return self.synthEyes.Cameras()
@@ -810,6 +855,8 @@ class Prism_SynthEyes_Functions(object):
         if shot:
             return shot.cam
 
+
+    ##  SHOTS  ##
 
     @err_catcher(name=__name__)
     def getShotFromCamera(self, shotObj:object) -> object:
@@ -889,27 +936,6 @@ class Prism_SynthEyes_Functions(object):
         shot.Call("Flush")
 
         return True
-
-
-    @err_catcher(name=__name__)
-    def getShotFrameCount(self, shot:object) -> int:
-        try:
-            return shot.Get("frameCount")
-        
-        except Exception as e:
-            logger.warning(f"ERROR: Unable to Get Shot's Frame Count: {e}")
-            return None
-        
-
-    @err_catcher(name=__name__)
-    def setShotFrameCount(self, shot:object, frameCount:int) -> bool:
-        try:
-            result = shot.Set("frameCount", frameCount)
-            return result
-        
-        except Exception as e:
-            logger.warning(f"ERROR: Unable to Set Shot's Frame Count: {e}")
-            return False
         
 
     @err_catcher(name=__name__)
@@ -1291,10 +1317,10 @@ class Prism_SynthEyes_Functions(object):
                     with self.UNDO_BLOCK("Rename Camera"):                    
                         self.setObjName(camera, camName_new)
 
-                return True
-            
             except Exception as e:
                 logger.warning(f"Unable to Update Camera Version Name: {e}")
+            
+        self.synthEyes.Validate(shot)
 
         return result
 
@@ -1400,7 +1426,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Sanity Check Before State Execution
     @err_catcher(name=__name__)
-    def sm_export_preExecute(self, origin, startFrame, endFrame):
+    def sm_sceneExport_preExecute(self, origin, startFrame, endFrame):
         warnings = []
 
         cameras = self.getCamNodes()
@@ -1423,10 +1449,30 @@ class Prism_SynthEyes_Functions(object):
 
         return warnings
     
+    @err_catcher(name=__name__)
+    def sm_pre_sceneExport(self, origin, rSettings):
+        # shot = self.getShotFromCamName(rSettings["currentCam"])
+        shot = self.synthEyes.Shots()[0]
+
+        #   Capture Original Settings
+        orig_start, orig_end = self.getFrameRange(origin, shot)
+        rSettings["orig_start"] = orig_start
+        rSettings["orig_end"] = orig_end
+        rSettings["orig_play_start"] = self.synthEyes.AnimStart()
+        rSettings["orig_play_end"] = self.synthEyes.AnimEnd()
+        rSettings["orig_currFrame"] = self.getCurrentFrame()
+
+
+        #   Update Frame Range
+        with self.UNDO_BLOCK("Set Framerange"):
+            self.setFrameRange(origin, rSettings["startFrame"], rSettings["endFrame"], shot)
+
+        return rSettings
+
 
     #   Called From SceneExport State Execute
     @err_catcher(name=__name__)
-    def sm_sceneExport(self, origin, outputType, outputName, startFrame=None, endFrame=None, details=None):
+    def sm_sceneExport(self, origin, outputType, outputName, details=None):
         try:
             synthFormatType = SynthFormatNames[outputType]["synthName"]
             exportPath = os.path.normpath(outputName)
@@ -1440,6 +1486,21 @@ class Prism_SynthEyes_Functions(object):
 
         if result:
             return outputName
+
+
+    @err_catcher(name=__name__)
+    def sm_post_sceneExport(self, origin, rSettings):
+        # shot = self.getShotFromCamName(rSettings["currentCam"])
+        shot = self.synthEyes.Shots()[0]
+
+        #   Restore Frame Range
+        with self.UNDO_BLOCK("Restore Framerange"):
+            self.setFrameRange(origin, rSettings["orig_start"], rSettings["orig_end"], shot)
+            self.synthEyes.SetAnimStart(rSettings["orig_play_start"])
+            self.synthEyes.SetAnimEnd(rSettings["orig_play_end"])
+            self.setCurrentFrame(rSettings["orig_currFrame"])
+
+        self.synthEyes.Validate(shot)
 
 
     @err_catcher(name=__name__)
@@ -1486,12 +1547,13 @@ class Prism_SynthEyes_Functions(object):
         orig_start, orig_end = self.getFrameRange(origin, shot)
         rSettings["orig_start"] = orig_start
         rSettings["orig_end"] = orig_end
+        rSettings["orig_currFrame"] = self.getCurrentFrame()
         rSettings["orig_renderScale"] = self.getOutputRez(shot)
         rSettings["orig_renderFilter"] = self.getOutputSampleFilter(shot)
 
         #   Update Frame Range
         with self.UNDO_BLOCK("Set Framerange"):
-            self.setFrameRange(origin, shot, rSettings["startFrame"], rSettings["endFrame"])
+            self.setFrameRange(origin, rSettings["startFrame"], rSettings["endFrame"], shot)
 
         #   Sets Output Scaling and Scale Filter
         if rSettings["scaleOverride"]:
@@ -1568,12 +1630,15 @@ class Prism_SynthEyes_Functions(object):
 
         #   Restore Frame Range
         with self.UNDO_BLOCK("Restore Framerange"):
-            self.setFrameRange(origin, shot, rSettings["orig_start"], rSettings["orig_end"])
+            self.setFrameRange(origin, rSettings["orig_start"], rSettings["orig_end"], shot)
+            self.setCurrentFrame(rSettings["orig_currFrame"])
 
         #   Restore Render Scale
         with self.UNDO_BLOCK("Restore Image Scale"):
             self.setOutputRez(shot, scaleCode=rSettings["orig_renderScale"])
             self.setOutputSampleFilter(shot, filterCode=rSettings["orig_renderFilter"])
+        
+        self.synthEyes.Validate(shot)
 
 
     #   Sanity Check Before State Execution
@@ -1608,9 +1673,14 @@ class Prism_SynthEyes_Functions(object):
         # rData["orig_renderScale"] = self.getOutputRez(shot)
         # rData["orig_renderFilter"] = self.getOutputSampleFilter(shot)
         
+        ##  Capture Current Settings
         #   EXR Compression Format
         rData["orig_exrUVMcmp"] = self.synthEyes.GetPrefFromVar("exrUVMcmp")
+        rData["orig_currFrame"] = self.getCurrentFrame()
 
+
+        ##  Set Render Settings
+        #   EXR Compression Format
         self.synthEyes.BeginPref()
         self.synthEyes.SetPrefFromVar("exrUVMcmp", rData["exrUVMcmp"])
         self.synthEyes.AcceptPref()
@@ -1686,11 +1756,10 @@ class Prism_SynthEyes_Functions(object):
         self.synthEyes.SetPrefFromVar("exrUVMcmp", rData["orig_exrUVMcmp"])
         self.synthEyes.AcceptPref()
 
+        #   Restore Framerange
+        with self.UNDO_BLOCK("Restore Framerange"):
+            self.setCurrentFrame(rData["orig_currFrame"])
 
-
-    # @err_catcher(name=__name__)
-    # def sm_render_stMap_undoRenderSettings(self, origin, rSettings):            #   TODO
-    #     pass
 
 
 
