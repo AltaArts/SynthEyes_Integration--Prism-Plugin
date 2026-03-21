@@ -504,6 +504,10 @@ class Synth_PlayblastClass(object):
             self.chb_include_Alpha.setDisabled(True)
         else:
             self.chb_include_Alpha.setDisabled(False)
+
+        #   Configure Depth Checkbox
+        hasDepth = fmt == "EXR"
+        self.chb_include_Depth.setEnabled(hasDepth)
         
         self.stateManager.saveStatesToScene
 

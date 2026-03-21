@@ -535,41 +535,41 @@ class Ui_wg_Synth_ImageRender(object):
 
         self.verticalLayout_5.addItem(self.verticalSpacer)
 
-        self.f_include1_2 = QWidget(self.gb_options)
-        self.f_include1_2.setObjectName(u"f_include1_2")
-        self.f_include1 = QHBoxLayout(self.f_include1_2)
+        self.f_include1 = QWidget(self.gb_options)
         self.f_include1.setObjectName(u"f_include1")
-        self.f_include1.setContentsMargins(30, -1, 9, -1)
-        self.chb_include_RGB = QCheckBox(self.f_include1_2)
+        self.lo_include = QHBoxLayout(self.f_include1)
+        self.lo_include.setObjectName(u"lo_include")
+        self.lo_include.setContentsMargins(30, -1, 9, 0)
+        self.chb_include_RGB = QCheckBox(self.f_include1)
         self.chb_include_RGB.setObjectName(u"chb_include_RGB")
 
-        self.f_include1.addWidget(self.chb_include_RGB)
+        self.lo_include.addWidget(self.chb_include_RGB)
 
-        self.chb_include_Alpha = QCheckBox(self.f_include1_2)
+        self.chb_include_Alpha = QCheckBox(self.f_include1)
         self.chb_include_Alpha.setObjectName(u"chb_include_Alpha")
 
-        self.f_include1.addWidget(self.chb_include_Alpha)
+        self.lo_include.addWidget(self.chb_include_Alpha)
 
 
-        self.verticalLayout_5.addWidget(self.f_include1_2)
+        self.verticalLayout_5.addWidget(self.f_include1)
 
-        self.f_include2_2 = QWidget(self.gb_options)
-        self.f_include2_2.setObjectName(u"f_include2_2")
-        self.f_include2 = QHBoxLayout(self.f_include2_2)
+        self.f_include2 = QWidget(self.gb_options)
         self.f_include2.setObjectName(u"f_include2")
-        self.f_include2.setContentsMargins(30, -1, 9, -1)
-        self.chb_include_Mesh = QCheckBox(self.f_include2_2)
+        self.lo_include2 = QHBoxLayout(self.f_include2)
+        self.lo_include2.setObjectName(u"lo_include2")
+        self.lo_include2.setContentsMargins(30, 0, 9, -1)
+        self.chb_include_Mesh = QCheckBox(self.f_include2)
         self.chb_include_Mesh.setObjectName(u"chb_include_Mesh")
 
-        self.f_include2.addWidget(self.chb_include_Mesh)
+        self.lo_include2.addWidget(self.chb_include_Mesh)
 
-        self.chb_include_Burnin = QCheckBox(self.f_include2_2)
+        self.chb_include_Burnin = QCheckBox(self.f_include2)
         self.chb_include_Burnin.setObjectName(u"chb_include_Burnin")
 
-        self.f_include2.addWidget(self.chb_include_Burnin)
+        self.lo_include2.addWidget(self.chb_include_Burnin)
 
 
-        self.verticalLayout_5.addWidget(self.f_include2_2)
+        self.verticalLayout_5.addWidget(self.f_include2)
 
 
         self.verticalLayout.addWidget(self.gb_options)
@@ -586,7 +586,7 @@ class Ui_wg_Synth_ImageRender(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 409, 105))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 409, 123))
         self.verticalLayout_3 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.l_pathLast = QLabel(self.scrollAreaWidgetContents)
@@ -651,7 +651,7 @@ class Ui_wg_Synth_ImageRender(object):
         self.b_version.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"\u25bc", None))
         self.gb_options.setTitle(QCoreApplication.translate("wg_Synth_ImageRender", u"Render Options", None))
         self.label.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Camera:", None))
-        self.l_renderScale.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Output Scale Override: ", None))
+        self.l_renderScale.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Scale Override: ", None))
         self.chb_scaleOverride.setText("")
         self.l_renderFilter.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Scaling Filter: ", None))
         self.label_6.setText(QCoreApplication.translate("wg_Synth_ImageRender", u"Format:", None))

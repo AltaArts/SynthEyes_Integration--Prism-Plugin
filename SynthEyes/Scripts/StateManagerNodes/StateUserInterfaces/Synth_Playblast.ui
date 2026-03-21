@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>460</width>
-    <height>890</height>
+    <height>913</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -703,7 +703,7 @@
                <bool>true</bool>
               </property>
               <property name="text">
-               <string>Output Scale Override: </string>
+               <string>Scale Override: </string>
               </property>
              </widget>
             </item>
@@ -1063,6 +1063,16 @@
          <property name="rightMargin">
           <number>9</number>
          </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QCheckBox" name="chb_include_RGB">
+           <property name="text">
+            <string>Include RGB</string>
+           </property>
+          </widget>
+         </item>
          <item>
           <widget class="QCheckBox" name="chb_include_Items">
            <property name="text">
@@ -1070,6 +1080,24 @@
            </property>
           </widget>
          </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QWidget" name="f_include2" native="true">
+        <layout class="QHBoxLayout" name="lo_include2">
+         <property name="leftMargin">
+          <number>30</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>9</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
          <item>
           <widget class="QCheckBox" name="chb_include_Grid">
            <property name="text">
@@ -1077,56 +1105,44 @@
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QCheckBox" name="chb_include_Alpha">
+           <property name="text">
+            <string>Include Alpha</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="f_include2">
-        <property name="leftMargin">
-         <number>30</number>
-        </property>
-        <property name="rightMargin">
-         <number>9</number>
-        </property>
-        <item>
-         <widget class="QCheckBox" name="chb_include_RGB">
-          <property name="text">
-           <string>Include RGB</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="chb_include_Alpha">
-          <property name="text">
-           <string>Include Alpha</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="f_include3">
-        <property name="leftMargin">
-         <number>30</number>
-        </property>
-        <property name="rightMargin">
-         <number>9</number>
-        </property>
-        <item>
-         <widget class="QCheckBox" name="chb_include_Depth">
-          <property name="text">
-           <string>Include Depth</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="chb_include_Burnin">
-          <property name="text">
-           <string>Include Burn-in</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
+       <widget class="QWidget" name="f_include3" native="true">
+        <layout class="QHBoxLayout" name="lo_include3">
+         <property name="leftMargin">
+          <number>30</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>9</number>
+         </property>
+         <item>
+          <widget class="QCheckBox" name="chb_include_Burnin">
+           <property name="text">
+            <string>Include Burn-in</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="chb_include_Depth">
+           <property name="text">
+            <string>Include Depth</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
       </item>
      </layout>
     </widget>

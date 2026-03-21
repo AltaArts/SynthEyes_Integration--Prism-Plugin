@@ -12,11 +12,12 @@ from qtpy.QtCore import *  # type: ignore
 from qtpy.QtGui import *  # type: ignore
 from qtpy.QtWidgets import *  # type: ignore
 
+
 class Ui_wg_Synth_Playblast(object):
     def setupUi(self, wg_Synth_Playblast):
         if not wg_Synth_Playblast.objectName():
             wg_Synth_Playblast.setObjectName(u"wg_Synth_Playblast")
-        wg_Synth_Playblast.resize(460, 890)
+        wg_Synth_Playblast.resize(460, 913)
         self.verticalLayout = QVBoxLayout(wg_Synth_Playblast)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
@@ -535,51 +536,55 @@ class Ui_wg_Synth_Playblast(object):
         self.f_include1.setObjectName(u"f_include1")
         self.f_include1_2 = QHBoxLayout(self.f_include1)
         self.f_include1_2.setObjectName(u"f_include1_2")
-        self.f_include1_2.setContentsMargins(30, -1, 9, -1)
+        self.f_include1_2.setContentsMargins(30, -1, 9, 0)
+        self.chb_include_RGB = QCheckBox(self.f_include1)
+        self.chb_include_RGB.setObjectName(u"chb_include_RGB")
+
+        self.f_include1_2.addWidget(self.chb_include_RGB)
+
         self.chb_include_Items = QCheckBox(self.f_include1)
         self.chb_include_Items.setObjectName(u"chb_include_Items")
 
         self.f_include1_2.addWidget(self.chb_include_Items)
 
-        self.chb_include_Grid = QCheckBox(self.f_include1)
-        self.chb_include_Grid.setObjectName(u"chb_include_Grid")
-
-        self.f_include1_2.addWidget(self.chb_include_Grid)
-
 
         self.verticalLayout_5.addWidget(self.f_include1)
 
-        self.f_include2 = QHBoxLayout()
+        self.f_include2 = QWidget(self.gb_options)
         self.f_include2.setObjectName(u"f_include2")
-        self.f_include2.setContentsMargins(30, -1, 9, -1)
-        self.chb_include_RGB = QCheckBox(self.gb_options)
-        self.chb_include_RGB.setObjectName(u"chb_include_RGB")
+        self.lo_include2 = QHBoxLayout(self.f_include2)
+        self.lo_include2.setObjectName(u"lo_include2")
+        self.lo_include2.setContentsMargins(30, 0, 9, 0)
+        self.chb_include_Grid = QCheckBox(self.f_include2)
+        self.chb_include_Grid.setObjectName(u"chb_include_Grid")
 
-        self.f_include2.addWidget(self.chb_include_RGB)
+        self.lo_include2.addWidget(self.chb_include_Grid)
 
-        self.chb_include_Alpha = QCheckBox(self.gb_options)
+        self.chb_include_Alpha = QCheckBox(self.f_include2)
         self.chb_include_Alpha.setObjectName(u"chb_include_Alpha")
 
-        self.f_include2.addWidget(self.chb_include_Alpha)
+        self.lo_include2.addWidget(self.chb_include_Alpha)
 
 
-        self.verticalLayout_5.addLayout(self.f_include2)
+        self.verticalLayout_5.addWidget(self.f_include2)
 
-        self.f_include3 = QHBoxLayout()
+        self.f_include3 = QWidget(self.gb_options)
         self.f_include3.setObjectName(u"f_include3")
-        self.f_include3.setContentsMargins(30, -1, 9, -1)
-        self.chb_include_Depth = QCheckBox(self.gb_options)
-        self.chb_include_Depth.setObjectName(u"chb_include_Depth")
-
-        self.f_include3.addWidget(self.chb_include_Depth)
-
-        self.chb_include_Burnin = QCheckBox(self.gb_options)
+        self.lo_include3 = QHBoxLayout(self.f_include3)
+        self.lo_include3.setObjectName(u"lo_include3")
+        self.lo_include3.setContentsMargins(30, 0, 9, -1)
+        self.chb_include_Burnin = QCheckBox(self.f_include3)
         self.chb_include_Burnin.setObjectName(u"chb_include_Burnin")
 
-        self.f_include3.addWidget(self.chb_include_Burnin)
+        self.lo_include3.addWidget(self.chb_include_Burnin)
+
+        self.chb_include_Depth = QCheckBox(self.f_include3)
+        self.chb_include_Depth.setObjectName(u"chb_include_Depth")
+
+        self.lo_include3.addWidget(self.chb_include_Depth)
 
 
-        self.verticalLayout_5.addLayout(self.f_include3)
+        self.verticalLayout_5.addWidget(self.f_include3)
 
 
         self.verticalLayout.addWidget(self.gb_options)
@@ -661,7 +666,7 @@ class Ui_wg_Synth_Playblast(object):
         self.b_version.setText(QCoreApplication.translate("wg_Synth_Playblast", u"\u25bc", None))
         self.gb_options.setTitle(QCoreApplication.translate("wg_Synth_Playblast", u"Render Options", None))
         self.label.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Camera:", None))
-        self.l_renderScale.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Output Scale Override: ", None))
+        self.l_renderScale.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Scale Override: ", None))
         self.chb_scaleOverride.setText("")
         self.l_renderFilter.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Scaling Filter: ", None))
         self.label_6.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Format:", None))
@@ -669,12 +674,12 @@ class Ui_wg_Synth_Playblast(object):
         self.l_movCodec.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Codec:", None))
         self.l_mp4Codec.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Codec:", None))
         self.l_mp4Qual.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Quality:", None))
+        self.chb_include_RGB.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include RGB", None))
         self.chb_include_Items.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include Viewport Items", None))
         self.chb_include_Grid.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include Grid", None))
-        self.chb_include_RGB.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include RGB", None))
         self.chb_include_Alpha.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include Alpha", None))
-        self.chb_include_Depth.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include Depth", None))
         self.chb_include_Burnin.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include Burn-in", None))
+        self.chb_include_Depth.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include Depth", None))
         self.gb_previous.setTitle(QCoreApplication.translate("wg_Synth_Playblast", u"Previous render", None))
         self.l_pathLast.setText(QCoreApplication.translate("wg_Synth_Playblast", u"None", None))
         self.b_pathLast.setText(QCoreApplication.translate("wg_Synth_Playblast", u"...", None))
