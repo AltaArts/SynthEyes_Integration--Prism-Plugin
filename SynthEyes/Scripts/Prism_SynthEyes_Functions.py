@@ -121,17 +121,19 @@ class Prism_SynthEyes_Functions(object):
         self.core.registerCallback("onProjectBrowserStartup", self.onProjectBrowserStartup, plugin=self.plugin)
         self.core.registerCallback("onUserSettingsOpen", self.onUserSettingsOpen, plugin=self.plugin)
 
-        ##  DISABLED - Does Not Improve Performance
+        ######  DISABLED - Does Not Improve Performance  #################################
         # self.core.registerCallback("prePublish", self.prePublish, plugin=self.plugin)
         # self.core.registerCallback("postPublish", self.postPublish, plugin=self.plugin)
+        ##################################################################################
 
-
+        ######   NOT USED AS OF NOW   ####################################################
         # self.core.registerCallback("onStateCreated", self.onStateCreated, plugin=self.plugin)
         # self.core.registerCallback("prePlayblast", self.prePlayblast, plugin=self.plugin)
         # self.core.registerCallback("onGenerateStateNameContext", self.onGenerateStateNameContext, plugin=self.plugin)
+        ##################################################################################
 
-        self.findPrismActions()
-        self.createPrismMenu()
+
+        self.setupPrismMenu()
 
 
     @err_catcher(name=__name__)
@@ -188,7 +190,6 @@ class Prism_SynthEyes_Functions(object):
     ##########################################################
     ##    TO BE ABLE TO CONNECT FROM SEPARATE PROCESSES     ##
     ## vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv ##
-
     # import random
     # import string
 
@@ -202,7 +203,6 @@ class Prism_SynthEyes_Functions(object):
     #     chars = string.ascii_letters + string.digits
     #     pin = ''.join(random.choices(chars, k=12))
     #     return pin
-
     ## ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ##
     ##########################################################
 
@@ -241,11 +241,9 @@ class Prism_SynthEyes_Functions(object):
             ##########################################################
             ##    TO BE ABLE TO CONNECT FROM SEPARATE PROCESSES     ##
             ## vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv ##
-
             # self.synth_port = self.getRandomPort()
             # self.synth_pin = self.getRandomPin()
             # self.synthEyes.OpenExisting(self.synth_port, self.synth_pin)
-
             ## ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ##
             ##########################################################
 
@@ -260,53 +258,59 @@ class Prism_SynthEyes_Functions(object):
             return None
 
 
-    #   Queries Script Menu Items and Finds Prism Script ID's
-    @err_catcher(name=__name__)                                             #   TODO
-    def findPrismActions(self):     
-        mainMenu = self.synthEyes.MainMenu()
-        scriptMenu = mainMenu.SubMenuByName("Script")
-        prismMenu = scriptMenu.SubMenuByName("Prism")
-
-
-
-        for item in range(prismMenu.Count()):
-            actID = prismMenu.IDByPos(item)
-            actName = prismMenu.NameByPos(item)
-
-            if actName == "Prism - Save Version":
-                self.act_saveVersion_ID = actID
-
-            if actName == "Prism - Save Comment":
-                self.act_saveComment_ID = actID
-
-            if actName == "Prism - Open Project Browser":
-                self.act_projectManager_ID = actID
-
-            if actName == "Prism - Open State Manager":
-                self.act_stateManager_ID = actID
-
-            if actName == "Prism - Open Prism Settings":
-                self.act_prismSettings_ID = actID
-
-
-    #   Creates Custom Prism Menu in SynthEyes Main Toolbar
+    #   Queries Script Menu Items and Finds Prism Script ID's.
+    #   Creates Custom Prism Menu in SynthEyes Main Toolbar.
     @err_catcher(name=__name__)
-    def createPrismMenu(self):                                  #   TODO
+    def setupPrismMenu(self):
+        #   Ensure Menus Exist
         self.synthEyes.InitMenu()
 
+        #   Find SynthEyes Prism Script Menu
         mainMenu = self.synthEyes.MainMenu()
+        scriptMenu = mainMenu.SubMenuByName("Script")
+        prismScriptMenu = scriptMenu.SubMenuByName("Prism")
+
+        if not prismScriptMenu:
+            logger.warning(f"ERROR: Prism script menu not found")
+            self.core.popup("ERROR:\n\n"
+                            "Prism is unable to start.\n"
+                            "The Prism Script menu cannot be found in\n"
+                            "the SynthEyes script directory.\n"
+                            "Try restarting Prism.")
+            return
+        
+        #   Find SynthEyes Menu Action Numbers for Prism Scripts
+        for item in range(prismScriptMenu.Count()):
+            actID = prismScriptMenu.IDByPos(item)
+            actName = prismScriptMenu.NameByPos(item)
+
+            #   Add SynthyEyes Action ID's to Data Dict
+            for entry in self.synthMenuData:
+                if actName == entry["scriptName"]:
+                    entry["actionID"] = actID
+                    break
+
+        #   Validate Discovered Prism Menu Items
+        missing = [e["scriptName"] for e in self.synthMenuData if e["actionID"] is None]
+        if missing:
+            logger.warning(f"ERROR: Missing script actions: {missing}")
+
+        #   Build Custom Prism Menu (skip if already exists)
         prismMenu = mainMenu.SubMenuByName("Prism")
 
         if not prismMenu.Exists():
             prismMenu = mainMenu.AddSubMenu(9, "Prism")
 
-            prismMenu.AddMenuItem(1, "Save Next Version", self.act_saveVersion_ID)
-            prismMenu.AddMenuItem(2, "Save Version with Comment", self.act_saveComment_ID)
-            prismMenu.AddMenuItem(3, "Project Browser", self.act_projectManager_ID)
-            prismMenu.AddMenuItem(4, "State Manager", self.act_stateManager_ID)
-            prismMenu.AddMenuItem(5, "Prism Settings", self.act_prismSettings_ID)
+            for entry in sorted(self.synthMenuData, key=lambda x: x["menuPos"]):
+                prismMenu.AddMenuItem(
+                    entry["menuPos"],
+                    entry["menuName"],
+                    entry["actionID"]
+                )
 
             self.synthEyes.Redraw()
+
+        logger.debug("Prism Menu Setup Complete")
 
 
     #   Receives Signal from Listener Thread

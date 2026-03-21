@@ -75,3 +75,42 @@ class Prism_SynthEyes_Variables(object):
             "Synth_ImageRender",
             "Synth_Playblast"
             ]
+        
+        self.synthMenuData = [
+            {
+                "menuName": "Save Next Version",
+                "menuPos": 1,
+                "scriptName": "Prism - Save Version",
+                "actionID": None,
+            },
+            {
+                "menuName": "Save Version with Comment",
+                "menuPos": 2,
+                "scriptName": "Prism - Save Comment",
+                "actionID": None,
+            },
+            {
+                "menuName": "Project Browser",
+                "menuPos": 3,
+                "scriptName": "Prism - Open Project Browser",
+                "actionID": None,
+            },
+            {
+                "menuName": "State Manager",
+                "menuPos": 4,
+                "scriptName": "Prism - Open State Manager",
+                "actionID": None,
+            },
+            {
+                "menuName": "Prism Settings",
+                "menuPos": 5,
+                "scriptName": "Prism - Open Prism Settings",
+                "actionID": None,
+            },
+            {
+                "menuName": "Reset Prism",
+                "menuPos": 6,
+                "scriptName": "Launch Prism",
+                "actionID": None,
+            },
+        ]
