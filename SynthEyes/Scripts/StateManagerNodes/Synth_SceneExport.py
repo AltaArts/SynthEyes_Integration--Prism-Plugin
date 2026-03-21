@@ -100,13 +100,12 @@ class Synth_SceneExportClass(object):
             )
 
         outputFormats = SynthFormatNames.keys()
-
         self.cb_outType.addItems(outputFormats)
+
         self.export_paths = self.core.paths.getExportProductBasePaths()
         self.cb_outPath.addItems(list(self.export_paths.keys()))
         if len(self.export_paths) < 2:
             self.w_outPath.setVisible(False)
-
 
         getattr(self.core.appPlugin, "sm_export_startup", lambda x: None)(self)
         self.nameChanged(state.text(0))
@@ -172,10 +171,6 @@ class Synth_SceneExportClass(object):
             self.chb_additionalOptions.setChecked(eval(data["additionaloptions"]))
         if "currentCam" in data:
             self.curCam = data["currentCam"]
-        # if "currentscamshot" in data:
-        #     idx = self.cb_sCamShot.findText(data["currentscamshot"])
-        #     if idx != -1:
-        #         self.cb_sCamShot.setCurrentIndex(idx)
         if "lastexportpath" in data:
             lePath = self.core.fixPath(data["lastexportpath"])
             self.setLastPath(lePath)
@@ -221,10 +216,8 @@ class Synth_SceneExportClass(object):
         startFrame, endFrame = self.getFrameRange("Scene")
         if startFrame is not None:
             self.sp_rangeStart.setValue(startFrame)
-
         if endFrame is not None:
             self.sp_rangeEnd.setValue(endFrame)
-
         if context.get("type") == "asset":
             self.setRangeType("Single Frame")
             self.sp_rangeEnd.setValue(startFrame)
@@ -469,7 +462,8 @@ class Synth_SceneExportClass(object):
             showTasks=True,
             taskType="export",
             core=self.core,
-        )
+            )
+        
         self.core.parentWindow(self.nameWin)
         self.nameWin.setWindowTitle("Change Productname")
         self.nameWin.l_item.setText("Productname:")

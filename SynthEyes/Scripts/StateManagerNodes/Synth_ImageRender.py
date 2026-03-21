@@ -937,7 +937,6 @@ class Synth_ImageRenderClass(object):
         self.updateUi()
 
         rData = {}
-
         rData["currentCam"] = self.cb_cam.currentText()
 
         rangeType = self.cb_rangeType.currentText()

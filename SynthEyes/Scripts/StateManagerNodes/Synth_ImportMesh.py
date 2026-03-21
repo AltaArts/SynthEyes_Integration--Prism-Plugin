@@ -92,9 +92,6 @@ class Synth_ImportMeshClass(object):
         self.l_name.setVisible(False)
         self.e_name.setVisible(False)
 
-        # self.f_abcPath.setVisible(False)
-        # self.f_keepRefEdits.setVisible(False)
-
         self.oldPalette = self.b_importLatest.palette()
         self.updatePalette = QPalette()
         self.updatePalette.setColor(QPalette.Button, QColor(200, 100, 0))
@@ -504,8 +501,6 @@ class Synth_ImportMeshClass(object):
         self.e_meshName.setText(meshName)
 
 
-
-
     @err_catcher(name=__name__)
     def setStateColor(self, status):
         if status == "ok":
@@ -603,11 +598,6 @@ class Synth_ImportMeshClass(object):
         tip = "Will import the latest version of the Mesh."
         self.b_importLatest.setToolTip(tip)
 
-        # tip = ("Enables Auto-update function.\n\n"
-        #        "This will automatically import/update to\n"
-        #        "the most recent version of the media.")
-        # self.w_autoUpdate.setToolTip(tip)
-
         tip = ("Name of SynthEyes Mesh for the Import.\n\n"
                "You may change the name and it will be\n"
                "reflected in SynthEyes.  Also the version\n"
@@ -615,8 +605,6 @@ class Synth_ImportMeshClass(object):
                " to the selected version.")
         self.l_meshName.setToolTip(tip)
         self.e_meshName.setToolTip(tip)
-
-
 
 
     @err_catcher(name=__name__)

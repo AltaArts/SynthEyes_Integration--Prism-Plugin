@@ -70,9 +70,6 @@ class Synth_Render_StMapClass(object):
         self.allowCustomContext = False
         self.cb_context.addItems(["From scenefile", "Custom"])
 
-        # self.renderingStarted = False
-        # self.cleanOutputdir = True
-
         self.e_name.setText(state.text(0) + " - {identifier}")
 
         self.rangeTypes = [
@@ -336,10 +333,6 @@ class Synth_Render_StMapClass(object):
 
     @err_catcher(name=__name__)
     def initializeContextBasedSettings(self):
-        # context = self.getCurrentContext()                 #   Commented Out for Initial Naming
-        # if context.get("task"):
-        #     self.setIdentifier(context.get("task"))
-
         self.updateUi()
 
 
@@ -523,10 +516,8 @@ class Synth_Render_StMapClass(object):
         if widget:
             widget.show()
 
-
         self.rb_renderType_seq.setChecked(isVid)
         self.rb_renderType_single.setEnabled(not isVid)
-
 
         self.stateManager.saveStatesToScene
 
@@ -873,7 +864,6 @@ class Synth_Render_StMapClass(object):
         self.updateUi()
 
         rData = {}
-
         rData["currentCam"] = self.cb_cam.currentText()
 
         rangeType = self.cb_rangeType.currentText()
@@ -949,7 +939,6 @@ class Synth_Render_StMapClass(object):
     @err_catcher(name=__name__)
     def executeState(self, parent, useVersion="next"):
         currentCam = self.cb_cam.currentText()
-
         rangeType = self.cb_rangeType.currentText()
         frames = self.getFrameRange(rangeType)
         startFrame = frames[0]
@@ -960,7 +949,6 @@ class Synth_Render_StMapClass(object):
 
         if rangeType == "Single Frame":
             endFrame = startFrame
-
 
         fileName = self.core.getCurrentFileName()
         context = self.getCurrentContext()

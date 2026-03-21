@@ -125,6 +125,7 @@ class Prism_SynthEyes_Functions(object):
         # self.core.registerCallback("prePublish", self.prePublish, plugin=self.plugin)
         # self.core.registerCallback("postPublish", self.postPublish, plugin=self.plugin)
 
+
         # self.core.registerCallback("onStateCreated", self.onStateCreated, plugin=self.plugin)
         # self.core.registerCallback("prePlayblast", self.prePlayblast, plugin=self.plugin)
         # self.core.registerCallback("onGenerateStateNameContext", self.onGenerateStateNameContext, plugin=self.plugin)
@@ -215,10 +216,23 @@ class Prism_SynthEyes_Functions(object):
     #   Parses the Integration Path and Imports SyPy3
     @err_catcher(name=__name__)
     def importSyPy3(self):
-        if not self.synthEyes:
+        if self.synthEyes:
+            return self.synthEyes
+
+        try:
             integrations = self.core.integration.getIntegrations()
-            synthPath = integrations["SynthEyes"][0]
-            sys.path.append(synthPath)
+            synthData = integrations.get("SynthEyes")
+
+            if not synthData:
+                raise RuntimeError("SynthEyes integration not found")
+
+            synthPath = synthData[0]
+
+            if not synthPath or not os.path.exists(synthPath):
+                raise RuntimeError(f"Invalid SynthEyes path: {synthPath}")
+
+            if synthPath not in sys.path:
+                sys.path.append(synthPath)
 
             import SyPy3
 
@@ -238,14 +252,22 @@ class Prism_SynthEyes_Functions(object):
             self.synthEyes.OpenExisting()
 
             logger.debug("Imported SynthEyes SyPy3")
+            return self.synthEyes
+
+        except Exception:
+            logger.exception("importSyPy3 failed")
+            self.synthEyes = None
+            return None
 
 
     #   Queries Script Menu Items and Finds Prism Script ID's
-    @err_catcher(name=__name__)
+    @err_catcher(name=__name__)                                             #   TODO
     def findPrismActions(self):     
         mainMenu = self.synthEyes.MainMenu()
         scriptMenu = mainMenu.SubMenuByName("Script")
         prismMenu = scriptMenu.SubMenuByName("Prism")
+
+
 
         for item in range(prismMenu.Count()):
             actID = prismMenu.IDByPos(item)
@@ -269,7 +291,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Creates Custom Prism Menu in SynthEyes Main Toolbar
     @err_catcher(name=__name__)
-    def createPrismMenu(self):
+    def createPrismMenu(self):                                  #   TODO
         self.synthEyes.InitMenu()
 
         mainMenu = self.synthEyes.MainMenu()
@@ -307,23 +329,6 @@ class Prism_SynthEyes_Functions(object):
 
             case "open_PrismSettings":
                 self.open_PrismSettings()
-
-
-
-
-    # @err_catcher(name=__name__)
-    # def autosaveEnabled(self, origin):
-    #     if bpy.app.version < (2, 80, 0):
-    #         return bpy.context.user_preferences.filepaths.use_auto_save_temporary_files
-    #     else:
-    #         return bpy.context.preferences.filepaths.use_auto_save_temporary_files
-
-    # @err_catcher(name=__name__)
-    # def sceneOpen(self, origin):
-    #     if self.core.shouldAutosaveTimerRun():
-    #         origin.startAutosaveTimer()
-
-
 
 
 
@@ -375,10 +380,9 @@ class Prism_SynthEyes_Functions(object):
         origin.b_preview.setMinimumWidth(35 * self.core.uiScaleFactor)
         origin.b_preview.setMaximumWidth(35 * self.core.uiScaleFactor)
 
-        #	Remove Import Export and Playblast buttons
+        #	Remove Native Buttons
         origin.b_createImport.deleteLater()
         origin.b_createExport.deleteLater()
-        # origin.b_createPlayblast.deleteLater()
         origin.b_shotCam.deleteLater()
 
         #	Create New Scene Button
@@ -438,12 +442,9 @@ class Prism_SynthEyes_Functions(object):
                "the Perspective View.")
         origin.b_createPlayblast.setToolTip(tip)
 
-        #   States to Keep in SynthEyes
-        keepStates = ["Folder", "Synth_AddShot", "Synth_ImportMesh", "Synth_SceneExport", "Synth_Render_StMap", "Synth_ImageRender", "Synth_Playblast"]
-
-        #   Remove Unused States
+        #   Remove Unused States Except for SynthStates
         for state in list(origin.stateTypes.keys()):
-            if state not in keepStates:
+            if state not in self.synthStates:
                 try:
                     del origin.stateTypes[state]
                 except Exception:
@@ -515,135 +516,9 @@ class Prism_SynthEyes_Functions(object):
 
 
 
-    @err_catcher(name=__name__)                                                 #   TESTING
-    def saveSynthPrefs(self):
-
-        import json
-        import os
-        from concurrent.futures import ThreadPoolExecutor, TimeoutError
-
-        # Path to JSON output
-        jsonPath = r"C:\Users\Joshua Breckeen\Desktop\SynthPrefs.json"
-
-
-        # Dynamic skip list for problematic prefs
-        skip_list = {
-            "solvercalib",
-            "setAsPrefs",
-            "placeAsPrefs",
-            "removePrefs",
-            "setToPrefs",
-            }
-
-
-        # Read existing JSON to resume if file exists
-        if os.path.exists(jsonPath):
-            with open(jsonPath, "r", encoding="utf-8") as f:
-                try:
-                    existing_prefs = json.load(f)
-                    start_idx = max(p["index"] for p in existing_prefs) + 1
-                except:
-                    existing_prefs = []
-                    start_idx = 0
-        else:
-            existing_prefs = []
-            start_idx = 0
-
-        print(f"Starting at index {start_idx}")
-
-        # Prepare file for incremental writing
-        if not os.path.exists(jsonPath) or start_idx == 0:
-            # new file: start JSON array
-            with open(jsonPath, "w", encoding="utf-8") as f:
-                f.write("[\n")
-        else:
-            # existing file: continue, remove final ']'
-            with open(jsonPath, "rb+") as f:
-                f.seek(-2, os.SEEK_END)
-                f.truncate()
-                f.write(b",\n")
-
-        numPrefs = self.synthEyes.NumPrefs()
-        print(f"Total prefs: {numPrefs}")
-
-        self.synthEyes.BeginPref()
-
-        executor = ThreadPoolExecutor(max_workers=1)  # single thread for safety
-        first = (start_idx == 0) and (len(existing_prefs) == 0)
-
-        try:
-            for idx in range(start_idx, numPrefs):
-
-                name = self.synthEyes.PrefName(idx)
-                variable = self.synthEyes.PrefVariable(idx)
-
-                if not variable:
-                    continue  # skip headers
-
-                description = self.synthEyes.PrefDescription(idx)
-
-                # Skip known problematic prefs
-                if variable in skip_list:
-                    print(f"**** Skipped pref {variable}")
-                    pref_entry = {
-                        "index": idx,
-                        "name": name,
-                        "variable": variable,
-                        "value": None,
-                        "description": description
-                    }
-                else:
-                    # Function to safely read value
-                    def get_value():
-                        try:
-                            return self.synthEyes.GetPrefFromIndex(idx)
-                        except:
-                            return None
-
-                    future = executor.submit(get_value)
-                    try:
-                        value = future.result(timeout=2.0)  # 2 sec timeout
-                        print(f"Pref {variable} = {value}")  # print successful read
-                    except TimeoutError:
-                        print(f"**** Pref {variable} timed out, skipping")
-                        value = None
-                        skip_list.add(variable)  # dynamically add to skip list
-
-                    pref_entry = {
-                        "index": idx,
-                        "name": name,
-                        "variable": variable,
-                        "value": value,
-                        "description": description
-                    }
-
-                # Write directly to disk incrementally
-                with open(jsonPath, "a", encoding="utf-8") as f:
-                    if not first:
-                        f.write(",\n")
-                    f.write(json.dumps(pref_entry, ensure_ascii=False))
-                    first = False
-
-        finally:
-            self.synthEyes.AcceptPref()
-            executor.shutdown(wait=False)
-
-        # Close JSON array
-        with open(jsonPath, "a", encoding="utf-8") as f:
-            f.write("\n]")
-
-        print(f"Prefs successfully written to: {jsonPath}")
-
-
-
-
-
-
-
     ###################################################
     ##                  Synth Stuff                  ##
     ###################################################
-
 
 
     #   Context Wrapper for SynthEyes Undo Blocks
@@ -689,28 +564,39 @@ class Prism_SynthEyes_Functions(object):
     #   Returns Bool of Prefetch is Enabled in SynthEyes
     @err_catcher(name=__name__)
     def getPrefetch(self) -> bool:
-        self.synthEyes.InitMenu()
-        shotMenu = self.synthEyes.TopMenu("Shot")
-        menu_idx = shotMenu.PosByName("Enable Prefetch")
-        isChecked_int = shotMenu.IsCheckedByPos(menu_idx)
+        try:
+            self.synthEyes.InitMenu()
+            shotMenu = self.synthEyes.TopMenu("Shot")
 
-        return bool(isChecked_int == 1)
+            if shotMenu:
+                menu_idx = shotMenu.PosByName("Enable Prefetch")
+                isChecked_int = shotMenu.IsCheckedByPos(menu_idx)
 
+            logger.debug("Got the Prefetch Enabled State")
+
+            return bool(isChecked_int == 1)
+        
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to get the Prefetch State.: {e}")
+            return False
+        
 
     #   Set the SynthEyes Prefetch Enabled/Disabled
     @err_catcher(name=__name__)
     def setPrefetch(self, enable:bool) -> None:
         isEnabled = self.getPrefetch()
 
-        if enable:
-            if not isEnabled:
-                self.synthEyes.PerformActionByNameAndContinue("Enable Prefetch")
-            
-        else:
-            if isEnabled:
-                self.synthEyes.PerformActionByNameAndContinue("Enable Prefetch")
+        try:
+            if enable:
+                if not isEnabled:
+                    self.synthEyes.PerformActionByNameAndContinue("Enable Prefetch")
+                
+            else:
+                if isEnabled:
+                    self.synthEyes.PerformActionByNameAndContinue("Enable Prefetch")
 
-
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Set Prefetch State: {e}")
 
 
     ##  FRAMES  ##
@@ -900,6 +786,8 @@ class Prism_SynthEyes_Functions(object):
         shot = self.getObjByUUID("shot", shotUUID)
         if shot:
             return shot.cam
+        
+        return None
 
 
     ##  SHOTS  ##
@@ -1049,55 +937,6 @@ class Prism_SynthEyes_Functions(object):
         except Exception as e:
             logger.warning(f"ERROR: Unable to Set Shot's Sampling Filter: {e}")
             return
-
-
-
-
-    # @err_catcher(name=__name__)
-    # def selectCam(self, origin):
-    #     if self.getObject(origin.curCam):
-    #         self.deselectObjects()
-    #         self.selectObject(self.getObject(origin.curCam))
-
-
-    # @err_catcher(name=__name__)
-    # def getImportPaths(self, origin):
-    #     if "PrismImports" not in bpy.context.scene:
-    #         return False
-    #     else:
-    #         return bpy.context.scene["PrismImports"]
-
-
-    # @err_catcher(name=__name__)
-    # def getFPS(self, origin):
-    #     intFps = bpy.context.scene.render.fps
-    #     baseFps = bpy.context.scene.render.fps_base
-    #     return round(intFps / baseFps, 2)
-
-
-    # @err_catcher(name=__name__)
-    # def setFPS(self, origin, fps):
-    #     if int(fps) == fps:
-    #         bpy.context.scene.render.fps = int(fps)
-    #     else:
-    #         intFps = math.ceil(fps)
-    #         bpy.context.scene.render.fps = intFps
-    #         bpy.context.scene.render.fps_base = intFps/fps
-
-
-    # @err_catcher(name=__name__)
-    # def getResolution(self):
-    #     width = bpy.context.scene.render.resolution_x
-    #     height = bpy.context.scene.render.resolution_y
-    #     return [width, height]
-
-
-    # @err_catcher(name=__name__)
-    # def setResolution(self, width=None, height=None):
-    #     if width:
-    #         bpy.context.scene.render.resolution_x = width
-    #     if height:
-    #         bpy.context.scene.render.resolution_y = height
 
 
 
@@ -1278,7 +1117,7 @@ class Prism_SynthEyes_Functions(object):
             return None
     
 
-
+    #   Waits in QtLoop Until Popup Window is Invalid
     @err_catcher(name=__name__)
     def waitForPopupClose(self, popup, timeout=600.0):
         start_time = time.time()
@@ -1305,10 +1144,8 @@ class Prism_SynthEyes_Functions(object):
                 logger.warning(f"Error during popup wait: {e}")
                 finish()
 
-        # Start checking
         check()
 
-        # 🚀 THIS is the key: block here, but keep UI alive
         loop.exec_()
 
 
@@ -1336,7 +1173,7 @@ class Prism_SynthEyes_Functions(object):
         result = self.core.popupQuestion(text=question, title=title)
 
         if result != "Yes":
-            return
+            return False
 
         #   Call to Create the State Creation with Given Mode
         self.addShot_mode = mode
@@ -1432,11 +1269,6 @@ class Prism_SynthEyes_Functions(object):
     #######################################
 
 
-    # @err_catcher(name=__name__)
-    # def sm_import_startup(self, origin):
-    #     origin.f_abcPath.setVisible(True)
-
-
     #   Called from ImportMesh State Execute
     @err_catcher(name=__name__)
     def sm_import_importToApp(self, origin, doImport, update, impFileName, data=None):
@@ -1454,7 +1286,6 @@ class Prism_SynthEyes_Functions(object):
 
         ##   Update Existing Mesh
         if update and mesh_orig:
-
             #   Capture Original Mesh Data
             meshName_curr = self.getObjName(self, mesh_orig)
             meshTrans_orig = mesh_orig.trans
@@ -1462,7 +1293,6 @@ class Prism_SynthEyes_Functions(object):
             with self.UNDO_BLOCK("Update Mesh"):
                 #   Load Mesh from New Filepath
                 mesh_orig.Call("ReadMesh", impFileName)
-
                 #   Apply Original Transforms
                 mesh_orig.Set("trans", meshTrans_orig)
 
@@ -1552,7 +1382,6 @@ class Prism_SynthEyes_Functions(object):
     
     @err_catcher(name=__name__)
     def sm_pre_sceneExport(self, origin, rSettings):
-        # shot = self.getShotFromCamName(rSettings["currentCam"])
         shot = self.synthEyes.Shots()[0]
 
         #   Capture Original Settings
@@ -1562,7 +1391,6 @@ class Prism_SynthEyes_Functions(object):
         rSettings["orig_play_start"] = self.synthEyes.AnimStart()
         rSettings["orig_play_end"] = self.synthEyes.AnimEnd()
         rSettings["orig_currFrame"] = self.getCurrentFrame()
-
 
         #   Update Frame Range
         with self.UNDO_BLOCK("Set Framerange"):
@@ -1591,7 +1419,6 @@ class Prism_SynthEyes_Functions(object):
 
     @err_catcher(name=__name__)
     def sm_post_sceneExport(self, origin, rSettings):
-        # shot = self.getShotFromCamName(rSettings["currentCam"])
         shot = self.synthEyes.Shots()[0]
 
         #   Restore Frame Range
@@ -1607,7 +1434,6 @@ class Prism_SynthEyes_Functions(object):
     @err_catcher(name=__name__)
     def sm_export_preDelete(self, origin):
         pass
-    
 
 
 
@@ -1760,7 +1586,6 @@ class Prism_SynthEyes_Functions(object):
         rData["orig_exrUVMcmp"] = self.synthEyes.GetPrefFromVar("exrUVMcmp")
         rData["orig_currFrame"] = self.getCurrentFrame()
 
-
         ##  Set Render Settings
         #   EXR Compression Format
         self.synthEyes.BeginPref()
@@ -1832,7 +1657,6 @@ class Prism_SynthEyes_Functions(object):
         #     self.setOutputRez(shot, scaleCode=oData["orig_renderScale"])
         #     self.setOutputSampleFilter(shot, filterCode=oData["orig_renderFilter"])
 
-
         #   EXR Compression Format
         self.synthEyes.BeginPref()
         self.synthEyes.SetPrefFromVar("exrUVMcmp", rData["orig_exrUVMcmp"])
@@ -1841,8 +1665,6 @@ class Prism_SynthEyes_Functions(object):
         #   Restore Framerange
         with self.UNDO_BLOCK("Restore Framerange"):
             self.setCurrentFrame(rData["orig_currFrame"])
-
-
 
 
     @err_catcher(name=__name__)
@@ -1948,16 +1770,7 @@ class Prism_SynthEyes_Functions(object):
             if start_btn.IsValid():
                 start_btn.ClickAndWait()
 
-            # timeout = 600.0  # max wait time for render (secs)
-            # interval = 1.0   # poll interval (secs)
-            # elapsed = 0.0
-
-            #   Start Polling to See if Popup is Closed After Render
-            # while popup_preview.IsValid() and elapsed < timeout:
-            #     time.sleep(interval)
-            #     elapsed += interval
-
-            # 🚀 Non-blocking wait
+            #   Wait for Popup to Close
             self.waitForPopupClose(popup_preview)
 
             return True
@@ -2163,116 +1976,3 @@ class Prism_SynthEyes_Functions(object):
 
         with self.UNDO_BLOCK("Write Index Note"):
             index_note.text = json.dumps({"notes": []})
-
-
-
-
-
-
-    # @err_catcher(name=__name__)
-    # def sm_export_exportShotcam(self, origin, startFrame, endFrame, outputName):
-    #     self.selectCam(origin)
-    #     if bpy.app.version < (4, 0, 0):
-    #         bpy.ops.wm.alembic_export(
-    #             self.getOverrideContext(origin),
-    #             filepath=(outputName + ".abc"),
-    #             start=startFrame,
-    #             end=endFrame,
-    #             selected=True,
-    #             as_background_job=False,
-    #         )
-    #     else:
-    #         with bpy.context.temp_override(**self.getOverrideContext()):
-    #             bpy.ops.wm.alembic_export(
-    #                 filepath=(outputName + ".abc"),
-    #                 start=startFrame,
-    #                 end=endFrame,
-    #                 selected=True,
-    #                 as_background_job=False,
-    #             )
-
-    #     self.selectCam(origin)
-    #     if bpy.app.version < (4, 0, 0):
-    #         bpy.ops.export_scene.fbx(
-    #             self.getOverrideContext(origin),
-    #             filepath=(outputName + ".fbx"),
-    #             use_selection=True,
-    #         )
-    #     else:
-    #         with bpy.context.temp_override(**self.getOverrideContext()):
-    #             bpy.ops.export_scene.fbx(
-    #                 filepath=(outputName + ".fbx"),
-    #                 use_selection=True,
-    #             )
-
-    #     self.deselectObjects()
-
-
-
-
-    # @err_catcher(name=__name__)
-    # def sm_render_fixOutputPath(self, origin, outputName, singleFrame=False, state=None):
-    #     if (not singleFrame) or self.useNodeAOVs() or (state and not state.gb_submit.isHidden() and state.gb_submit.isChecked()):
-    #         outputName = (
-    #             os.path.splitext(outputName)[0].rstrip("#.")
-    #             + "." + "#"*self.core.framePadding
-    #             + os.path.splitext(outputName)[1]
-    #         )
-    #     return outputName
-
-
-    # @err_catcher(name=__name__)
-    # def getImportedNodes(self, existingNodes, prevSceneContent):
-    #     importedNodes = []
-    #     for obj in bpy.data.objects:
-    #         if obj not in existingNodes:
-    #             importedNodes.append(self.getNode(obj))
-
-    #     for col in bpy.data.collections:
-    #         if col not in existingNodes:
-    #             importedNodes.append(self.getNode(col))
-
-    #     if not importedNodes:
-    #         for obj in bpy.data.scenes[0].collection.objects:
-    #             if obj not in prevSceneContent:
-    #                 importedNodes.append(self.getNode(obj))
-
-    #         for col in bpy.data.scenes[0].collection.children:
-    #             if col not in prevSceneContent:
-    #                 importedNodes.append(self.getNode(col))
-
-    #     return importedNodes
-
-
-
-    # @err_catcher(name=__name__)
-    # def sm_playblast_startup(self, origin):
-    #     frange = self.getFrameRange(origin)
-    #     origin.sp_rangeStart.setValue(frange[0])
-    #     origin.sp_rangeEnd.setValue(frange[1])
-    #     origin.b_resPresets.setMinimumWidth(30 * self.core.uiScaleFactor)
-    #     origin.b_resPresets.setMinimumHeight(0)
-    #     origin.b_resPresets.setMaximumHeight(500 * self.core.uiScaleFactor)
-    #     origin.cb_formats.addItem(".mp4 (with audio)")
-
-    # @err_catcher(name=__name__)
-    # def prePlayblast(self, **kwargs):
-    #     outputName = origOutputName = kwargs["outputpath"]
-    #     tmpOutputName = os.path.splitext(kwargs["outputpath"])[0].rstrip("#")
-    #     tmpOutputName = tmpOutputName.strip(".")
-    #     selFmt = kwargs["state"].cb_formats.currentText()
-    #     if selFmt == ".mp4 (with audio)":
-    #         outputName = tmpOutputName + ".mp4"
-
-    #     renderAnim = kwargs["startframe"] != kwargs["endframe"]
-    #     if not renderAnim:
-    #         outputName = (
-    #             os.path.splitext(outputName)[0]
-    #             + "."
-    #             + ("%0" + str(self.core.framePadding) + "d") % kwargs["startframe"]
-    #             + os.path.splitext(outputName)[1]
-    #         )
-
-    #     if outputName != origOutputName:
-    #         return {"outputName": outputName}
-

@@ -789,7 +789,6 @@ class Synth_PlayblastClass(object):
         self.refreshCameras()
 
 
-
     @err_catcher(name=__name__)
     def refreshCameras(self):
         self.cb_cam.clear()
@@ -964,7 +963,6 @@ class Synth_PlayblastClass(object):
         if startFrame is None:
             warnings.append(["Framerange is invalid.", "", 3])
 
-
         warnings += self.core.appPlugin.sm_playblast_preExecute(self, rData)
 
         return [self.state.text(0), warnings]
@@ -1035,7 +1033,6 @@ class Synth_PlayblastClass(object):
 
         if rangeType == "Single Frame":
             endFrame = startFrame
-
 
         fileName = self.core.getCurrentFileName()
         context = self.getCurrentContext()

@@ -45,7 +45,6 @@
 
 
 import os
-import platform
 
 from qtpy.QtCore import *
 from qtpy.QtGui import *
@@ -73,11 +72,7 @@ class Prism_SynthEyes_externalAccess_Functions(object):
         
         self.core.registerCallback("getPresetScenes", self.getPresetScenes, plugin=self.plugin)
 
-        ssheetPath = os.path.join(
-            self.pluginDirectory,
-            "UserInterfaces",
-            "SynthEyesStyleSheet"
-            )
+        ssheetPath = os.path.join(self.pluginDirectory, "UserInterfaces", "SynthEyesStyleSheet")
         self.core.registerStyleSheet(ssheetPath)
 
 
@@ -121,15 +116,6 @@ class Prism_SynthEyes_externalAccess_Functions(object):
         if "SynthEyes" in settings:
             if "commsPort" in settings["SynthEyes"]:
                 origin.sp_port.setValue(settings["SynthEyes"]["commsPort"])
-
-
-    @err_catcher(name=__name__)
-    def createProject_startup(self, origin):
-
-        pass
-
-        # if self.core.useOnTop:
-        #     origin.setWindowFlags(origin.windowFlags() ^ Qt.WindowStaysOnTopHint)
 
 
     @err_catcher(name=__name__)

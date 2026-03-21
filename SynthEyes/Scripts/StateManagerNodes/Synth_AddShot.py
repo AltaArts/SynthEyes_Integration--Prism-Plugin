@@ -316,7 +316,7 @@ class Synth_AddShotClass(object):
     #########################
 
 
-    @err_catcher(name=__name__)                     #   NEEDED ???
+    @err_catcher(name=__name__)
     def setStateMode(self, stateMode):
         self.stateMode = stateMode
         self.l_class.setText(stateMode)
@@ -496,11 +496,6 @@ class Synth_AddShotClass(object):
         tip = "Will import the latest version of the media."
         self.b_importLatest.setToolTip(tip)
 
-        # tip = ("Enables Auto-update function.\n\n"
-        #        "This will automatically import/update to\n"
-        #        "the most recent version of the media.")
-        # self.w_autoUpdate.setToolTip(tip)
-
         tip = ("Name of SynthEyes Camera for the Shot.\n\n"
                "You may change the name and it will be\n"
                "reflected in SynthEyes.  Also the version\n"
@@ -598,7 +593,7 @@ class Synth_AddShotClass(object):
     #   Sets the Selected Result from the MediaChooser
     @err_catcher(name=__name__)
     def setSelectedMedia(self, selResult):        
-        self.selResult = selResult  # Save the selected media
+        self.selResult = selResult
 
 
     @err_catcher(name=__name__)
@@ -818,7 +813,6 @@ class Synth_AddShotClass(object):
         self.importData["autoUpdate"] = str(self.chb_autoUpdate.isChecked())
         self.importData["taskname"] = self.taskName
 
-
         return self.importData
     
 
@@ -852,7 +846,6 @@ class Synth_AddShotClass(object):
                 seqFiles = self.core.media.detectSequence(validFiles, baseFile=baseFile)
 
                 start, end = self.core.media.getFrameRangeFromSequence(seqFiles, baseFile=baseFile)
-
                 frameCount = end - start
 
         verStr = versionData.get("version")
@@ -863,7 +856,6 @@ class Synth_AddShotClass(object):
         result = self.synthFuncts.sm_changeShotImages(self, shot, baseFile, verStr, frameCount)
 
         return result
-
 
 
 

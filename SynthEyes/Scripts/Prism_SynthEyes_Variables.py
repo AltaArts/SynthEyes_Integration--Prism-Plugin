@@ -66,3 +66,12 @@ class Prism_SynthEyes_Variables(object):
         self.pluginDirectory = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
         self.appIcon = os.path.join(self.pluginDirectory, "UserInterfaces", "SynthEyes.ico")
         self.prismAppIcon = os.path.join(self.pluginDirectory, "UserInterfaces", "SynthEyes.ico")
+        self.synthStates = [
+            "Folder",
+            "Synth_AddShot",
+            "Synth_ImportMesh",
+            "Synth_SceneExport",
+            "Synth_Render_StMap",
+            "Synth_ImageRender",
+            "Synth_Playblast"
+            ]

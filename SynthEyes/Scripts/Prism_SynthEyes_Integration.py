@@ -226,13 +226,8 @@ class Prism_SynthEyes_Integration(object):
             with open(file, "r") as file_data:
                 file_str = file_data.read()
 
-            file_str = file_str.replace(
-                "@PRISMROOTREPLACE@", '"%s"' % prismRoot.replace("\\", "/")
-            )
-
-            file_str = file_str.replace(
-                "@PLUGINROOTREPLACE@", '"%s"' % pluginRoot.replace("\\", "/")
-            )
+            file_str = file_str.replace("@PRISMROOTREPLACE@", '"%s"' % prismRoot.replace("\\", "/"))
+            file_str = file_str.replace("@PLUGINROOTREPLACE@", '"%s"' % pluginRoot.replace("\\", "/"))
 
             cmd = {"type": "writeToFile", "args": [file, file_str]}
             cmds.append(cmd)
@@ -322,6 +317,7 @@ class Prism_SynthEyes_Integration(object):
                 % (__file__, str(e), exc_type, exc_tb.tb_lineno),
             )
             return False
+
 
     def installerExecute(self, synthItem, result):
         try:
