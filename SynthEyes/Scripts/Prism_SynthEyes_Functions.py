@@ -1216,7 +1216,60 @@ class Prism_SynthEyes_Functions(object):
 
         else:
             return None
+        
+
+    #   Returns Str of Format Specific Render Settings
+    #   (from Synth_Formats.py imports)
+    @err_catcher(name=__name__)
+    def getRenderOptsStr(self, rSettings):
+        format = rSettings["format"]
+
+        if format == ".exr":
+            return SynthExrCompress[rSettings["exrCompress"]]
+        
+        elif format == ".mov":
+            return SynthMovCodecs[rSettings["movCodec"]]
+        
+        elif format == ".mp4":
+            return f"{SynthMP4Codecs[rSettings['mp4Codec']]} {SynthMP4Qual[rSettings['mp4Qual']]}"
+        
+        else:
+            return None
     
+
+
+    @err_catcher(name=__name__)
+    def waitForPopupClose(self, popup, timeout=600.0):
+        start_time = time.time()
+        loop = QEventLoop()
+
+        def finish():
+            if loop.isRunning():
+                loop.quit()
+
+        def check():
+            try:
+                if not popup or not popup.IsValid():
+                    finish()
+                    return
+
+                if time.time() - start_time > timeout:
+                    logger.warning("Preview render timed out")
+                    finish()
+                    return
+
+                QTimer.singleShot(200, check)
+
+            except Exception as e:
+                logger.warning(f"Error during popup wait: {e}")
+                finish()
+
+        # Start checking
+        check()
+
+        # 🚀 THIS is the key: block here, but keep UI alive
+        loop.exec_()
+
 
 
     #######################################
@@ -1571,25 +1624,6 @@ class Prism_SynthEyes_Functions(object):
         return rSettings
     
 
-    #   Returns Str of Format Specific Render Settings
-    #   (from Synth_Formats.py imports)
-    @err_catcher(name=__name__)
-    def getRenderOptsStr(self, rSettings):
-        format = rSettings["format"]
-
-        if format == ".exr":
-            return SynthExrCompress[rSettings["exrCompress"]]
-        
-        elif format == ".mov":
-            return SynthMovCodecs[rSettings["movCodec"]]
-        
-        elif format == ".mp4":
-            return f"{SynthMP4Codecs[rSettings['mp4Codec']]} {SynthMP4Qual[rSettings['mp4Qual']]}"
-        
-        else:
-            return None
-
-
     #   Renders with SynthEyes 'Save Sequence'
     @err_catcher(name=__name__)
     def sm_render_Sequence(self, origin, stateManager, outputPath, rSettings):
@@ -1873,14 +1907,17 @@ class Prism_SynthEyes_Functions(object):
             if start_btn.IsValid():
                 start_btn.ClickAndWait()
 
-            timeout = 600.0  # max wait time for render (secs)
-            interval = 1.0   # poll interval (secs)
-            elapsed = 0.0
+            # timeout = 600.0  # max wait time for render (secs)
+            # interval = 1.0   # poll interval (secs)
+            # elapsed = 0.0
 
             #   Start Polling to See if Popup is Closed After Render
-            while popup_preview.IsValid() and elapsed < timeout:
-                time.sleep(interval)
-                elapsed += interval
+            # while popup_preview.IsValid() and elapsed < timeout:
+            #     time.sleep(interval)
+            #     elapsed += interval
+
+            # 🚀 Non-blocking wait
+            self.waitForPopupClose(popup_preview)
 
             return True
         

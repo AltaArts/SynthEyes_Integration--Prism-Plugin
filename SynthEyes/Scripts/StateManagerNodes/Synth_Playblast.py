@@ -1072,7 +1072,7 @@ class Synth_PlayblastClass(object):
                 errors.append(f"{idf}: VersionInfo Error")
 
             try:
-                self.handleMasterVersion(outputName, details)
+                self.handleMasterVersion(outputName)
             except:
                 errors.append(f"{idf}: Master Error")
         else:
@@ -1132,15 +1132,15 @@ class Synth_PlayblastClass(object):
 
 
     @err_catcher(name=__name__)
-    def handleMasterVersion(self, outputName, context):
+    def handleMasterVersion(self, outputName):
         if not self.isUsingMasterVersion():
             return
 
         masterAction = self.cb_master.currentText()
         if masterAction == "Set as master":
-            self.core.mediaProducts.updateMasterVersion(outputName, context=context)
+            self.core.mediaProducts.updateMasterVersion(outputName, mediaType="playblasts")
         elif masterAction == "Add to master":
-            self.core.mediaProducts.addToMasterVersion(outputName, context=context)
+            self.core.mediaProducts.addToMasterVersion(outputName, mediaType="playblasts")
 
 
     @err_catcher(name=__name__)
