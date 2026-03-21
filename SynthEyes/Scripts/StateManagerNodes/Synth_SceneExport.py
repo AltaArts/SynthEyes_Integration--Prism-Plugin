@@ -110,6 +110,8 @@ class Synth_SceneExportClass(object):
 
         getattr(self.core.appPlugin, "sm_export_startup", lambda x: None)(self)
         self.nameChanged(state.text(0))
+
+        self.toolTips()
         self.connectEvents()
 
         self.core.callback("onStateStartup", self)
@@ -120,6 +122,12 @@ class Synth_SceneExportClass(object):
             self.initializeContextBasedSettings()
 
         self.typeChanged(self.getOutputType())
+
+
+    @err_catcher(name=__name__)
+    def toolTips(self):
+        tip = "Image format for the Scene Export."
+        self.cb_outType.setToolTip(tip)
 
 
     @err_catcher(name=__name__)
