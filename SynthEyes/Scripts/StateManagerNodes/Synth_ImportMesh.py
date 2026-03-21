@@ -139,6 +139,7 @@ class Synth_ImportMeshClass(object):
             self.loadData(stateData)
 
         self.nameChanged()
+        self.toolTips()
         self.updateUi()
 
 
@@ -592,7 +593,7 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
-    def setToolTips(self):
+    def toolTips(self):
         tip = "Product Name of Imported Mesh"
         self.e_name.setToolTip(tip)
 
