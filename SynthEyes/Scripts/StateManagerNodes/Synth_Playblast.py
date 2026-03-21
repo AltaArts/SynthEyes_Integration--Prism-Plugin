@@ -121,6 +121,7 @@ class Synth_PlayblastClass(object):
         self.setupFormatOptions()
         self.configFormatUI()
         self.loadDefaults()
+        self.toolTips()
         self.connectEvents()
 
         self.oldPalette = self.b_changeTask.palette()
@@ -157,6 +158,65 @@ class Synth_PlayblastClass(object):
         self.chb_include_Alpha.setChecked(False)
         self.chb_include_Depth.setChecked(False)
         self.chb_include_Burnin.setChecked(False)
+
+    @err_catcher(name=__name__)
+    def toolTips(self):
+        tip = "SynthEyes Camera for Playblast"
+        self.cb_cam.setToolTip(tip)
+
+        tip = "Enable Scale Override"
+        self.chb_scaleOverride.setToolTip(tip)
+
+        tip = ("Scale Factor for Rendered Images.\n\n"
+               "This does not affect the Scenefile\n"
+               "or the track.")
+        self.cb_renderScale.setToolTip(tip)
+
+        tip = ("Interpolation filter to be used in\n"
+               "the down-sample process.")
+        self.cb_renderFilter.setToolTip(tip)
+
+        tip = "Image format for the Render images."
+        self.cb_format.setToolTip(tip)
+
+        tip = "Compression algorithm for EXR."
+        self.cb_exrCompression.setToolTip(tip)
+
+        tip = "Codec for .MOV render file."
+        self.cb_movCodec.setToolTip(tip)
+
+        tip = "Codec for .MP4 render file."
+        self.cb_mp4Codec.setToolTip(tip)
+
+        tip = "Quality control for MP4 render file."
+        self.cb_mp4Qual.setToolTip(tip)
+
+        tip = ("Include all Visible items displayed\n"
+               "in the Perspective view.")
+        self.chb_include_Items.setToolTip(tip)
+
+        tip = ("Include the 3D Grid displayed\n"
+               "in the Perspective view.")
+        self.chb_include_Grid.setToolTip(tip)
+
+        tip = ("Add Burn-in Data to rendered image.")
+        self.chb_include_Burnin.setToolTip(tip)
+
+        tip = ("Include the visible RGB data in the\n"
+               "rendered file.\n\n"
+               "Should always be checked unless rendering\n"
+               "an Alpha-only pass.")
+        self.chb_include_RGB.setToolTip(tip)
+
+        tip = ("Include an Alpha channel in the\n"
+               "rendered image.  Only available for\n"
+               "Alpha-supported formats.")
+        self.chb_include_Alpha.setToolTip(tip)
+
+        tip = ("Include an Depth channel in the\n"
+               "rendered image.  Only available in\n"
+               "multi-layer formats.")
+        self.chb_include_Depth.setToolTip(tip)
 
 
     @err_catcher(name=__name__)

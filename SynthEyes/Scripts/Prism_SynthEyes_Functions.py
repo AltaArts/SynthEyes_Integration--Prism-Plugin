@@ -117,6 +117,7 @@ class Prism_SynthEyes_Functions(object):
 
         ##  CALLBACKS
         self.core.registerCallback("onStateManagerOpen", self.onStateManagerOpen, plugin=self.plugin, priority=20)
+        self.core.registerCallback("onStateManagerShow", self.onStateManagerShow, plugin=self.plugin, priority=20)
         self.core.registerCallback("onProjectBrowserStartup", self.onProjectBrowserStartup, plugin=self.plugin)
         self.core.registerCallback("onUserSettingsOpen", self.onUserSettingsOpen, plugin=self.plugin)
 
@@ -353,22 +354,22 @@ class Prism_SynthEyes_Functions(object):
 
         origin.b_showImportStates.setStyleSheet("padding-left: 1px;padding-right: 1px;")
         origin.b_showExportStates.setStyleSheet("padding-left: 1px;padding-right: 1px;")
-        # origin.b_createImport.setMinimumWidth(70 * self.core.uiScaleFactor)
-        # origin.b_createImport.setMaximumWidth(70 * self.core.uiScaleFactor)
-        # origin.b_createImport.setMinimumHeight(0)
-        # origin.b_createImport.setMaximumHeight(500 * self.core.uiScaleFactor)
-        # origin.b_shotCam.setMinimumHeight(0)
-        # origin.b_shotCam.setMaximumHeight(50 * self.core.uiScaleFactor)
+        origin.b_createImport.setMinimumWidth(70 * self.core.uiScaleFactor)
+        origin.b_createImport.setMaximumWidth(70 * self.core.uiScaleFactor)
+        origin.b_createImport.setMinimumHeight(0)
+        origin.b_createImport.setMaximumHeight(500 * self.core.uiScaleFactor)
+        origin.b_shotCam.setMinimumHeight(0)
+        origin.b_shotCam.setMaximumHeight(50 * self.core.uiScaleFactor)
         origin.b_showImportStates.setMinimumWidth(30 * self.core.uiScaleFactor)
         origin.b_showImportStates.setMaximumWidth(30 * self.core.uiScaleFactor)
         origin.b_showExportStates.setMinimumWidth(30 * self.core.uiScaleFactor)
         origin.b_showExportStates.setMaximumWidth(30 * self.core.uiScaleFactor)
-        # origin.b_createExport.setMinimumWidth(70 * self.core.uiScaleFactor)
-        # origin.b_createExport.setMaximumWidth(70 * self.core.uiScaleFactor)
+        origin.b_createExport.setMinimumWidth(70 * self.core.uiScaleFactor)
+        origin.b_createExport.setMaximumWidth(70 * self.core.uiScaleFactor)
         origin.b_createRender.setMinimumWidth(70 * self.core.uiScaleFactor)
         origin.b_createRender.setMaximumWidth(70 * self.core.uiScaleFactor)
-        # origin.b_createPlayblast.setMinimumWidth(80 * self.core.uiScaleFactor)
-        # origin.b_createPlayblast.setMaximumWidth(80 * self.core.uiScaleFactor)
+        origin.b_createPlayblast.setMinimumWidth(80 * self.core.uiScaleFactor)
+        origin.b_createPlayblast.setMaximumWidth(80 * self.core.uiScaleFactor)
         origin.b_description.setMinimumWidth(35 * self.core.uiScaleFactor)
         origin.b_description.setMaximumWidth(35 * self.core.uiScaleFactor)
         origin.b_preview.setMinimumWidth(35 * self.core.uiScaleFactor)
@@ -380,11 +381,10 @@ class Prism_SynthEyes_Functions(object):
         # origin.b_createPlayblast.deleteLater()
         origin.b_shotCam.deleteLater()
 
-
         #	Create New Scene Button
         origin.b_createShot = QPushButton(origin.w_CreateImports)
         origin.b_createShot.setObjectName("b_createShot")
-        origin.b_createShot.setText("Create New Scene")
+        origin.b_createShot.setText("New Scene")
         origin.horizontalLayout_3.insertWidget(0, origin.b_createShot)
         origin.b_createShot.clicked.connect(lambda: self.addShot(origin, "create"))
 
@@ -409,12 +409,34 @@ class Prism_SynthEyes_Functions(object):
         origin.b_exportScene.setMaximumSize(QSize(150, 16777215))
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         origin.b_exportScene.setSizePolicy(sizePolicy)
-        # index = origin.horizontalLayout_4.indexOf(origin.b_showExportStates)
-        # origin.horizontalLayout_4.insertWidget(index - 1, origin.b_exportScene)
         origin.horizontalLayout_4.insertWidget(0, origin.b_exportScene)
         origin.b_exportScene.clicked.connect(lambda: origin.createState("Synth_SceneExport"))
 
-        # origin.createState(appStates["stateType"], parent=parent, setActive=True, **appStates.get("kwargs", {}))
+        tip = ("Create New SynthEyes Scene.\n\n"
+               "This will start an entirely new scene and import the images(s)\n"
+               "This is the same as the 'New' button in the SynthEyes UI.\n\n"
+               "Please note this will overwrite any shots in the existing scene.")
+        origin.b_createShot.setToolTip(tip)
+
+        tip = ("This will add an additional Shot and Camera to the existing Scene.\n\n"
+               "This is the same as the 'Add Shot' button in SynthEyes.")
+        origin.b_addShot.setToolTip(tip)
+
+        tip = "Import a 3D Mesh object into the Scene."
+        origin.b_addMesh.setToolTip(tip)
+
+        tip = "Export the SynthEyes Scene to the desired format."
+        origin.b_exportScene.setToolTip(tip)
+
+        tip = ("Create the Desired Render State:\n\n"
+               "ImageRender - Same as SynthEyes 'Save Sequence'\n"
+               "STMap Render - Same as SynthEyes 'Write Distortion Maps")
+        origin.b_createRender.setToolTip(tip)
+
+        tip = ("Creates a Playblast State.\n\n"
+               "This uses the SynthEyes 'Preview Movie' from\n"
+               "the Perspective View.")
+        origin.b_createPlayblast.setToolTip(tip)
 
         #   States to Keep in SynthEyes
         keepStates = ["Folder", "Synth_AddShot", "Synth_ImportMesh", "Synth_SceneExport", "Synth_Render_StMap", "Synth_ImageRender", "Synth_Playblast"]
@@ -426,37 +448,12 @@ class Prism_SynthEyes_Functions(object):
                     del origin.stateTypes[state]
                 except Exception:
                     logger.debug(f"Unable to remove default state: {state}")
-        
-        # # Add MenuItems
-        # origin.actionSortImageLoaders = QAction(origin)
-        # origin.actionSortImageLoaders.setObjectName(u"actionSortImageLoaders")
-        # origin.actionSortImageLoaders.setText(QCoreApplication.translate("mw_StateManager", u"Sort Image Loaders", None))
-        # origin.actionSortImageLoaders.triggered.connect(lambda: self.sortLoaders(comp, getfeedback=True))
-        # #.
-        # origin.actionSelectImageLoaders = QAction(origin)
-        # origin.actionSelectImageLoaders.setObjectName(u"actionSelectImageLoaders")
-        # origin.actionSelectImageLoaders.setText(QCoreApplication.translate("mw_StateManager", u"Select Image Loaders", None))
-        # origin.actionSelectImageLoaders.triggered.connect(self.selectAllStateLoaders)
-        # #.
-        # origin.menuAbout.addSeparator()
-        # origin.menuAbout.addAction(origin.actionSortImageLoaders)
-        # origin.menuAbout.addAction(origin.actionSelectImageLoaders)
-        # origin.menuAbout.addSeparator()
-        # ##
 
-        # try:
-        #     self.core.plugins.monkeyPatch(origin.rclTree, self.rclTree, self, force=True)
-        #     self.core.plugins.monkeyPatch(self.core.mediaProducts.getVersionStackContextFromPath,
-        #                                     self.getVersionStackContextFromPath,
-        #                                     self,
-        #                                     force=True)
-        #     self.core.plugins.monkeyPatch(origin.importShotCam, self.importShotCam, self, force=True)
-        #     self.core.plugins.monkeyPatch(origin.showStateMenu, self.showStateMenu, self, force=True)
-        #     self.core.plugins.monkeyPatch(origin.pasteStates, self.pasteStates, self, force=True)
-        # except Exception as e:
-        #     logger.warning(f"ERROR: Failed to load patched functions:\n{e}")
 
-        # #origin.gb_import.setStyleSheet("margin-top: 20px;")
+    @err_catcher(name=__name__)
+    def onStateManagerShow(self, origin):
+        #   Display Import List (Prism closes the list by default)
+        origin.gb_import.setChecked(True)
 
 
 
