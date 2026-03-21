@@ -56,6 +56,7 @@ import base64
 import tempfile
 import re
 from contextlib import contextmanager
+import time
 
 
 
@@ -491,9 +492,15 @@ class Prism_SynthEyes_Functions(object):
     def testTwo(self):
         self.core.popup("IN TEST TWO")							#	TESTING
 
-        with self.UNDO_BLOCK("test"):
-            self.synthEyes.SetAnimStart(51)
-            self.synthEyes.SetAnimEnd(100)
+        # for action in self.synthEyes.Actions():
+        #     print(f"NAME: {action}\n"
+        #           f"{dir(action)}\n\n"
+        #           "********************")
+
+
+        # return
+
+
 
 
     @err_catcher(name=__name__)                                                 #   TESTING
@@ -1764,88 +1771,148 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def sm_playblast_preExecute(self, origin):
+    def sm_playblast_preExecute(self, origin, rData):
         warnings = []
 
+        camName = rData["currentCam"]
+
+        #   Check if Shot Camera was Solved with Distortion
+        hasDistor = self.getShotHasDistort(camName)
+
+        #   Check if Shot Camera has had Lens Workflow Completed
+        hasLensWorkflow = self.getShotHasLensWorkflow(camName)
+
+        if hasDistor and not hasLensWorkflow:
+            msg = (f"CAMERA   '{camName}':\n"
+                   "             appears to have solved distortion,\n"
+                   "             and the Lens Workflow script has not\n"
+                   "             been completed.")
+            warnings.append([msg, "", 2])
+
         return warnings
+    
+
+        #   Called Before Render to Capture Current Settings
+    @err_catcher(name=__name__)
+    def sm_playblast_preRender(self, origin, rSettings):
+        shot = self.getShotFromCamName(rSettings["currentCam"])
+
+        #   Capture Original Settings
+        orig_start, orig_end = self.getFrameRange(origin, shot)
+        rSettings["orig_start"] = orig_start
+        rSettings["orig_end"] = orig_end
+        rSettings["orig_currFrame"] = self.getCurrentFrame()
+        rSettings["orig_renderScale"] = self.getOutputRez(shot)
+        rSettings["orig_renderFilter"] = self.getOutputSampleFilter(shot)
+
+        #   Update Frame Range
+        with self.UNDO_BLOCK("Set Framerange"):
+            self.setFrameRange(origin, rSettings["startFrame"], rSettings["endFrame"], shot)
+
+        #   Sets Output Scaling and Scale Filter
+        if rSettings["scaleOverride"]:
+            with self.UNDO_BLOCK("Scale Image"):
+                self.setOutputRez(shot, scaleStr=rSettings["renderScale"])
+                self.setOutputSampleFilter(shot, filterStr=rSettings["renderFilter"])
+
+        #   Capture Current View and Set to Perspective
+        self.synthEyes.InitMenu()
+        currView = self.synthEyes.View()
+
+        if currView != "Prespective":
+            rSettings["currView"] = currView
+            self.synthEyes.SetView("Perspective")
+
+        return rSettings
 
 
     @err_catcher(name=__name__)
-    def sm_render_playblast(self, origin, stateManager, outputPath, rSettings, context):
-        camName = rSettings["currentCam"]
-        compType = rSettings["exrCompress"]
+    def sm_render_playblast(self, origin, stateManager, outputPath, rSettings):
+        #   Get Format Specific Render Settings
+        optStr = self.getRenderOptsStr(rSettings)
 
         include_items = rSettings["include_Items"]
         include_grid = rSettings["include_Grid"]
         include_RGB = rSettings["include_RGB"]
-        include_alpha = rSettings["include_Alpha"]
         include_depth = rSettings["include_Depth"]
+        include_alpha = rSettings["include_Alpha"]
         include_burnIn = rSettings["include_Burnin"]
 
         settingsStr = ("prvu: "
-        # settingsStr = ("imp: "
-                       f"{boolToBit(include_items)},"
-                       f"{boolToBit(include_grid)},"
-                        "1,"
-                       f"{boolToBit(include_RGB)},"
-                       f"{boolToBit(include_alpha)},"
-                       f"{boolToBit(include_depth)},"
-                       f"{boolToBit(include_burnIn)}")
+                       "0,"                                 #   Unknown
+                       f"{boolToBit(include_items)},"       #   Include Viewport Items
+                       f"{boolToBit(include_grid)},"        #   Include Grid
+                        "1,"                                #   Square Pixels
+                       f"{boolToBit(include_RGB)},"         #   Include RGB
+                       f"{boolToBit(include_depth)},"       #   Include Depth
+                       f"{boolToBit(include_alpha)},"       #   Include Alpha
+                       f"{boolToBit(include_burnIn)}")      #   Unknown
+
+        shot = self.getShotFromCamName(rSettings["currentCam"])
+
+        with self.UNDO_BLOCK("Playblast Settings"):
+            shot.Set("previewFile", outputPath)
+            shot.Set("previewSettings", settingsStr)
+            shot.Set("previewCompression", optStr)
+
+        stateManager.showMinimized()
+
+        try:
+            #   Get Perspective View Object
+            perspVu = self.synthEyes.Main().ByClass("Perspect")
+            #   "Click" the Preview Movie Button
+            perspVu.PerformActionByNameAndContinue("Persp/Preview Movie")
+
+            time.sleep(0.5)
+
+            #   Capture the Resulting Popup Window
+            popup_preview = self.synthEyes.Popup()
+
+            #   Find and "Click" the Start Button
+            start_btn = popup_preview.ByName("Start")
+            if start_btn.IsValid():
+                start_btn.ClickAndWait()
+
+            timeout = 600.0  # max wait time for render (secs)
+            interval = 1.0   # poll interval (secs)
+            elapsed = 0.0
+
+            #   Start Polling to See if Popup is Closed After Render
+            while popup_preview.IsValid() and elapsed < timeout:
+                time.sleep(interval)
+                elapsed += interval
+
+            return True
         
-        # settingsStr = "prvu: 1,1,1,1,1,0,0"
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Render Playblast: {e}")
+            return False
         
-        # self.core.popup(f"settingsStr:  {settingsStr}")							#	TESTING
-
-        # stateManager.showMinimized()
-
-        # try:
-
-        shot = self.getShotFromCamName(camName)
-
-        self.synthEyes.Begin()
-
-        shot.Set("previewFile", outputPath)
-        shot.Set("previewSettings", settingsStr)
-        shot.Set("previewCompression", SynthExrCompress[compType])
-
-        self.synthEyes.Accept("PreviewSettings")
-
-        # self.core.popup(f"previewFile:  {shot.Get("previewFile")}")							#	TESTING
-        # self.core.popup(f"previewSettings:  {shot.Get("previewSettings")}")							#	TESTING
-        # self.core.popup(f"previewCompression:  {shot.Get("previewCompression")}")							#	TESTING
-
-        self.synthEyes.Begin()
-
-        # Render
-        # RenderPreview
-        # RenderPreviewMovie
-        # RenderMovie
-        # PreviewRender
-        # PreviewMovieRender
-        # PreviewMovie
-        actID = self.synthEyes.ActionID("Persp/Preview Movie")
-
-        self.core.popup(f"actID: {actID}")                                      #    TESTING
-
-        if actID:
-            self.synthEyes.PerformActionByIDAndWait(actID)
+        finally:
+            stateManager.showNormal()
 
 
-        # self.synthEyes.PerformActionByNameAndWait("Persp/Preview Movie")
+    @err_catcher(name=__name__)
+    def sm_playblast_postRender(self, origin, rSettings):
+        shot = self.getShotFromCamName(rSettings["currentCam"])
 
-        # result = shot.Call("RenderPreviewMovie")
+        #   Restore Frame Range
+        with self.UNDO_BLOCK("Restore Framerange"):
+            self.setFrameRange(origin, rSettings["orig_start"], rSettings["orig_end"], shot)
+            self.setCurrentFrame(rSettings["orig_currFrame"])
 
-        self.synthEyes.Accept("Playblast")
+        #   Restore Render Scale
+        with self.UNDO_BLOCK("Restore Image Scale"):
+            self.setOutputRez(shot, scaleCode=rSettings["orig_renderScale"])
+            self.setOutputSampleFilter(shot, filterCode=rSettings["orig_renderFilter"])
 
-        # except Exception as e:
-        #     logger.warning(f"ERROR: Unable to Render Playblast: {e}")
-        #     return False
+        #   Restore View if it Was Not Already Perspective
+        if rSettings["currView"] != "Perspective":
+            self.synthEyes.SetView(rSettings["currView"])
         
-        # finally:
-        #     stateManager.showNormal()
+        self.synthEyes.Validate(shot)
 
-        # return int(result) == 1
-        
+
 
 
     ###################################################

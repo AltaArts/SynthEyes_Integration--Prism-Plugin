@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>460</width>
-    <height>884</height>
+    <height>900</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -968,14 +968,20 @@
        <widget class="QWidget" name="f_codecOptions_MP4" native="true">
         <layout class="QVBoxLayout" name="lo_mp4Options">
          <property name="leftMargin">
-          <number>9</number>
+          <number>0</number>
          </property>
          <property name="rightMargin">
-          <number>9</number>
+          <number>0</number>
          </property>
          <item>
           <widget class="QWidget" name="lo_mp4Codec" native="true">
            <layout class="QHBoxLayout" name="lo_mp4Options1">
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
              <widget class="QLabel" name="l_mp4Codec">
               <property name="text">
@@ -1012,6 +1018,12 @@
          <item>
           <widget class="QWidget" name="lo_mp4Qual" native="true">
            <layout class="QHBoxLayout" name="lo_mp4Options2">
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
              <widget class="QLabel" name="l_mp4Qual">
               <property name="text">
@@ -1065,7 +1077,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="QWidget" name="" native="true">
+       <widget class="QWidget" name="f_include1_2" native="true">
         <layout class="QHBoxLayout" name="f_include1">
          <property name="leftMargin">
           <number>30</number>
@@ -1091,7 +1103,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QWidget" name="" native="true">
+       <widget class="QWidget" name="f_include2_2" native="true">
         <layout class="QHBoxLayout" name="f_include2">
          <property name="leftMargin">
           <number>30</number>
@@ -1154,7 +1166,7 @@
            <x>0</x>
            <y>0</y>
            <width>409</width>
-           <height>149</height>
+           <height>105</height>
           </rect>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_3">

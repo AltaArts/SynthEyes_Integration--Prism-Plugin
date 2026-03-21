@@ -44,11 +44,13 @@ from qtpy.QtWidgets import *
 
 from PrismUtils.Decorators import err_catcher
 
-from Synth_Formats import (SynthFormatNames,
-                           SynthExrCompress,
+from Synth_Formats import (SynthExrCompress,
                            SynthMovCodecs,
                            SynthMP4Codecs,
-                           SynthMP4Qual)
+                           SynthMP4Qual,
+                           SynthHasAlpha,
+                           SynthSubSample,
+                           SynthInterp)
 
 logger = logging.getLogger(__name__)
 
@@ -63,14 +65,12 @@ class Synth_PlayblastClass(object):
         self.state = state
         self.core = core
         self.stateManager = stateManager
+        self.synthFuncts = self.core.appPlugin
+
         self.canSetVersion = True
         self.customContext = None
         self.allowCustomContext = False
         self.cb_context.addItems(["From scenefile", "Custom"])
-
-        self.curCam = None
-        self.renderingStarted = False
-        self.cleanOutputdir = True
 
         self.e_name.setText(state.text(0) + " - {identifier}")
 
@@ -87,15 +87,8 @@ class Synth_PlayblastClass(object):
                 idx, self.stateManager.getFrameRangeTypeToolTip(rtype), Qt.ToolTipRole
             )
 
-        self.renderPresets = (
-            self.stateManager.stateTypes["RenderSettings"].getPresets(self.core)
-            if "RenderSettings" in self.stateManager.stateTypes
-            else {}
-        )
-        if self.renderPresets:
-            self.cb_renderPreset.addItems(self.renderPresets.keys())
-        else:
-            self.w_renderPreset.setVisible(False)
+        self.curCam = None
+        self.refreshCameras()
 
         self.l_name.setVisible(False)
         self.e_name.setVisible(False)
@@ -113,6 +106,8 @@ class Synth_PlayblastClass(object):
         self.tasknameRequired = True
         
         self.outputFormats = [
+            ".mov",
+            ".mp4",
             ".exr",
             ".png",
             ".jpg",
@@ -120,15 +115,11 @@ class Synth_PlayblastClass(object):
 
         self.cb_format.addItems(self.outputFormats)
 
-        exrCompress = SynthExrCompress.keys()
+        self.cb_renderScale.addItems(SynthSubSample.keys())
+        self.cb_renderFilter.addItems(SynthInterp.keys())
 
-        self.cb_exrCompression.addItems(exrCompress)
-
-
-        self.resolutionPresets = self.core.projects.getResolutionPresets()
-        if "Get from rendersettings" not in self.resolutionPresets:
-            self.resolutionPresets.append("Get from rendersettings")
-
+        self.setupFormatOptions()
+        self.configFormatUI()
         self.loadDefaults()
         self.connectEvents()
 
@@ -136,9 +127,6 @@ class Synth_PlayblastClass(object):
         self.warnPalette = QPalette()
         self.warnPalette.setColor(QPalette.Button, QColor(200, 0, 0))
         self.warnPalette.setColor(QPalette.ButtonText, QColor(255, 255, 255))
-
-        self.cb_cam.showPopupOrig = self.cb_cam.showPopup
-        self.cb_cam.showPopup = self.showCameraPopup
 
         self.setTaskWarn(True)
         self.nameChanged(state.text(0))
@@ -186,14 +174,6 @@ class Synth_PlayblastClass(object):
             self.e_name.setText(data["stateName"])
         elif "statename" in data:
             self.e_name.setText(data["statename"] + " - {identifier}")
-        if "renderpresetoverride" in data:
-            res = eval(data["renderpresetoverride"])
-            self.chb_renderPreset.setChecked(res)
-        if "currentrenderpreset" in data:
-            idx = self.cb_renderPreset.findText(data["currentrenderpreset"])
-            if idx != -1:
-                self.cb_renderPreset.setCurrentIndex(idx)
-                self.stateManager.saveStatesToScene()
         if "rangeType" in data:
             idx = self.cb_rangeType.findText(data["rangeType"])
             if idx != -1:
@@ -204,19 +184,7 @@ class Synth_PlayblastClass(object):
         if "endframe" in data:
             self.sp_rangeEnd.setValue(int(data["endframe"]))
         if "currentCam" in data:
-            camName = getattr(self.core.appPlugin, "getCamName", lambda x, y: "")(
-                self, data["currentCam"]
-            )
-            idx = self.cb_cam.findText(camName)
-            if idx != -1:
-                self.curCam = self.camlist[idx]
-                self.cb_cam.setCurrentIndex(idx)
-                self.stateManager.saveStatesToScene()
-        if "resoverride" in data:
-            res = eval(data["resoverride"])
-            self.chb_resOverride.setChecked(res[0])
-            self.sp_resWidth.setValue(res[1])
-            self.sp_resHeight.setValue(res[2])
+            self.curCam = data["currentCam"]
         if "masterVersion" in data:
             idx = self.cb_master.findText(data["masterVersion"])
             if idx != -1:
@@ -233,20 +201,39 @@ class Synth_PlayblastClass(object):
             idx = self.cb_format.findText(data["outputFormat"])
             if idx != -1:
                 self.cb_format.setCurrentIndex(idx)
+        if "scaleOvr" in data:
+            self.chb_scaleOverride.setChecked(data["scaleOvr"])
+            self.onScaleOvrChanged()
+        if "renderScale" in data:
+            idx = self.cb_renderScale.findText(data["renderScale"])
+            if idx != -1:
+                self.cb_renderScale.setCurrentIndex(idx)
+        if "renderFilter" in data:
+            idx = self.cb_renderFilter.findText(data["renderFilter"])
+            if idx != -1:
+                self.cb_renderFilter.setCurrentIndex(idx)
         if "exrCompress" in data:
             idx = self.cb_exrCompression.findText(data["exrCompress"])
             if idx != -1:
                 self.cb_exrCompression.setCurrentIndex(idx)
-        if "include_Items" in data:
-            self.chb_include_Items.setChecked(data["include_Items"])
-        if "include_Grid" in data:
-            self.chb_include_Grid.setChecked(data["include_Grid"])
+        if "movCodec" in data:
+            idx = self.cb_movCodec.findText(data["movCodec"])
+            if idx != -1:
+                self.cb_movCodec.setCurrentIndex(idx)
+        if "mp4Codec" in data:
+            idx = self.cb_mp4Codec.findText(data["mp4Codec"])
+            if idx != -1:
+                self.cb_mp4Codec.setCurrentIndex(idx)
+        if "mp4Qual" in data:
+            idx = self.cb_mp4Qual.findText(data["mp4Qual"])
+            if idx != -1:
+                self.cb_mp4Qual.setCurrentIndex(idx)
         if "include_RGB" in data:
             self.chb_include_RGB.setChecked(data["include_RGB"])
         if "include_Alpha" in data:
             self.chb_include_Alpha.setChecked(data["include_Alpha"])
-        if "include_Depth" in data:
-            self.chb_include_Depth.setChecked(data["include_Depth"])
+        if "include_Mesh" in data:
+            self.chb_include_Mesh.setChecked(data["include_Mesh"])
         if "include_Burnin" in data:
             self.chb_include_Burnin.setChecked(data["include_Burnin"])
         if "lastexportpath" in data:
@@ -259,7 +246,10 @@ class Synth_PlayblastClass(object):
                     0, Qt.CheckState(data["stateenabled"]),
                 )
 
+        self.configFormatUI()
+
         self.core.callback("onStateSettingsLoaded", self, data)
+
 
     @err_catcher(name=__name__)
     def connectEvents(self):
@@ -268,23 +258,23 @@ class Synth_PlayblastClass(object):
         self.cb_context.activated.connect(self.onContextTypeChanged)
         self.b_context.clicked.connect(self.selectContextClicked)
         self.b_changeTask.clicked.connect(self.changeTask)
-        self.chb_renderPreset.stateChanged.connect(self.presetOverrideChanged)
-        self.cb_renderPreset.activated.connect(self.stateManager.saveStatesToScene)
         self.cb_rangeType.activated.connect(self.rangeTypeChanged)
         self.sp_rangeStart.editingFinished.connect(self.startChanged)
         self.sp_rangeEnd.editingFinished.connect(self.endChanged)
         self.cb_cam.activated.connect(self.setCam)
-        self.chb_resOverride.stateChanged.connect(self.resOverrideChanged)
-        self.sp_resWidth.editingFinished.connect(self.stateManager.saveStatesToScene)
-        self.sp_resHeight.editingFinished.connect(self.stateManager.saveStatesToScene)
-        self.b_resPresets.clicked.connect(self.showResPresets)
         self.cb_master.activated.connect(self.stateManager.saveStatesToScene)
         self.cb_outPath.activated.connect(self.stateManager.saveStatesToScene)
         self.chb_version.stateChanged.connect(self.onVersionOverrideChanged)
         self.sp_version.editingFinished.connect(self.stateManager.saveStatesToScene)
         self.b_version.clicked.connect(self.onVersionOverrideClicked)
-        self.cb_format.activated.connect(self.stateManager.saveStatesToScene)
+        self.cb_format.activated.connect(self.configFormatUI)
+        self.chb_scaleOverride.clicked.connect(self.onScaleOvrChanged)
+        self.cb_renderScale.activated.connect(self.stateManager.saveStatesToScene)
+        self.cb_renderFilter.activated.connect(self.stateManager.saveStatesToScene)
         self.cb_exrCompression.activated.connect(self.stateManager.saveStatesToScene)
+        self.cb_movCodec.activated.connect(self.configFormatUI)
+        self.cb_mp4Codec.activated.connect(self.stateManager.saveStatesToScene)
+        self.cb_mp4Qual.activated.connect(self.stateManager.saveStatesToScene)
         self.chb_include_Items.stateChanged.connect(self.stateManager.saveStatesToScene)
         self.chb_include_Grid.stateChanged.connect(self.stateManager.saveStatesToScene)
         self.chb_include_RGB.stateChanged.connect(self.stateManager.saveStatesToScene)
@@ -317,6 +307,7 @@ class Synth_PlayblastClass(object):
             self.setIdentifier(context.get("task"))
 
         self.updateUi()
+
 
     @err_catcher(name=__name__)
     def getLastPathOptions(self):
@@ -404,12 +395,6 @@ class Synth_PlayblastClass(object):
 
 
     @err_catcher(name=__name__)
-    def setCam(self, index):
-        self.curCam = self.camlist[index]
-        self.stateManager.saveStatesToScene()
-
-
-    @err_catcher(name=__name__)
     def nameChanged(self, text):
         text = self.e_name.text()
         context = {}
@@ -445,7 +430,7 @@ class Synth_PlayblastClass(object):
 
     @err_catcher(name=__name__)
     def getFormat(self):
-        self.cb_format.currentText()
+        return self.cb_format.currentText()
 
 
     @err_catcher(name=__name__)
@@ -458,6 +443,97 @@ class Synth_PlayblastClass(object):
 
         return False
 
+
+    #   Populate Various Format Combos
+    @err_catcher(name=__name__)
+    def setupFormatOptions(self):
+        exrCompress = SynthExrCompress.keys()
+        self.cb_exrCompression.addItems(exrCompress)
+
+        movCodecs = SynthMovCodecs.keys()
+        self.cb_movCodec.addItems(movCodecs)
+
+        mp4Codecs = SynthMP4Codecs.keys()
+        self.cb_mp4Codec.addItems(mp4Codecs)
+
+        mp4Qual = SynthMP4Qual.keys()
+        self.cb_mp4Qual.addItems(mp4Qual)
+
+
+    #   Show/Hide Format UI
+    @err_catcher(name=__name__)
+    def configFormatUI(self, format=None):
+        ##  Option Widgets
+        #   Hide All Codec Option Widgets
+        for w in self.findChildren(QWidget):
+            if w.objectName().startswith("f_codecOptions_"):
+                w.hide()
+
+        #   Find Widget Name for Format
+        fmt = self.cb_format.currentText().upper().replace(".", "")
+        targetWidget = f"f_codecOptions_{fmt}"
+
+        #   Show the Matching Format Widget
+        widget = getattr(self, targetWidget, None)
+        if widget:
+            widget.show()
+
+        ##  Alpha Checkbox
+        hasAlpha = False
+
+        #   Check Format
+        if fmt in SynthHasAlpha:
+            hasAlpha = True
+
+        else:
+            #   Find Codec Combo by Matching Format Name
+            codecCombo = None
+            for child in widget.findChildren(QWidget):               
+                if child.objectName().startswith("cb_"):
+                    codecCombo = child
+                    break
+
+            #   Check if Codec is Alpha Supported
+            if codecCombo:
+                codec = codecCombo.currentText()
+                hasAlpha = codec in SynthHasAlpha
+
+        #   Configure Alpha Checkbox
+        if not hasAlpha:
+            self.chb_include_Alpha.setChecked(False)
+            self.chb_include_Alpha.setDisabled(True)
+        else:
+            self.chb_include_Alpha.setDisabled(False)
+        
+        self.stateManager.saveStatesToScene
+
+    
+    #   Returns Dict of format Options Based on Selected format
+    @err_catcher(name=__name__)
+    def getFormatOptions(self):
+        fmt = self.getFormat().lower()
+
+        if fmt == ".exr":
+            return {"exrCompress": self.cb_exrCompression.currentText()}
+        
+        elif fmt == ".mov":
+            return {"movCodec": self.cb_movCodec.currentText()}
+        
+        elif fmt == ".mp4":
+            return {"mp4Codec": self.cb_mp4Codec.currentText(),
+                    "mp4Qual": self.cb_mp4Qual.currentText()}
+        else:
+            return {}
+        
+
+    @err_catcher(name=__name__)
+    def onScaleOvrChanged(self, checked=None):
+        enabled = self.chb_scaleOverride.isChecked()
+
+        self.cb_renderScale.setEnabled(enabled)
+        self.cb_renderFilter.setEnabled(enabled)
+
+        self.stateManager.saveStatesToScene
 
     @err_catcher(name=__name__)
     def getContextType(self):
@@ -524,45 +600,6 @@ class Synth_PlayblastClass(object):
             self.setIdentifier(self.nameWin.e_item.text())
             self.nameChanged(self.e_name.text())
             self.stateManager.saveStatesToScene()
-
-
-    @err_catcher(name=__name__)
-    def presetOverrideChanged(self, checked):
-        self.cb_renderPreset.setEnabled(checked)
-        self.stateManager.saveStatesToScene()
-
-
-    @err_catcher(name=__name__)
-    def resOverrideChanged(self, checked):
-        self.sp_resWidth.setEnabled(checked)
-        self.sp_resHeight.setEnabled(checked)
-        self.b_resPresets.setEnabled(checked)
-
-        self.stateManager.saveStatesToScene()
-
-
-    @err_catcher(name=__name__)
-    def showResPresets(self):
-        pmenu = QMenu(self)
-
-        for preset in self.resolutionPresets:
-            pAct = QAction(preset, self)
-            res = self.getResolution(preset)
-            if not res:
-                continue
-
-            pwidth, pheight = res
-
-            pAct.triggered.connect(
-                lambda x=None, v=pwidth: self.sp_resWidth.setValue(v)
-            )
-            pAct.triggered.connect(
-                lambda x=None, v=pheight: self.sp_resHeight.setValue(v)
-            )
-            pAct.triggered.connect(lambda: self.stateManager.saveStatesToScene())
-            pmenu.addAction(pAct)
-
-        pmenu.exec_(QCursor.pos())
 
 
     @err_catcher(name=__name__)
@@ -678,24 +715,28 @@ class Synth_PlayblastClass(object):
 
 
     @err_catcher(name=__name__)
-    def showCameraPopup(self):
+    def setCam(self, cameraIdx): 
+        self.curCam = self.cb_cam.currentText()
+
         self.refreshCameras()
-        self.cb_cam.showPopupOrig()
+
+
 
     @err_catcher(name=__name__)
     def refreshCameras(self):
-        # update Cams
         self.cb_cam.clear()
-        self.camlist = camNames = []
+        self.camlist = []
 
         if not self.stateManager.standalone:
-            self.camlist = self.core.appPlugin.getCamNodes(self, cur=True)
-            camNames = [self.core.appPlugin.getCamName(self, i) for i in self.camlist]
+            camObjs = self.core.appPlugin.getCamNodes(self, cur=True)
+            self.camlist = [self.core.appPlugin.getCamName(self, i) for i in camObjs]
 
-        self.cb_cam.addItems(camNames)
+        self.cb_cam.addItems(self.camlist)
 
         if self.curCam in self.camlist:
-            self.cb_cam.setCurrentIndex(self.camlist.index(self.curCam))
+            idx = self.cb_cam.findText(self.curCam)
+            if idx != -1:
+                self.cb_cam.setCurrentIndex(idx)
         else:
             self.cb_cam.setCurrentIndex(0)
             if len(self.camlist) > 0:
@@ -703,22 +744,24 @@ class Synth_PlayblastClass(object):
             else:
                 self.curCam = None
 
-            self.stateManager.saveStatesToScene()
+        self.stateManager.saveStatesToScene()
 
 
     @err_catcher(name=__name__)
     def updateUi(self):
         self.w_context.setHidden(not self.allowCustomContext)
-        self.refreshContext()
-        self.refreshCameras()
-        self.updateRange()
         self.w_comment.setHidden(not self.stateManager.useStateComments())
 
         if not self.core.mediaProducts.getUseMaster():
             self.w_master.setVisible(False)
 
+        self.refreshContext()
+        self.refreshCameras()
+        self.updateRange()
+
         self.nameChanged(self.e_name.text())
         getattr(self.core.appPlugin, "sm_render_updateUi", lambda x: None)(self)
+
         return True
 
 
@@ -843,25 +886,18 @@ class Synth_PlayblastClass(object):
 
         self.updateUi()
 
-        # if self.tasknameRequired and not self.getIdentifier():
-        #     warnings.append(["No identifier is given.", "", 3])
+        rData = {}
 
-        # if self.curCam is None or (
-        #     self.curCam != "Current View"
-        #     and not self.core.appPlugin.isNodeValid(self, self.curCam)
-        # ):
-        #     warnings.append(["No camera is selected.", "", 3])
-        # elif self.curCam == "Current View":
-        #     warnings.append(["No camera is selected.", "", 2])
+        rData["currentCam"] = self.cb_cam.currentText()
 
-        # rangeType = self.cb_rangeType.currentText()
-        # frames = self.getFrameRange(rangeType)
+        rangeType = self.cb_rangeType.currentText()
+        startFrame, endFrame = self.getFrameRange(rangeType)
 
-        # if frames is None or frames == []:
-        #     warnings.append(["Framerange is invalid.", "", 3])
+        if startFrame is None:
+            warnings.append(["Framerange is invalid.", "", 3])
 
 
-        warnings += self.core.appPlugin.sm_playblast_preExecute(self)
+        warnings += self.core.appPlugin.sm_playblast_preExecute(self, rData)
 
         return [self.state.text(0), warnings]
     
@@ -871,11 +907,15 @@ class Synth_PlayblastClass(object):
         if self.tasknameRequired and not identifier:
             return
 
-        extension = self.cb_format.currentText()
         context = self.getCurrentContext()
 
         if "type" not in context:
             return
+        
+        extension = self.cb_format.currentText().lower()
+        padding = ""
+        if extension not in self.core.media.videoFormats:
+            padding = ("#" * self.core.framePadding)
 
         location = self.cb_outPath.currentText()
 
@@ -889,7 +929,7 @@ class Synth_PlayblastClass(object):
             task=identifier,
             extension=extension,
             framePadding=("#" * self.core.framePadding),
-            comment=self.getComment(),
+            comment=padding,
             version=version,
             location=location,
             returnDetails=True,
@@ -897,7 +937,6 @@ class Synth_PlayblastClass(object):
 
         outputPath = outputPathData["path"].replace("\\", "/")
         outputFolder = os.path.dirname(outputPath)
-
         if not os.path.exists(outputFolder):
             os.makedirs(outputFolder)
 
@@ -929,20 +968,21 @@ class Synth_PlayblastClass(object):
         if rangeType == "Single Frame":
             endFrame = startFrame
 
-        updateMaster = True
 
         fileName = self.core.getCurrentFileName()
         context = self.getCurrentContext()
-
         idf = self.getIdentifier()
 
         outputName, outputPath, hVersion = self.getOutputName(useVersion="next", identifier=idf)
         expandedOutputPath = self.expandvars(outputPath)
 
-        paddingNum = self.core.framePadding
-        framePadding = "#" * paddingNum
-        paddedFrame = str(startFrame).zfill(paddingNum)
-        outputName = outputName.replace(framePadding, paddedFrame)
+        #   Change Prism "###"'s to ".001"'s
+        extension = self.cb_format.currentText().lower()
+        if extension not in self.core.media.videoFormats:
+            paddingNum = self.core.framePadding
+            framePadding = "#" * paddingNum
+            paddedFrame = str(startFrame).zfill(paddingNum)
+            outputName = outputName.replace(framePadding, paddedFrame)
 
         outLength = len(expandedOutputPath)
         if platform.system() == "Windows" and os.getenv("PRISM_IGNORE_PATH_LENGTH") != "1" and outLength > 255:
@@ -964,20 +1004,35 @@ class Synth_PlayblastClass(object):
             "frames": frames,
             "identifier": idf,
             "currentCam": self.cb_cam.currentText(),
+            "format": extension,
+            "scaleOverride": self.chb_scaleOverride.isChecked(),
+            "renderScale": self.cb_renderScale.currentText(),
+            "renderFilter": self.cb_renderFilter.currentText(),
             "exrCompress": self.cb_exrCompression.currentText(),
             "include_Items": self.chb_include_Items.isChecked(),
             "include_Grid": self.chb_include_Grid.isChecked(),
-
-
             "include_RGB": self.chb_include_RGB.isChecked(),
             "include_Alpha": self.chb_include_Alpha.isChecked(),
             "include_Depth": self.chb_include_Depth.isChecked(),
             "include_Burnin": self.chb_include_Burnin.isChecked(),
             }
-        
-        errors = []
 
-        result = self.core.appPlugin.sm_render_playblast(self, self.stateManager, rSettings["outputName"], rSettings, context)
+        #   Add Format Specific Options
+        rSettings.update(self.getFormatOptions())
+
+        self.l_pathLast.setText(rSettings["outputName"])
+        self.l_pathLast.setToolTip(rSettings["outputName"])
+
+        #   Capture Current Settings
+        rSettings = self.synthFuncts.sm_playblast_preRender(self, rSettings)
+
+        #   Execute Render
+        result = self.core.appPlugin.sm_render_playblast(self, self.stateManager, rSettings["outputName"], rSettings)
+
+        #   Restore Settings
+        self.synthFuncts.sm_playblast_postRender(self, rSettings)
+
+        errors = []
 
         if result:
             try:
@@ -996,13 +1051,19 @@ class Synth_PlayblastClass(object):
                 details["endframe"] = endFrame
                 details["path"] = expandedOutputPath
                 details["mediaType"] = self.mediaType
+                details["Scale Override"] = self.chb_scaleOverride.isChecked()
+                details["Render Scale"] = self.cb_renderScale.currentText()
+                details["Scaling Filter"] = self.cb_renderFilter.currentText()
                 details["exrCompress"] = self.cb_exrCompression.currentText()
+                details["include_Items"] = self.chb_include_Items.isChecked()
+                details["include_Grid"] = self.chb_include_Grid.isChecked()
                 details["include_RGB"] = self.chb_include_RGB.isChecked()
                 details["include_Alpha"] = self.chb_include_Alpha.isChecked()
-                details["include_Mesh"] = self.chb_include_Mesh.isChecked()
+                details["include_Depth"] = self.chb_include_Depth.isChecked()
                 details["include_Burnin"] = self.chb_include_Burnin.isChecked()
 
                 self.core.saveVersionInfo(filepath=expandedOutputPath, details=details)
+
             except:
                 errors.append(f"{idf}: VersionInfo Error")
 
@@ -1051,8 +1112,6 @@ class Synth_PlayblastClass(object):
             expandedPath = os.path.expandvars(path)
 
         return expandedPath
-
-
 
 
     @err_catcher(name=__name__)
@@ -1104,25 +1163,22 @@ class Synth_PlayblastClass(object):
             "contextType": self.getContextType(),
             "customContext": self.customContext,
             "identifier": self.getIdentifier(),
-            "renderpresetoverride": str(self.chb_renderPreset.isChecked()),
-            "currentrenderpreset": self.cb_renderPreset.currentText(),
             "rangeType": str(self.cb_rangeType.currentText()),
             "startframe": self.sp_rangeStart.value(),
             "endframe": self.sp_rangeEnd.value(),
             "currentCam": str(self.curCam),
-            "resoverride": str(
-                [
-                    self.chb_resOverride.isChecked(),
-                    self.sp_resWidth.value(),
-                    self.sp_resHeight.value(),
-                ]
-            ),
             "masterVersion": self.cb_master.currentText(),
             "curoutputpath": self.cb_outPath.currentText(),
             "useVersionOverride": self.chb_version.isChecked(),
             "versionOverride": self.sp_version.value(),
-            "outputFormat": self.cb_format.currentText(),
+            "outputFormat": self.getFormat(),
+            "scaleOvr": self.chb_scaleOverride.isChecked(),
+            "renderScale": self.cb_renderScale.currentText(),
+            "renderFilter": self.cb_renderFilter.currentText(),
             "exrCompress": self.cb_exrCompression.currentText(),
+            "movCodec": self.cb_movCodec.currentText(),
+            "mp4Codec": self.cb_mp4Codec.currentText(),
+            "mp4Qual": self.cb_mp4Qual.currentText(),
             "include_Items": self.chb_include_Items.isChecked(),
             "include_Grid": self.chb_include_Grid.isChecked(),
             "include_RGB": self.chb_include_RGB.isChecked(),

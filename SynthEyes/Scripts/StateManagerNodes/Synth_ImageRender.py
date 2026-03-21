@@ -643,6 +643,11 @@ class Synth_ImageRenderClass(object):
 
 
     @err_catcher(name=__name__)
+    def getRangeType(self):
+        return self.cb_rangeType.currentText()
+
+
+    @err_catcher(name=__name__)
     def setRangeType(self, rangeType):
         idx = self.cb_rangeType.findText(rangeType)
         if idx != -1:
@@ -937,6 +942,7 @@ class Synth_ImageRenderClass(object):
             os.makedirs(outputFolder)
 
         hVersion = outputPathData["version"]
+        
         return outputPath, outputFolder, hVersion
 
 

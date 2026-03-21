@@ -8,23 +8,15 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QGridLayout,
-    QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QScrollArea, QSizePolicy, QSpacerItem,
-    QSpinBox, QToolButton, QVBoxLayout, QWidget)
+from qtpy.QtCore import *  # type: ignore
+from qtpy.QtGui import *  # type: ignore
+from qtpy.QtWidgets import *  # type: ignore
 
 class Ui_wg_Synth_ImageRender(object):
     def setupUi(self, wg_Synth_ImageRender):
         if not wg_Synth_ImageRender.objectName():
             wg_Synth_ImageRender.setObjectName(u"wg_Synth_ImageRender")
-        wg_Synth_ImageRender.resize(460, 884)
+        wg_Synth_ImageRender.resize(460, 900)
         self.verticalLayout = QVBoxLayout(wg_Synth_ImageRender)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
@@ -489,11 +481,12 @@ class Ui_wg_Synth_ImageRender(object):
         self.f_codecOptions_MP4.setObjectName(u"f_codecOptions_MP4")
         self.lo_mp4Options = QVBoxLayout(self.f_codecOptions_MP4)
         self.lo_mp4Options.setObjectName(u"lo_mp4Options")
-        self.lo_mp4Options.setContentsMargins(9, -1, 9, -1)
+        self.lo_mp4Options.setContentsMargins(0, -1, 0, -1)
         self.lo_mp4Codec = QWidget(self.f_codecOptions_MP4)
         self.lo_mp4Codec.setObjectName(u"lo_mp4Codec")
         self.lo_mp4Options1 = QHBoxLayout(self.lo_mp4Codec)
         self.lo_mp4Options1.setObjectName(u"lo_mp4Options1")
+        self.lo_mp4Options1.setContentsMargins(-1, 0, -1, 0)
         self.l_mp4Codec = QLabel(self.lo_mp4Codec)
         self.l_mp4Codec.setObjectName(u"l_mp4Codec")
 
@@ -516,6 +509,7 @@ class Ui_wg_Synth_ImageRender(object):
         self.lo_mp4Qual.setObjectName(u"lo_mp4Qual")
         self.lo_mp4Options2 = QHBoxLayout(self.lo_mp4Qual)
         self.lo_mp4Options2.setObjectName(u"lo_mp4Options2")
+        self.lo_mp4Options2.setContentsMargins(-1, 0, -1, 0)
         self.l_mp4Qual = QLabel(self.lo_mp4Qual)
         self.l_mp4Qual.setObjectName(u"l_mp4Qual")
 
@@ -541,41 +535,41 @@ class Ui_wg_Synth_ImageRender(object):
 
         self.verticalLayout_5.addItem(self.verticalSpacer)
 
-        self.widget = QWidget(self.gb_options)
-        self.widget.setObjectName(u"widget")
-        self.f_include1 = QHBoxLayout(self.widget)
+        self.f_include1_2 = QWidget(self.gb_options)
+        self.f_include1_2.setObjectName(u"f_include1_2")
+        self.f_include1 = QHBoxLayout(self.f_include1_2)
         self.f_include1.setObjectName(u"f_include1")
         self.f_include1.setContentsMargins(30, -1, 9, -1)
-        self.chb_include_RGB = QCheckBox(self.widget)
+        self.chb_include_RGB = QCheckBox(self.f_include1_2)
         self.chb_include_RGB.setObjectName(u"chb_include_RGB")
 
         self.f_include1.addWidget(self.chb_include_RGB)
 
-        self.chb_include_Alpha = QCheckBox(self.widget)
+        self.chb_include_Alpha = QCheckBox(self.f_include1_2)
         self.chb_include_Alpha.setObjectName(u"chb_include_Alpha")
 
         self.f_include1.addWidget(self.chb_include_Alpha)
 
 
-        self.verticalLayout_5.addWidget(self.widget)
+        self.verticalLayout_5.addWidget(self.f_include1_2)
 
-        self.widget1 = QWidget(self.gb_options)
-        self.widget1.setObjectName(u"widget1")
-        self.f_include2 = QHBoxLayout(self.widget1)
+        self.f_include2_2 = QWidget(self.gb_options)
+        self.f_include2_2.setObjectName(u"f_include2_2")
+        self.f_include2 = QHBoxLayout(self.f_include2_2)
         self.f_include2.setObjectName(u"f_include2")
         self.f_include2.setContentsMargins(30, -1, 9, -1)
-        self.chb_include_Mesh = QCheckBox(self.widget1)
+        self.chb_include_Mesh = QCheckBox(self.f_include2_2)
         self.chb_include_Mesh.setObjectName(u"chb_include_Mesh")
 
         self.f_include2.addWidget(self.chb_include_Mesh)
 
-        self.chb_include_Burnin = QCheckBox(self.widget1)
+        self.chb_include_Burnin = QCheckBox(self.f_include2_2)
         self.chb_include_Burnin.setObjectName(u"chb_include_Burnin")
 
         self.f_include2.addWidget(self.chb_include_Burnin)
 
 
-        self.verticalLayout_5.addWidget(self.widget1)
+        self.verticalLayout_5.addWidget(self.f_include2_2)
 
 
         self.verticalLayout.addWidget(self.gb_options)
@@ -592,7 +586,7 @@ class Ui_wg_Synth_ImageRender(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 409, 149))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 409, 105))
         self.verticalLayout_3 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.l_pathLast = QLabel(self.scrollAreaWidgetContents)
