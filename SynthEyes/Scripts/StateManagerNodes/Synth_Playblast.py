@@ -159,6 +159,7 @@ class Synth_PlayblastClass(object):
         self.chb_include_Depth.setChecked(False)
         self.chb_include_Burnin.setChecked(False)
 
+
     @err_catcher(name=__name__)
     def toolTips(self):
         tip = "SynthEyes Camera for Playblast"
