@@ -133,6 +133,7 @@ class Synth_Render_StMapClass(object):
         self.setupFormatOptions()
         self.configFormatUI()
         self.loadDefaults()
+        self.toolTips()
         self.connectEvents()
 
         self.oldPalette = self.b_changeTask.palette()
@@ -170,28 +171,44 @@ class Synth_Render_StMapClass(object):
 
 
     @err_catcher(name=__name__)
-    def tooltips(self):
-        tip = "Click to change Media Identifier Name"
-        self.b_changeTask.setToolTip(tip)
-        tip = ("Format for STMap Output\n\n"
-               "Note: EXR's will be saved as 32bit with no compression")
-        # self.cb_format.setToolTip(tip)
-        # tip = ""
-        # self.b_changeTask.setToolTip(tip)
-        # tip = ""
-        # self.b_changeTask.setToolTip(tip)
-        # tip = ""
-        # self.b_changeTask.setToolTip(tip)
-        # tip = ""
-        # self.b_changeTask.setToolTip(tip)
-        # tip = ""
-        # self.b_changeTask.setToolTip(tip)
-        # tip = ""
-        # self.b_changeTask.setToolTip(tip)
-        # tip = ""
-        # self.b_changeTask.setToolTip(tip)
+    def toolTips(self):
+        tip = "SynthEyes Camera for Playblast"
+        self.cb_cam.setToolTip(tip)
 
+        tip = "Enable Scale Override"
+        self.chb_scaleOverride.setToolTip(tip)
 
+        tip = ("Scale Factor for Rendered Images.\n\n"
+               "This does not affect the Scenefile\n"
+               "or the track.")
+        self.cb_renderScale.setToolTip(tip)
+
+        tip = ("Interpolation filter to be used in\n"
+               "the down-sample process.")
+        self.cb_renderFilter.setToolTip(tip)
+
+        tip = "Image format for the Render images."
+        self.cb_format.setToolTip(tip)
+
+        tip = "Compression algorithm for EXR."
+        self.cb_exrCompression.setToolTip(tip)
+
+        tip = "Codec for .MOV render file."
+        self.cb_movCodec.setToolTip(tip)
+
+        tip = "Codec for .MP4 render file."
+        self.cb_mp4Codec.setToolTip(tip)
+
+        tip = "Quality control for MP4 render file."
+        self.cb_mp4Qual.setToolTip(tip)
+
+        tip = ("Type of Distortion map output:\n\n"
+               "    SINGLE:  used for non-changing distortion.\n\n"
+               "    SEQUENCE:  used for animated distion such as zooming in the shot.")
+        self.f_renderType.setToolTip(tip)
+
+        tip = ("Desired Distortion Maps to be Generated.")
+        self.gb_mapTypes.setToolTip(tip)
 
 
     #   Load Saved Options Data
