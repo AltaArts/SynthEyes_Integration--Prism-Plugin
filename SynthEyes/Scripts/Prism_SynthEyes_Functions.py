@@ -119,6 +119,11 @@ class Prism_SynthEyes_Functions(object):
         self.core.registerCallback("onStateManagerOpen", self.onStateManagerOpen, plugin=self.plugin, priority=20)
         self.core.registerCallback("onProjectBrowserStartup", self.onProjectBrowserStartup, plugin=self.plugin)
         self.core.registerCallback("onUserSettingsOpen", self.onUserSettingsOpen, plugin=self.plugin)
+
+        ##  DISABLED - Does Not Improve Performance
+        # self.core.registerCallback("prePublish", self.prePublish, plugin=self.plugin)
+        # self.core.registerCallback("postPublish", self.postPublish, plugin=self.plugin)
+
         # self.core.registerCallback("onStateCreated", self.onStateCreated, plugin=self.plugin)
         # self.core.registerCallback("prePlayblast", self.prePlayblast, plugin=self.plugin)
         # self.core.registerCallback("onGenerateStateNameContext", self.onGenerateStateNameContext, plugin=self.plugin)
@@ -455,6 +460,20 @@ class Prism_SynthEyes_Functions(object):
 
 
 
+    ########################################################################
+    ##               DISABLED - DOES NOT INCREASE PERFORMANCE             ##
+    # @err_catcher(name=__name__)
+    # def prePublish(self, origin):
+    #     self.publishData = {"orig_prefetchEnabled": self.getPrefetch()}
+    #     self.setPrefetch(False)
+    # @err_catcher(name=__name__)
+    # def postPublish(self, origin, pubType, result={}):
+    #     self.setPrefetch(self.publishData["orig_prefetchEnabled"])
+    #########################################################################
+
+
+
+
     ###################################################
     ##       Called From SynthEyes Prism Tools       ##   
     ###################################################
@@ -487,7 +506,6 @@ class Prism_SynthEyes_Functions(object):
         self.core.popup("IN TEST ONE")							#	TESTING
 
 
-
     @err_catcher(name=__name__)
     def testTwo(self):
         self.core.popup("IN TEST TWO")							#	TESTING
@@ -496,10 +514,7 @@ class Prism_SynthEyes_Functions(object):
         #     print(f"NAME: {action}\n"
         #           f"{dir(action)}\n\n"
         #           "********************")
-
-
         # return
-
 
 
 
@@ -672,6 +687,33 @@ class Prism_SynthEyes_Functions(object):
     @err_catcher(name=__name__)
     def getAppVersion(self, origin) -> str:
         return self.synthEyes.Version()
+
+
+    #   Returns Bool of Prefetch is Enabled in SynthEyes
+    @err_catcher(name=__name__)
+    def getPrefetch(self) -> bool:
+        self.synthEyes.InitMenu()
+        shotMenu = self.synthEyes.TopMenu("Shot")
+        menu_idx = shotMenu.PosByName("Enable Prefetch")
+        isChecked_int = shotMenu.IsCheckedByPos(menu_idx)
+
+        return bool(isChecked_int == 1)
+
+
+    #   Set the SynthEyes Prefetch Enabled/Disabled
+    @err_catcher(name=__name__)
+    def setPrefetch(self, enable:bool) -> None:
+        isEnabled = self.getPrefetch()
+
+        if enable:
+            if not isEnabled:
+                self.synthEyes.PerformActionByNameAndContinue("Enable Prefetch")
+            
+        else:
+            if isEnabled:
+                self.synthEyes.PerformActionByNameAndContinue("Enable Prefetch")
+
+
 
 
     ##  FRAMES  ##
@@ -1010,6 +1052,8 @@ class Prism_SynthEyes_Functions(object):
         except Exception as e:
             logger.warning(f"ERROR: Unable to Set Shot's Sampling Filter: {e}")
             return
+
+
 
 
     # @err_catcher(name=__name__)

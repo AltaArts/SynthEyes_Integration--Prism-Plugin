@@ -143,8 +143,10 @@ class Synth_PlayblastClass(object):
 
     @err_catcher(name=__name__)
     def loadDefaults(self):
-        self.cb_format.setCurrentIndex(0)
+        self.chb_scaleOverride.setChecked(False)
+        self.onScaleOvrChanged()
 
+        self.cb_format.setCurrentIndex(0)
         idx = self.cb_exrCompression.findText("DWAA")
         if idx != -1:
             self.cb_exrCompression.setCurrentIndex(idx)
@@ -538,6 +540,7 @@ class Synth_PlayblastClass(object):
         self.cb_renderFilter.setEnabled(enabled)
 
         self.stateManager.saveStatesToScene
+
 
     @err_catcher(name=__name__)
     def getContextType(self):

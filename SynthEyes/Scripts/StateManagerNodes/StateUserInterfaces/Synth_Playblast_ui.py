@@ -537,15 +537,15 @@ class Ui_wg_Synth_Playblast(object):
         self.f_include1_2 = QHBoxLayout(self.f_include1)
         self.f_include1_2.setObjectName(u"f_include1_2")
         self.f_include1_2.setContentsMargins(30, -1, 9, 0)
-        self.chb_include_RGB = QCheckBox(self.f_include1)
-        self.chb_include_RGB.setObjectName(u"chb_include_RGB")
-
-        self.f_include1_2.addWidget(self.chb_include_RGB)
-
         self.chb_include_Items = QCheckBox(self.f_include1)
         self.chb_include_Items.setObjectName(u"chb_include_Items")
 
         self.f_include1_2.addWidget(self.chb_include_Items)
+
+        self.chb_include_RGB = QCheckBox(self.f_include1)
+        self.chb_include_RGB.setObjectName(u"chb_include_RGB")
+
+        self.f_include1_2.addWidget(self.chb_include_RGB)
 
 
         self.verticalLayout_5.addWidget(self.f_include1)
@@ -674,8 +674,8 @@ class Ui_wg_Synth_Playblast(object):
         self.l_movCodec.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Codec:", None))
         self.l_mp4Codec.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Codec:", None))
         self.l_mp4Qual.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Quality:", None))
-        self.chb_include_RGB.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include RGB", None))
         self.chb_include_Items.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include Viewport Items", None))
+        self.chb_include_RGB.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include RGB", None))
         self.chb_include_Grid.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include Grid", None))
         self.chb_include_Alpha.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include Alpha", None))
         self.chb_include_Burnin.setText(QCoreApplication.translate("wg_Synth_Playblast", u"Include Burn-in", None))

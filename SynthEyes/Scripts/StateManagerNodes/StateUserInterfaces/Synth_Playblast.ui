@@ -1067,16 +1067,16 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QCheckBox" name="chb_include_RGB">
+          <widget class="QCheckBox" name="chb_include_Items">
            <property name="text">
-            <string>Include RGB</string>
+            <string>Include Viewport Items</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QCheckBox" name="chb_include_Items">
+          <widget class="QCheckBox" name="chb_include_RGB">
            <property name="text">
-            <string>Include Viewport Items</string>
+            <string>Include RGB</string>
            </property>
           </widget>
          </item>

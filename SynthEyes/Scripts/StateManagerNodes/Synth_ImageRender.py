@@ -142,14 +142,13 @@ class Synth_ImageRenderClass(object):
 
     @err_catcher(name=__name__)
     def loadDefaults(self):
-        self.cb_format.setCurrentIndex(0)
+        self.chb_scaleOverride.setChecked(False)
+        self.onScaleOvrChanged()
 
+        self.cb_format.setCurrentIndex(0)
         idx = self.cb_exrCompression.findText("DWAA")
         if idx != -1:
             self.cb_exrCompression.setCurrentIndex(idx)
-
-        self.chb_scaleOverride.setChecked(False)
-        self.onScaleOvrChanged()
 
         self.chb_include_RGB.setChecked(True)
         self.chb_include_Alpha.setChecked(False)
