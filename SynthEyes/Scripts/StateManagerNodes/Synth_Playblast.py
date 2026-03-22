@@ -994,7 +994,7 @@ class Synth_PlayblastClass(object):
             entity=context,
             task=identifier,
             extension=extension,
-            framePadding=("#" * self.core.framePadding),
+            framePadding=padding,
             comment=padding,
             version=version,
             location=location,

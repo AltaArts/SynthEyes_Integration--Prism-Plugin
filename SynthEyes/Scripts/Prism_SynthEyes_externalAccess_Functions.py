@@ -45,12 +45,16 @@
 
 
 import os
+import logging
 
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 
 from PrismUtils.Decorators import err_catcher_plugin as err_catcher
+
+
+logger = logging.getLogger(__name__)
 
 
 class Prism_SynthEyes_externalAccess_Functions(object):
@@ -78,28 +82,58 @@ class Prism_SynthEyes_externalAccess_Functions(object):
 
     @err_catcher(name=__name__)
     def userSettings_loadUI(self, origin, tab):
-        origin.gb_options = QGroupBox("SynthEyes Socket Communications")
-        lo_comms = QVBoxLayout()
-        origin.gb_options.setLayout(lo_comms)
-        origin.gb_options.setCheckable(False)
-        origin.gb_options.setChecked(True)
+        #   Options Groupbox
+        origin.gb_synthOptions = QGroupBox("SynthEyes Options")
+        origin.gb_synthOptions.setCheckable(False)
+        origin.gb_synthOptions.setChecked(True)
 
-        w_bldAutoSavePath = QWidget()
-        lo_socketPort = QHBoxLayout()
+        #   Grid Layout
+        grid = QGridLayout()
+        grid.setContentsMargins(30, 10, 30, 10)
+        grid.setHorizontalSpacing(20)
+        origin.gb_synthOptions.setLayout(grid)
 
-        l_port = QLabel("Socket Port:   ")
-        lo_socketPort.addWidget(l_port)
+        #   Auto-start
+        l_autoStart = QLabel("Click to Set Prism Auto-start:")
+        l_autoStart.setFixedWidth(280)
+        origin.b_autoStart = QPushButton("Add")
+        origin.b_autoStart.setFixedWidth(100)
+        grid.addWidget(l_autoStart, 0, 0, alignment=Qt.AlignLeft)
+        grid.addWidget(origin.b_autoStart, 0, 1, alignment=Qt.AlignLeft)
 
+        #   Comms Port
+        l_port = QLabel("SynthEyes Communications Socket Port:")
+        l_port.setFixedWidth(280)
         origin.sp_port = QSpinBox()
+        origin.sp_port.setFixedWidth(150)
         origin.sp_port.setRange(49152, 65535)
         origin.sp_port.setValue(50555)
-        lo_socketPort.addWidget(origin.sp_port)
+        grid.addWidget(l_port, 1, 0, alignment=Qt.AlignLeft)
+        grid.addWidget(origin.sp_port, 1, 1, alignment=Qt.AlignLeft)
 
-        lo_socketPort.setContentsMargins(20, 0, 0, 20)
-        w_bldAutoSavePath.setLayout(lo_socketPort)
+        #   Add Options to DCC Tab
+        tab.layout().addWidget(origin.gb_synthOptions)
 
-        lo_comms.addWidget(w_bldAutoSavePath)
-        tab.layout().addWidget(origin.gb_options)
+        #   Add Signal to Button and Pass the DCC Settings UI Objects
+        origin.b_autoStart.clicked.connect(
+            lambda: self.onAutostartClicked(
+                origin.exOverridePlugins["SynthEyes"]["chb"],
+                origin.exOverridePlugins["SynthEyes"]["le"]
+                )
+            )
+
+        tip = ("Adds a .bat file to the 'Executable Override' (above).\n\n"
+               "This .bat file will allow Prism to automatically\n"
+               "start in SynthEyes.  To disable, just un-check the\n"
+               "enabled checkbox above.")
+        l_autoStart.setToolTip(tip)
+        origin.b_autoStart.setToolTip(tip)
+
+        tip = ("The port that the SynthEyes Prism integration uses\n"
+               "for socket communications between the Prism menu\n"
+               "in SynthEyes and Prism Core.")
+        l_port.setToolTip(tip)
+        origin.sp_port.setToolTip(tip)
 
 
     @err_catcher(name=__name__)
@@ -126,3 +160,31 @@ class Prism_SynthEyes_externalAccess_Functions(object):
         presetDir = os.path.join(self.pluginDirectory, "Presets")
         scenes = self.core.entities.getPresetScenesFromFolder(presetDir)
         presetScenes += scenes
+
+
+    #   Sets the Executable Override for the Autostart
+    @err_catcher(name=__name__)
+    def onAutostartClicked(self, chb_ovr, le_ovr):
+        #   Get SynthEyes Intergration
+        integrations = self.core.integration.getIntegrations()
+        synthData = integrations.get("SynthEyes")
+
+        if not synthData:
+            logger.warning("ERROR: Unable to Set Auto-start - SynthEyes integration not found.")
+            self.core.popup("ERROR:\n\n"
+                            "Unable to Set Auto-start - SynthEyes integration not found.")
+            return
+
+        #   Make Autostart Path
+        synthPath = synthData[0]
+        autostartPath = os.path.join(synthPath, "SynthEyes-Prism.bat")
+
+        if not os.path.isfile(autostartPath):
+            logger.warning("ERROR: Unable to Set Auto-start - 'SynthEyes-Prism.bat' not found.")
+            self.core.popup("ERROR:\n\n"
+                                      "Unable to Set Auto-start - 'SynthEyes-Prism.bat' not found.")
+            return
+
+        #   Set the Executable Override Path
+        chb_ovr.setChecked(True)
+        le_ovr.setText(autostartPath)

@@ -45,6 +45,7 @@
 
 
 import os
+from subprocess import Popen
 import sys
 import platform
 import glob
@@ -85,7 +86,13 @@ class Prism_SynthEyes_Integration(object):
             key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, key_path)
             value, _ = _winreg.QueryValueEx(key, None)
 
-            exe = value.strip().split(' ')[0].strip('"')
+            value = value.strip()
+
+            #   If Path is Quoted, Extract Inside Quotes
+            if value.startswith('"'):
+                exe = value.split('"')[1]
+            else:
+                exe = value.split(' ')[0]
 
             if os.path.exists(exe):
                 return exe
@@ -171,6 +178,13 @@ class Prism_SynthEyes_Integration(object):
             cmds.append(cmd)
             addedFiles.append(dest_toolbar)
 
+            #   Cmd to Copy Prism Launcher .bat
+            source_launcher = os.path.abspath(os.path.join(integrationBase, "SynthEyes-Prism.bat"))
+            dest_launcher = os.path.abspath(os.path.join(installPath, "SynthEyes-Prism.bat"))
+            cmd = {"type": "copyFile", "args": [source_launcher, dest_launcher]}
+            cmds.append(cmd)
+            addedFiles.append(dest_launcher)
+
             #   Cmd to Copy all the Integration Files
             prismInterDir = os.path.join(integrationBase, "Prism")
             for file in os.listdir(prismInterDir):
@@ -193,7 +207,7 @@ class Prism_SynthEyes_Integration(object):
                     os.chmod(i, 0o777)
 
             #   Replaces Path Placeholders with Local Install Paths
-            result = self.replacePaths(addedFiles)
+            result = self.replacePaths(installPath, addedFiles)
 
             if result is True:
                 return True
@@ -215,9 +229,11 @@ class Prism_SynthEyes_Integration(object):
 
 
     #   Replaces Path Placeholders with Local Install Paths
-    def replacePaths(self, addedFiles):
+    def replacePaths(self, installPath, addedFiles):
         prismRoot = os.path.abspath(self.core.prismRoot)
         pluginRoot = os.path.dirname(os.path.dirname(__file__))
+        synthEXE = os.path.abspath(os.path.join(installPath, "SynthEyes64.exe"))
+        prismLauncher = os.path.abspath(os.path.join(installPath, "scripts", "Prism", "Prism_Start.py"))
 
         cmds = []
 
@@ -228,6 +244,8 @@ class Prism_SynthEyes_Integration(object):
 
             file_str = file_str.replace("@PRISMROOTREPLACE@", '"%s"' % prismRoot.replace("\\", "/"))
             file_str = file_str.replace("@PLUGINROOTREPLACE@", '"%s"' % pluginRoot.replace("\\", "/"))
+            file_str = file_str.replace("@SYNTHEYESREPLACE@", '"%s"' % synthEXE.replace("\\", "/"))
+            file_str = file_str.replace("@PRISMLAUNCHERREPLACE@", '"%s"' % prismLauncher.replace("\\", "/"))
 
             cmd = {"type": "writeToFile", "args": [file, file_str]}
             cmds.append(cmd)
@@ -244,9 +262,14 @@ class Prism_SynthEyes_Integration(object):
             scripts_dir = os.path.join(installPath, "scripts")
             prismScripts_dir = os.path.join(scripts_dir, "Prism")
             toolbarfile = os.path.join(scripts_dir, "Prism.tbi")
+            launcherfile = os.path.join(installPath, "SynthEyes-Prism.bat")
             
             if os.path.isfile(toolbarfile):
                 cmd = {"type": "removeFile", "args": [toolbarfile]}
+                cmds.append(cmd)
+
+            if os.path.isfile(launcherfile):
+                cmd = {"type": "removeFile", "args": [launcherfile]}
                 cmds.append(cmd)
 
             #   Cmd to Remove Prism Script Dir

@@ -1697,6 +1697,7 @@ class Prism_SynthEyes_Functions(object):
     @err_catcher(name=__name__)
     def sm_playblast_preRender(self, origin, rSettings):
         shot = self.getShotFromCamName(rSettings["currentCam"])
+        camera = self.getCamFromName(rSettings["currentCam"])
 
         #   Capture Original Settings
         orig_start, orig_end = self.getFrameRange(origin, shot)
@@ -1716,13 +1717,18 @@ class Prism_SynthEyes_Functions(object):
                 self.setOutputRez(shot, scaleStr=rSettings["renderScale"])
                 self.setOutputSampleFilter(shot, filterStr=rSettings["renderFilter"])
 
-        #   Capture Current View and Set to Perspective
+        #   Capture Current View
         self.synthEyes.InitMenu()
         currView = self.synthEyes.View()
 
+        #   Set View to Perspective (has to be for Preview Movie)
         if currView != "Prespective":
             rSettings["currView"] = currView
             self.synthEyes.SetView("Perspective")
+
+        #   Set Active Shot (Tracker Host)
+        with self.UNDO_BLOCK("Set Camera"):
+            self.synthEyes.SetActive(camera)
 
         return rSettings
 
@@ -1764,7 +1770,7 @@ class Prism_SynthEyes_Functions(object):
             #   "Click" the Preview Movie Button
             perspVu.PerformActionByNameAndContinue("Persp/Preview Movie")
 
-            time.sleep(0.5)
+            time.sleep(1)
 
             #   Capture the Resulting Popup Window
             popup_preview = self.synthEyes.Popup()
