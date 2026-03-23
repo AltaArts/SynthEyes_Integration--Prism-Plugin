@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'default_Export.ui'
+## Form generated from reading UI file 'Synth_SceneExport.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.0
+## Created by: Qt User Interface Compiler version 6.10.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from qtpy.QtCore import *  # type: ignore
-from qtpy.QtGui import *  # type: ignore
-from qtpy.QtWidgets import *  # type: ignore
+from qtpy.QtCore import *
+from qtpy.QtGui import *
+from qtpy.QtWidgets import *
 
 class Ui_wg_Synth_SceneExport(object):
     def setupUi(self, wg_Synth_SceneExport):
         if not wg_Synth_SceneExport.objectName():
             wg_Synth_SceneExport.setObjectName(u"wg_Synth_SceneExport")
-        wg_Synth_SceneExport.resize(400, 1259)
+        wg_Synth_SceneExport.setEnabled(True)
+        wg_Synth_SceneExport.resize(399, 810)
         self.verticalLayout = QVBoxLayout(wg_Synth_SceneExport)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
@@ -289,64 +290,75 @@ class Ui_wg_Synth_SceneExport(object):
 
         self.lo_export.addWidget(self.w_outPath)
 
-        self.w_cam = QWidget(self.gb_export)
-        self.w_cam.setObjectName(u"w_cam")
-        self.horizontalLayout_3 = QHBoxLayout(self.w_cam)
-        self.horizontalLayout_3.setSpacing(0)
-        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
-        self.horizontalLayout_3.setContentsMargins(9, 0, 9, 0)
-        self.l_cam = QLabel(self.w_cam)
-        self.l_cam.setObjectName(u"l_cam")
-        self.l_cam.setMinimumSize(QSize(40, 0))
-        self.l_cam.setMaximumSize(QSize(95, 16777215))
 
-        self.horizontalLayout_3.addWidget(self.l_cam)
+        self.verticalLayout.addWidget(self.gb_export)
 
-        self.cb_cam = QComboBox(self.w_cam)
-        self.cb_cam.setObjectName(u"cb_cam")
+        self.gb_ExportList = QGroupBox(wg_Synth_SceneExport)
+        self.gb_ExportList.setObjectName(u"gb_ExportList")
+        self.gb_ExportList.setCheckable(False)
+        self.lo_exportList = QVBoxLayout(self.gb_ExportList)
+        self.lo_exportList.setObjectName(u"lo_exportList")
+        self.lo_exportList.setContentsMargins(9, 9, 9, 9)
+        self.lo_exportAll = QHBoxLayout()
+        self.lo_exportAll.setObjectName(u"lo_exportAll")
+        self.lo_exportAll.setContentsMargins(9, -1, 9, -1)
+        self.chb_customExport = QCheckBox(self.gb_ExportList)
+        self.chb_customExport.setObjectName(u"chb_customExport")
+        self.chb_customExport.setChecked(True)
 
-        self.horizontalLayout_3.addWidget(self.cb_cam)
+        self.lo_exportAll.addWidget(self.chb_customExport)
 
+        self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.lo_export.addWidget(self.w_cam)
+        self.lo_exportAll.addItem(self.horizontalSpacer_4)
 
-        self.w_sCamShot = QWidget(self.gb_export)
-        self.w_sCamShot.setObjectName(u"w_sCamShot")
-        self.horizontalLayout_7 = QHBoxLayout(self.w_sCamShot)
-        self.horizontalLayout_7.setSpacing(0)
-        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
-        self.horizontalLayout_7.setContentsMargins(9, 0, 9, 0)
-        self.l_sCamShot = QLabel(self.w_sCamShot)
-        self.l_sCamShot.setObjectName(u"l_sCamShot")
-        self.l_sCamShot.setMinimumSize(QSize(40, 0))
-        self.l_sCamShot.setMaximumSize(QSize(95, 16777215))
+        self.b_refreshExports = QPushButton(self.gb_ExportList)
+        self.b_refreshExports.setObjectName(u"b_refreshExports")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.b_refreshExports.sizePolicy().hasHeightForWidth())
+        self.b_refreshExports.setSizePolicy(sizePolicy1)
+        self.b_refreshExports.setMinimumSize(QSize(30, 0))
+        self.b_refreshExports.setMaximumSize(QSize(30, 16777215))
 
-        self.horizontalLayout_7.addWidget(self.l_sCamShot)
-
-        self.cb_sCamShot = QComboBox(self.w_sCamShot)
-        self.cb_sCamShot.setObjectName(u"cb_sCamShot")
-
-        self.horizontalLayout_7.addWidget(self.cb_sCamShot)
+        self.lo_exportAll.addWidget(self.b_refreshExports)
 
 
-        self.lo_export.addWidget(self.w_sCamShot)
+        self.lo_exportList.addLayout(self.lo_exportAll)
 
-        self.w_selectCam = QWidget(self.gb_export)
-        self.w_selectCam.setObjectName(u"w_selectCam")
-        self.horizontalLayout_2 = QHBoxLayout(self.w_selectCam)
-        self.horizontalLayout_2.setSpacing(0)
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.horizontalLayout_2.setContentsMargins(9, 0, 9, 0)
-        self.b_selectCam = QPushButton(self.w_selectCam)
-        self.b_selectCam.setObjectName(u"b_selectCam")
-        self.b_selectCam.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.gb_shotList = QGroupBox(self.gb_ExportList)
+        self.gb_shotList.setObjectName(u"gb_shotList")
+        self.lo_shotList = QVBoxLayout(self.gb_shotList)
+        self.lo_shotList.setObjectName(u"lo_shotList")
+        self.lo_shotList.setContentsMargins(15, 10, 15, 10)
+        self.lw_shots = QListWidget(self.gb_shotList)
+        self.lw_shots.setObjectName(u"lw_shots")
+        self.lw_shots.setMinimumSize(QSize(0, 75))
+        self.lw_shots.setMaximumSize(QSize(16777215, 75))
 
-        self.horizontalLayout_2.addWidget(self.b_selectCam)
+        self.lo_shotList.addWidget(self.lw_shots)
 
 
-        self.lo_export.addWidget(self.w_selectCam)
+        self.lo_exportList.addWidget(self.gb_shotList)
 
-        self.gb_previous = QGroupBox(self.gb_export)
+        self.gb_meshList = QGroupBox(self.gb_ExportList)
+        self.gb_meshList.setObjectName(u"gb_meshList")
+        self.lo_meshList = QVBoxLayout(self.gb_meshList)
+        self.lo_meshList.setObjectName(u"lo_meshList")
+        self.lo_meshList.setContentsMargins(15, 10, 15, 10)
+        self.lw_meshes = QListWidget(self.gb_meshList)
+        self.lw_meshes.setObjectName(u"lw_meshes")
+
+        self.lo_meshList.addWidget(self.lw_meshes)
+
+
+        self.lo_exportList.addWidget(self.gb_meshList)
+
+
+        self.verticalLayout.addWidget(self.gb_ExportList)
+
+        self.gb_previous = QGroupBox(wg_Synth_SceneExport)
         self.gb_previous.setObjectName(u"gb_previous")
         self.horizontalLayout_13 = QHBoxLayout(self.gb_previous)
         self.horizontalLayout_13.setObjectName(u"horizontalLayout_13")
@@ -356,7 +368,7 @@ class Ui_wg_Synth_SceneExport(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 329, 797))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 348, 69))
         self.horizontalLayout_12 = QHBoxLayout(self.scrollAreaWidgetContents)
         self.horizontalLayout_12.setObjectName(u"horizontalLayout_12")
         self.l_pathLast = QLabel(self.scrollAreaWidgetContents)
@@ -376,10 +388,11 @@ class Ui_wg_Synth_SceneExport(object):
         self.horizontalLayout_13.addWidget(self.b_pathLast)
 
 
-        self.lo_export.addWidget(self.gb_previous)
+        self.verticalLayout.addWidget(self.gb_previous)
 
+        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
-        self.verticalLayout.addWidget(self.gb_export)
+        self.verticalLayout.addItem(self.verticalSpacer)
 
         QWidget.setTabOrder(self.e_name, self.b_context)
         QWidget.setTabOrder(self.b_context, self.cb_context)
@@ -389,9 +402,7 @@ class Ui_wg_Synth_SceneExport(object):
         QWidget.setTabOrder(self.sp_rangeEnd, self.chb_master)
         QWidget.setTabOrder(self.chb_master, self.cb_outPath)
         QWidget.setTabOrder(self.cb_outPath, self.cb_outType)
-        QWidget.setTabOrder(self.cb_outType, self.cb_cam)
-        QWidget.setTabOrder(self.cb_cam, self.cb_sCamShot)
-        QWidget.setTabOrder(self.cb_sCamShot, self.scrollArea)
+        QWidget.setTabOrder(self.cb_outType, self.scrollArea)
         QWidget.setTabOrder(self.scrollArea, self.b_pathLast)
 
         self.retranslateUi(wg_Synth_SceneExport)
@@ -420,9 +431,11 @@ class Ui_wg_Synth_SceneExport(object):
         self.l_master.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Update Master Version:", None))
         self.chb_master.setText("")
         self.l_outPath.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Location:", None))
-        self.l_cam.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Camera:", None))
-        self.l_sCamShot.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Shot:", None))
-        self.b_selectCam.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Select", None))
+        self.gb_ExportList.setTitle(QCoreApplication.translate("wg_Synth_SceneExport", u"Scene", None))
+        self.chb_customExport.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Customize Export", None))
+        self.b_refreshExports.setText("")
+        self.gb_shotList.setTitle(QCoreApplication.translate("wg_Synth_SceneExport", u"Shots", None))
+        self.gb_meshList.setTitle(QCoreApplication.translate("wg_Synth_SceneExport", u"Meshes", None))
         self.gb_previous.setTitle(QCoreApplication.translate("wg_Synth_SceneExport", u"Last export", None))
         self.l_pathLast.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"None", None))
         self.b_pathLast.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"...", None))

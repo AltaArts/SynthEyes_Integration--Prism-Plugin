@@ -37,6 +37,7 @@ import time
 import traceback
 import platform
 import logging
+import json
 
 from qtpy.QtCore import *
 from qtpy.QtGui import *
@@ -67,15 +68,14 @@ class Synth_SceneExportClass(object):
         self.allowCustomContext = False
         self.shotCamsInitialized = False
 
+        self.exportData = None
+
         self.e_name.setText(state.text(0) + " ({product})")
 
         self.l_name.setVisible(False)
         self.e_name.setVisible(False)
 
         self.cb_context.addItems(["From scenefile", "Custom"])
-
-        self.curCam = None
-        self.refreshCameras()
 
         self.chb_master.setChecked(os.getenv("PRISM_ENABLE_MASTER_DFT", "1") == "1")
 
@@ -85,9 +85,6 @@ class Synth_SceneExportClass(object):
         self.warnPalette.setColor(QPalette.ButtonText, QColor(255, 255, 255))
         self.b_changeTask.setPalette(self.warnPalette)
 
-        self.w_cam.setVisible(False)
-        self.w_sCamShot.setVisible(False)
-        self.w_selectCam.setVisible(False)
         self.additionalSettings = []
         self.b_additionalSettings = QPushButton("Additional Settings...")
         self.b_additionalSettings.clicked.connect(self.showAdditionalSettings)
@@ -113,6 +110,11 @@ class Synth_SceneExportClass(object):
         self.toolTips()
         self.connectEvents()
 
+        self.chb_customExport.setChecked(False)
+
+        refreshIcon = QIcon(os.path.join(self.core.prismRoot, "Scripts", "UserInterfacesPrism", "refresh.png"))
+        self.b_refreshExports.setIcon(refreshIcon)
+
         self.core.callback("onStateStartup", self)
 
         if stateData is not None:
@@ -127,6 +129,10 @@ class Synth_SceneExportClass(object):
     def toolTips(self):
         tip = "Image format for the Scene Export."
         self.cb_outType.setToolTip(tip)
+
+        tip = ("Refreshes the Export Items and their current\n"
+               "state in the SynthEyes scene.")
+        self.b_refreshExports.setToolTip(tip)
 
 
     @err_catcher(name=__name__)
@@ -165,12 +171,13 @@ class Synth_SceneExportClass(object):
             idx = self.cb_outType.findText(data["curoutputtype"])
             if idx != -1:
                 self.cb_outType.setCurrentIndex(idx)
-        if "wholescene" in data:
-            self.chb_wholeScene.setChecked(eval(data["wholescene"]))
+        if "customExport" in data:
+            self.chb_customExport.setChecked(data["customExport"])
+        if "exportItems" in data:
+            self.exportData = json.loads(data["exportItems"])
+            self.loadExportLists()
         if "additionaloptions" in data:
             self.chb_additionalOptions.setChecked(eval(data["additionaloptions"]))
-        if "currentCam" in data:
-            self.curCam = data["currentCam"]
         if "lastexportpath" in data:
             lePath = self.core.fixPath(data["lastexportpath"])
             self.setLastPath(lePath)
@@ -204,9 +211,10 @@ class Synth_SceneExportClass(object):
         self.chb_master.stateChanged.connect(self.stateManager.saveStatesToScene)
         self.cb_outPath.activated.connect(self.stateManager.saveStatesToScene)
         self.cb_outType.activated.connect(lambda x: self.typeChanged(self.getOutputType()))
-        self.cb_cam.activated.connect(self.setCam)
-        self.cb_sCamShot.activated.connect(self.stateManager.saveStatesToScene)
-        self.b_selectCam.clicked.connect(lambda: self.synthFuncts.selectCam(self))
+        self.chb_customExport.stateChanged.connect(self.updateExportUI)
+        self.b_refreshExports.clicked.connect(self.refreshExportLists)
+        self.lw_shots.itemChanged.connect(self.onExportItemChanged)
+        self.lw_meshes.itemChanged.connect(self.onExportItemChanged)
         self.b_pathLast.clicked.connect(lambda: self.stateManager.showLastPathMenu(self))
 
 
@@ -304,14 +312,8 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def wholeSceneChanged(self, state):
-        if self.w_wholeScene.isHidden():
-            enabled = True
-        else:
-            enabled = not state == Qt.Checked
-
-        self.gb_objects.setEnabled(enabled)
-        self.updateUi()
+    def onExportItemChanged(self, item):
+        self.getExportItems()
         self.stateManager.saveStatesToScene()
 
 
@@ -579,7 +581,6 @@ class Synth_SceneExportClass(object):
             self.w_master.setVisible(False)
 
         self.refreshContext()
-        self.refreshCameras()
         self.updateRange()
 
         if self.getOutputType() == "ShotCam":
@@ -592,7 +593,21 @@ class Synth_SceneExportClass(object):
         self.b_additionalSettings.setHidden(not showSettings)
         self.nameChanged(self.e_name.text())
 
+        self.updateExportUI()
+
         self.core.callback("sm_export_updateUi", self)
+
+
+
+    @err_catcher(name=__name__)
+    def updateExportUI(self, checked=None):
+        if checked is None:
+            checked = self.chb_customExport.isChecked()
+
+        self.gb_shotList.setEnabled(checked)
+        self.gb_meshList.setEnabled(checked)
+
+        self.stateManager.saveStatesToScene()
 
 
     @err_catcher(name=__name__)
@@ -707,9 +722,6 @@ class Synth_SceneExportClass(object):
     @err_catcher(name=__name__)
     def typeChanged(self, idx):
         isSCam = idx == "ShotCam"
-        self.w_cam.setVisible(isSCam)
-        self.w_sCamShot.setVisible(isSCam)
-        self.w_selectCam.setVisible(isSCam)
         self.w_taskname.setVisible(not isSCam)
         getattr(self.core.appPlugin, "sm_export_typeChanged", lambda x, y: None)(
             self, idx
@@ -719,36 +731,133 @@ class Synth_SceneExportClass(object):
         self.stateManager.saveStatesToScene()
 
 
+    #   Called from Refresh Button to Reload Lists from Scene Data
     @err_catcher(name=__name__)
-    def setCam(self, cameraIdx): 
-        self.curCam = self.cb_cam.currentText()
-
-        self.refreshCameras()
-
-
-    @err_catcher(name=__name__)
-    def refreshCameras(self):
-        self.cb_cam.clear()
-        self.camlist = []
-
-        if not self.stateManager.standalone:
-            camObjs = self.core.appPlugin.getCamNodes(self, cur=True)
-            self.camlist = [self.core.appPlugin.getCamName(self, i) for i in camObjs]
-
-        self.cb_cam.addItems(self.camlist)
-
-        if self.curCam in self.camlist:
-            idx = self.cb_cam.findText(self.curCam)
-            if idx != -1:
-                self.cb_cam.setCurrentIndex(idx)
-        else:
-            self.cb_cam.setCurrentIndex(0)
-            if len(self.camlist) > 0:
-                self.curCam = self.camlist[0]
-            else:
-                self.curCam = None
+    def refreshExportLists(self):
+        self.exportData = None
+        self.loadExportLists()
 
         self.stateManager.saveStatesToScene()
+
+
+    #   Loads and Sets the Export Lists
+    @err_catcher(name=__name__)
+    def loadExportLists(self):
+        self.loadCameraList()
+        self.loadMeshList()
+
+
+    #   Loads and Sets Camera/Shots List
+    @err_catcher(name=__name__)
+    def loadCameraList(self):
+        self.lw_shots.blockSignals(True)
+        self.lw_shots.clear()
+        
+        #   Get All Cameras from Scene
+        cameras = self.synthFuncts.getCamNodes()
+
+        #   Build Lookup Dict
+        camLookup = {}
+        if self.exportData and "cameraExports" in self.exportData:
+            camLookup = {
+                c["cameraName"]: c["exported"]
+                for c in self.exportData["cameraExports"]
+            }
+
+        #   Iterate Cameras and Build Items
+        for cam in cameras:
+            camName = self.synthFuncts.getCamName(self, cam)
+
+            #   Make New List Item
+            item = QListWidgetItem(camName)
+            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+
+            #   Set Checkbox from Data
+            if camName in camLookup:
+                exported = camLookup[camName]
+
+            #   Set Checkbox from Scene
+            else:
+                exported = self.synthFuncts.getObjExported(cam)
+
+            item.setCheckState(Qt.Checked if exported else Qt.Unchecked)
+            self.lw_shots.addItem(item)
+
+        self.lw_shots.blockSignals(False)
+
+
+    #   Loads and Sets Mesh List
+    @err_catcher(name=__name__)
+    def loadMeshList(self):
+        self.lw_meshes.blockSignals(True)
+        self.lw_meshes.clear()
+        
+        #   Get All Meshes from Scene
+        meshes = self.synthFuncts.synthEyes.Meshes()
+
+        #   Build Lookup Dict
+        meshLookup = {}
+        if self.exportData and "meshExports" in self.exportData:
+            meshLookup = {
+                m["meshName"]: m["exported"]
+                for m in self.exportData["meshExports"]
+            }
+
+        #   Iterate Meshes and Build Items
+        for mesh in meshes:
+            meshName = self.synthFuncts.getObjName(self, mesh)
+
+            #   Make New List Item
+            item = QListWidgetItem(meshName)
+            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+
+            #   Set Checkbox from Data
+            if meshName in meshLookup:
+                exported = meshLookup[meshName]
+
+            #   Set Checkbox from Scene
+            else:
+                exported = self.synthFuncts.getObjExported(mesh)
+
+            item.setCheckState(Qt.Checked if exported else Qt.Unchecked)
+            self.lw_meshes.addItem(item)
+
+        self.lw_meshes.blockSignals(False)
+
+
+    #   Builds Export Items from List Items
+    @err_catcher(name=__name__)
+    def getExportItems(self):
+        ##  Camera List
+        camExportData = []
+        #   Iterate Camera List and Build Dict of Check States
+        for i in range(self.lw_shots.count()):
+            camItem = self.lw_shots.item(i)
+            cData = {
+                "cameraName": camItem.text(),
+                "exported": camItem.checkState() == Qt.Checked
+            }
+            camExportData.append(cData)
+
+        ##   Mesh List
+        meshExportData = []
+        #   Iterate Mesh List and Build Dict of Check States
+        for i in range(self.lw_meshes.count()):
+            meshItem = self.lw_meshes.item(i)
+            mData = {
+                "meshName": meshItem.text(),
+                "exported": meshItem.checkState() == Qt.Checked
+            }
+            meshExportData.append(mData)
+
+        eData = {
+            "cameraExports": camExportData,
+            "meshExports": meshExportData
+        }
+
+        self.exportData = eData
+
+        return eData
 
 
     @err_catcher(name=__name__)
@@ -796,15 +905,16 @@ class Synth_SceneExportClass(object):
         rangeType = self.cb_rangeType.currentText()
         startFrame, endFrame = self.getFrameRange(rangeType)
 
-        if self.getOutputType() == "ShotCam":
-            if self.curCam is None:
-                warnings.append(["No camera specified.", "", 3])
-        else:
-            if not self.getProductname():
-                warnings.append(["No productname is given.", "", 3])
-
         if startFrame is None:
             warnings.append(["Framerange is invalid.", "", 3])
+
+        checked = sum(
+            1 for i in range(self.lw_shots.count())
+            if self.lw_shots.item(i).checkState() == Qt.Checked
+            )
+        
+        if checked < 1:
+            warnings.append(["No Cameras are Selected for Export.", "", 2])
 
         warnings += self.synthFuncts.sm_sceneExport_preExecute(self, startFrame, endFrame)
 
@@ -899,17 +1009,18 @@ class Synth_SceneExportClass(object):
 
         ##   For ShotCam
         if self.getOutputType() == "ShotCam":
-            if self.curCam is None:
-                return [
-                    self.state.text(0)
-                    + ": error - No camera specified. Skipped the activation of this state."
-                ]
+            pass
+            # if self.curCam is None:
+            #     return [
+            #         self.state.text(0)
+            #         + ": error - No camera specified. Skipped the activation of this state."
+            #     ]
 
-            if self.cb_sCamShot.currentText() == "":
-                return [
-                    self.state.text(0)
-                    + ": error - No Shot specified. Skipped the activation of this state."
-                ]
+            # if self.cb_sCamShot.currentText() == "":
+            #     return [
+            #         self.state.text(0)
+            #         + ": error - No Shot specified. Skipped the activation of this state."
+            #     ]
 
             fileName = self.core.getCurrentFileName()
             context = self.getCurrentContext()
@@ -1099,6 +1210,9 @@ class Synth_SceneExportClass(object):
 
             rSettings = details.copy()
 
+            rSettings["customExport"] = self.chb_customExport.isChecked()
+            rSettings["exportData"] = self.exportData
+
             #   Capture Current and Config New Settings
             rSettings = self.synthFuncts.sm_pre_sceneExport(self, rSettings)
 
@@ -1109,7 +1223,7 @@ class Synth_SceneExportClass(object):
                     self,
                     outputType,
                     outputName=outputName,
-                    details=details
+                    details=rSettings
                 )
 
                 if not outputName:
@@ -1125,7 +1239,6 @@ class Synth_SceneExportClass(object):
                 self.setLastPath(outputName)
                 self.stateManager.saveStatesToScene()
 
-
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 erStr = "%s ERROR - sm_default_export %s:\n%s" % (
@@ -1138,7 +1251,6 @@ class Synth_SceneExportClass(object):
                     self.state.text(0)
                     + " - unknown error (view console for more information)"
                 ]
-
 
             useMaster = self.core.products.getUseMaster()
             if useMaster and self.getUpdateMasterVersion():
@@ -1185,8 +1297,12 @@ class Synth_SceneExportClass(object):
                 "updateMasterVersion": self.chb_master.isChecked(),
                 "curoutputpath": self.cb_outPath.currentText(),
                 "curoutputtype": self.getOutputType(),
-                "currentcam": self.cb_cam.currentText(),
-                "currentscamshot": self.cb_sCamShot.currentText(),
+                # "currentcam": self.cb_cam.currentText(),
+                # "currentscamshot": self.cb_sCamShot.currentText(),
+                "customExport": self.chb_customExport.isChecked(),
+
+                "exportItems": json.dumps(self.getExportItems()),
+
                 "lastexportpath": self.l_pathLast.text().replace("\\", "/"),
                 "stateenabled": self.core.getCheckStateValue(self.state.checkState(0)),
                 "additionalSettings": {s["name"]: s["value"] for s in self.additionalSettings}

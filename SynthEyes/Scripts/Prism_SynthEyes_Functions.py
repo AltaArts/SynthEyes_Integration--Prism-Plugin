@@ -58,9 +58,6 @@ import re
 from contextlib import contextmanager
 import time
 
-import test
-
-
 
 PLUGINROOT = os.path.dirname(os.path.dirname(__file__))
 PYTHONLIBS = os.path.join(PLUGINROOT, "PythonLibs", "Python313")
@@ -101,6 +98,9 @@ logger = logging.getLogger(__name__)
 def boolToBit(boolInp: bool) -> int:
     return int(boolInp)
 
+#   Helper to Convert SynthEyes 0/1 to Python Bool
+def bitToBool(boolInt: int) -> bool:
+    return (boolInt == 1)
 
 
 class Prism_SynthEyes_Functions(object):
@@ -509,12 +509,6 @@ class Prism_SynthEyes_Functions(object):
     def testOne(self):
         self.core.popup("IN TEST ONE")							#	TESTING
 
-        noteClass = self.synthEyes.Notes
-
-        print(f"noteClass:  {noteClass}")							#	TESTING
-        self.core.popup(f"noteClass:  {noteClass}")							#	TESTING
-
-
 
 
     @err_catcher(name=__name__)
@@ -526,6 +520,7 @@ class Prism_SynthEyes_Functions(object):
         #           f"{dir(action)}\n\n"
         #           "********************")
         # return
+
 
 
 
@@ -603,7 +598,6 @@ class Prism_SynthEyes_Functions(object):
             if enable:
                 if not isEnabled:
                     self.synthEyes.PerformActionByNameAndContinue("Enable Prefetch")
-                
             else:
                 if isEnabled:
                     self.synthEyes.PerformActionByNameAndContinue("Enable Prefetch")
@@ -692,7 +686,7 @@ class Prism_SynthEyes_Functions(object):
     ##  OBJECTS  ##
 
     @err_catcher(name=__name__)
-    def getObjByUUID(self, objType:str, uuid:str) -> object:
+    def getObjsByType(self, objType:str) -> list[object]:   
         try:
             match objType:
                 case "shot":
@@ -708,12 +702,38 @@ class Prism_SynthEyes_Functions(object):
                 case "extra":
                     objs = self.synthEyes.Extras()
 
+            return objs
+
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to get list of {objType}")
+            return None
+
+
+    @err_catcher(name=__name__)
+    def getObjByUUID(self, objType:str, uuid:str) -> object:
+        try:
+            objs = self.getObjsByType(objType)
+
             for obj in objs:
                 if obj.UniqID() == uuid:
                     return obj
 
         except Exception as e:
             logger.warning(f"ERROR: Unable to get {objType} - {uuid}")
+            return None
+        
+
+    @err_catcher(name=__name__)
+    def getObjByName(self, objType:str, objName:str) -> object:
+        try:
+            objs = self.getObjsByType(objType)
+
+            for obj in objs:
+                if obj.Name() == objName:
+                    return obj
+
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to get {objType} - {objName}")
             return None
 
 
@@ -761,6 +781,26 @@ class Prism_SynthEyes_Functions(object):
             logger.warning(f"ERROR:  Unable to set Synth Object's Name: {e}")
             return False
 
+
+    @err_catcher(name=__name__)
+    def getObjExported(self, synthObj:object) -> bool:
+        try:
+            exportInt = synthObj.Get("isExported")
+            return bitToBool(exportInt)
+
+        except Exception as e:
+            logger.warning(f"ERROR:  Unable to Get Synth Object's Exportable State: {e}")
+            return False
+        
+
+    @err_catcher(name=__name__)
+    def setObjExported(self, synthObj:object, export:bool) -> None:
+        try:
+            synthObj.Set("isExported", boolToBit(export))
+
+        except Exception as e:
+            logger.warning(f"ERROR:  Unable to Set Synth Object's Exportable State: {e}")
+            
 
     ##  CAMERAS  ##
 
@@ -1017,16 +1057,16 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def copySceneFile(self, core, origFile, targetFile, mode=None):
+    def copySceneFile(self, core, origFile, targetFile, mode=None):             #   TODO - IS THIS EVER USED??
 
         self.core.popup(f"copy\n\n"
                         f"core: {core}"
                         f"origFile: {origFile}"
                         f"targetFile: {targetFile}"
-                        f"mode: {mode}")							#	TESTING
+                        f"mode: {mode}")
         
 
-    #   Finds Opsn SynthEyes Window and Captures Screenshot
+    #   Finds Open SynthEyes Window and Captures Screenshot
     @err_catcher(name=__name__)
     def captureViewportThumbnail(self):
         #   Get Current Open Windows
@@ -1396,17 +1436,18 @@ class Prism_SynthEyes_Functions(object):
 
     @err_catcher(name=__name__)
     def sm_pre_sceneExport(self, origin, rSettings):
-        camData = []
-        
         #   Get All Shots in Scene
         shots = self.synthEyes.Shots()
+       
+        orig_camData = []
 
-        #   Capture Original Settings for Each Shot
+        ##   Capture Original Framerange for Each Shot
         for shot in shots:
-            camName = self.getCamName(self, self.getCamFromShot(shot))
+            camObj = self.getCamFromShot(shot)
+            camName = self.getCamName(self, camObj)
             orig_start, orig_end = self.getFrameRange(origin, shot)
 
-            cData = {
+            fData = {
                 "camName": camName,
                 "orig_start": orig_start,
                 "orig_end": orig_end,
@@ -1415,13 +1456,71 @@ class Prism_SynthEyes_Functions(object):
                 "orig_currFrame": self.getCurrentFrame()
             }
 
-            camData.append(cData)
+            orig_camData.append(fData)
 
             #   Update Frame Range for Each Shot
             with self.UNDO_BLOCK("Set Framerange"):
                 self.setFrameRange(origin, rSettings["startFrame"], rSettings["endFrame"], shot)
 
-        rSettings["orig_camData"] = camData
+        rSettings["orig_frameData"] = orig_camData
+
+        ##  Handle Custom Export Overrides
+        if rSettings["customExport"]:
+            exportData = rSettings["exportData"]
+
+            ##   Capture Original Settings and Set Overrides for Each Camera
+            camData = []
+
+            #   Build Lookup for Cameras
+            cam_lookup = {
+                m["cameraName"]: m["exported"]
+                for m in exportData.get("cameraExports", [])
+                }
+
+            for cam in self.getCamNodes():
+                camName = self.getObjName(self, cam)
+
+                #   Store Original Exported State
+                orig_exported = self.getObjExported(cam)
+
+                camData.append({
+                    "cameraName": camName,
+                    "isExported": orig_exported
+                })
+
+                #   Apply Export Override (if present)
+                if camName in cam_lookup:
+                    with self.UNDO_BLOCK("Set Camera Export State"):
+                        self.setObjExported(cam, cam_lookup[camName])
+
+            rSettings["orig_camData"] = camData
+
+            ##   Capture Original Settings and Set Overrides for Each Mesh
+            meshData = []
+
+            #   Build Lookup for Meshes
+            mesh_lookup = {
+                m["meshName"]: m["exported"]
+                for m in exportData.get("meshExports", [])
+                }
+
+            for mesh in self.synthEyes.Meshes():
+                meshName = self.getObjName(self, mesh)
+
+                #   Store Original Exported State
+                orig_exported = self.getObjExported(mesh)
+
+                meshData.append({
+                    "meshName": meshName,
+                    "isExported": orig_exported
+                })
+
+                #   Apply Export Override (if present)
+                if meshName in mesh_lookup:
+                    with self.UNDO_BLOCK("Set Mesh Export State"):
+                        self.setObjExported(mesh, mesh_lookup[meshName])
+
+            rSettings["orig_meshData"] = meshData
 
         return rSettings
 
@@ -1446,9 +1545,11 @@ class Prism_SynthEyes_Functions(object):
 
     @err_catcher(name=__name__)
     def sm_post_sceneExport(self, origin, rSettings):
-        #   Restore Frame Range for Each Shot
-        for camData in rSettings["orig_camData"]:
+        ##   Restore Framerange for Each Shot
+        for camData in rSettings.get("orig_frameData", []):
             shot = self.getShotFromCamName(camData["camName"])
+            if not shot:
+                continue
 
             with self.UNDO_BLOCK("Restore Framerange"):
                 self.setFrameRange(origin, camData["orig_start"], camData["orig_end"], shot)
@@ -1456,8 +1557,28 @@ class Prism_SynthEyes_Functions(object):
                 self.synthEyes.SetAnimEnd(camData["orig_play_end"])
                 self.setCurrentFrame(camData["orig_currFrame"])
 
-        #   Reload Cache
-        self.synthEyes.Validate(shot)
+            #   Reload Cache
+            self.synthEyes.Validate(shot)
+
+        ##  Restore Camera and Mesh Export States
+        if rSettings.get("customExport"):
+            #   Restore Camera Export States
+            for camData in rSettings.get("orig_camData", []):
+                cam = self.getCamFromName(camData["cameraName"])
+                if not cam:
+                    continue
+
+                with self.UNDO_BLOCK("Restore Camera Export State"):
+                    self.setObjExported(cam, camData["isExported"])
+
+            #   Restore Mesh Export States
+            for mData in rSettings.get("orig_meshData", []):
+                mesh = self.getObjByName("mesh", mData["meshName"])
+                if not mesh:
+                    continue
+
+                with self.UNDO_BLOCK("Restore Mesh Export State"):
+                    self.setObjExported(mesh, mData["isExported"])
 
 
     @err_catcher(name=__name__)
@@ -1558,7 +1679,8 @@ class Prism_SynthEyes_Functions(object):
             QTimer.singleShot(1000, stateManager.showNormal)
 
         #   Return Bool of SynthEyes Int Result
-        return int(result) == 1
+        # return int(result) == 1                                             #   TODO - MAKE SURE WORKS
+        return bitToBool(result)
 
 
     @err_catcher(name=__name__)
@@ -1674,7 +1796,8 @@ class Prism_SynthEyes_Functions(object):
             result = shot.Call(stFunct, *args)
   
         result = 1
-        return int(result) == 1
+        return int(result) == 1                                                 #   TODO - Look at the Result handling
+        return bitToBool(result)
 
 
     #   Called after Render to Restore Original Settings
