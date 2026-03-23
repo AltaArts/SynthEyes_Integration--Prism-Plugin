@@ -121,6 +121,7 @@ class Synth_SceneExportClass(object):
             self.loadData(stateData)
         else:
             self.initializeContextBasedSettings()
+            self.loadExportLists()
 
         self.typeChanged(self.getOutputType())
 
@@ -743,86 +744,53 @@ class Synth_SceneExportClass(object):
     #   Loads and Sets the Export Lists
     @err_catcher(name=__name__)
     def loadExportLists(self):
-        self.loadCameraList()
-        self.loadMeshList()
+        self.loadExportList("shots")
+        self.loadExportList("meshes")
 
 
-    #   Loads and Sets Camera/Shots List
+    #   Loads the Export Table Based on Passed List Type
     @err_catcher(name=__name__)
-    def loadCameraList(self):
-        self.lw_shots.blockSignals(True)
-        self.lw_shots.clear()
-        
-        #   Get All Cameras from Scene
-        cameras = self.synthFuncts.getCamNodes()
+    def loadExportList(self, listType: str):
+        #   Assign Vars based on Type
+        if listType == "shots":
+            listWidget = self.lw_shots
+            objects = self.synthFuncts.getCamNodes()
+            exportKey = "cameraExports"
+            getNameFunc = self.synthFuncts.getCamName
+            getExportedFunc = self.synthFuncts.getObjExported
 
-        #   Build Lookup Dict
-        camLookup = {}
-        if self.exportData and "cameraExports" in self.exportData:
-            camLookup = {
-                c["cameraName"]: c["exported"]
-                for c in self.exportData["cameraExports"]
-            }
+        elif listType == "meshes":
+            listWidget = self.lw_meshes
+            objects = self.synthFuncts.synthEyes.Meshes()
+            exportKey = "meshExports"
+            getNameFunc = self.synthFuncts.getObjName
+            getExportedFunc = self.synthFuncts.getObjExported
 
-        #   Iterate Cameras and Build Items
-        for cam in cameras:
-            camName = self.synthFuncts.getCamName(self, cam)
+        else:
+            logger.warning(f"ERROR: Unknown listType: {listType}")
+            return
 
-            #   Make New List Item
-            item = QListWidgetItem(camName)
+        listWidget.blockSignals(True)
+        listWidget.clear()
+
+        #   Build Lookup Dict from ExportData
+        lookup = {}
+        if self.exportData and exportKey in self.exportData:
+            keyName = "cameraName" if exportKey == "cameraExports" else "meshName"
+            lookup = {item[keyName]: item["exported"] for item in self.exportData[exportKey]}
+
+        #   Populate List
+        for obj in objects:
+            name = getNameFunc(self, obj)
+            exported = lookup.get(name, getExportedFunc(obj))
+
+            item = QListWidgetItem(name)
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-
-            #   Set Checkbox from Data
-            if camName in camLookup:
-                exported = camLookup[camName]
-
-            #   Set Checkbox from Scene
-            else:
-                exported = self.synthFuncts.getObjExported(cam)
-
             item.setCheckState(Qt.Checked if exported else Qt.Unchecked)
-            self.lw_shots.addItem(item)
 
-        self.lw_shots.blockSignals(False)
+            listWidget.addItem(item)
 
-
-    #   Loads and Sets Mesh List
-    @err_catcher(name=__name__)
-    def loadMeshList(self):
-        self.lw_meshes.blockSignals(True)
-        self.lw_meshes.clear()
-        
-        #   Get All Meshes from Scene
-        meshes = self.synthFuncts.synthEyes.Meshes()
-
-        #   Build Lookup Dict
-        meshLookup = {}
-        if self.exportData and "meshExports" in self.exportData:
-            meshLookup = {
-                m["meshName"]: m["exported"]
-                for m in self.exportData["meshExports"]
-            }
-
-        #   Iterate Meshes and Build Items
-        for mesh in meshes:
-            meshName = self.synthFuncts.getObjName(self, mesh)
-
-            #   Make New List Item
-            item = QListWidgetItem(meshName)
-            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-
-            #   Set Checkbox from Data
-            if meshName in meshLookup:
-                exported = meshLookup[meshName]
-
-            #   Set Checkbox from Scene
-            else:
-                exported = self.synthFuncts.getObjExported(mesh)
-
-            item.setCheckState(Qt.Checked if exported else Qt.Unchecked)
-            self.lw_meshes.addItem(item)
-
-        self.lw_meshes.blockSignals(False)
+        listWidget.blockSignals(False)
 
 
     #   Builds Export Items from List Items
