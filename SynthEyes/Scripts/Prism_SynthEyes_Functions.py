@@ -58,6 +58,8 @@ import re
 from contextlib import contextmanager
 import time
 
+import test
+
 
 
 PLUGINROOT = os.path.dirname(os.path.dirname(__file__))
@@ -308,7 +310,7 @@ class Prism_SynthEyes_Functions(object):
                     entry["actionID"]
                 )
 
-            self.synthEyes.Redraw()
+            self.synthEyes.InitMenu()
 
         logger.debug("Prism Menu Setup Complete")
 
@@ -506,6 +508,13 @@ class Prism_SynthEyes_Functions(object):
     @err_catcher(name=__name__)
     def testOne(self):
         self.core.popup("IN TEST ONE")							#	TESTING
+
+        noteClass = self.synthEyes.Notes
+
+        print(f"noteClass:  {noteClass}")							#	TESTING
+        self.core.popup(f"noteClass:  {noteClass}")							#	TESTING
+
+
 
 
     @err_catcher(name=__name__)
@@ -1384,21 +1393,35 @@ class Prism_SynthEyes_Functions(object):
 
         return warnings
     
+
     @err_catcher(name=__name__)
     def sm_pre_sceneExport(self, origin, rSettings):
-        shot = self.synthEyes.Shots()[0]
+        camData = []
+        
+        #   Get All Shots in Scene
+        shots = self.synthEyes.Shots()
 
-        #   Capture Original Settings
-        orig_start, orig_end = self.getFrameRange(origin, shot)
-        rSettings["orig_start"] = orig_start
-        rSettings["orig_end"] = orig_end
-        rSettings["orig_play_start"] = self.synthEyes.AnimStart()
-        rSettings["orig_play_end"] = self.synthEyes.AnimEnd()
-        rSettings["orig_currFrame"] = self.getCurrentFrame()
+        #   Capture Original Settings for Each Shot
+        for shot in shots:
+            camName = self.getCamName(self, self.getCamFromShot(shot))
+            orig_start, orig_end = self.getFrameRange(origin, shot)
 
-        #   Update Frame Range
-        with self.UNDO_BLOCK("Set Framerange"):
-            self.setFrameRange(origin, rSettings["startFrame"], rSettings["endFrame"], shot)
+            cData = {
+                "camName": camName,
+                "orig_start": orig_start,
+                "orig_end": orig_end,
+                "orig_play_start": self.synthEyes.AnimStart(),
+                "orig_play_end": self.synthEyes.AnimEnd(),
+                "orig_currFrame": self.getCurrentFrame()
+            }
+
+            camData.append(cData)
+
+            #   Update Frame Range for Each Shot
+            with self.UNDO_BLOCK("Set Framerange"):
+                self.setFrameRange(origin, rSettings["startFrame"], rSettings["endFrame"], shot)
+
+        rSettings["orig_camData"] = camData
 
         return rSettings
 
@@ -1423,15 +1446,17 @@ class Prism_SynthEyes_Functions(object):
 
     @err_catcher(name=__name__)
     def sm_post_sceneExport(self, origin, rSettings):
-        shot = self.synthEyes.Shots()[0]
+        #   Restore Frame Range for Each Shot
+        for camData in rSettings["orig_camData"]:
+            shot = self.getShotFromCamName(camData["camName"])
 
-        #   Restore Frame Range
-        with self.UNDO_BLOCK("Restore Framerange"):
-            self.setFrameRange(origin, rSettings["orig_start"], rSettings["orig_end"], shot)
-            self.synthEyes.SetAnimStart(rSettings["orig_play_start"])
-            self.synthEyes.SetAnimEnd(rSettings["orig_play_end"])
-            self.setCurrentFrame(rSettings["orig_currFrame"])
+            with self.UNDO_BLOCK("Restore Framerange"):
+                self.setFrameRange(origin, camData["orig_start"], camData["orig_end"], shot)
+                self.synthEyes.SetAnimStart(camData["orig_play_start"])
+                self.synthEyes.SetAnimEnd(camData["orig_play_end"])
+                self.setCurrentFrame(camData["orig_currFrame"])
 
+        #   Reload Cache
         self.synthEyes.Validate(shot)
 
 
