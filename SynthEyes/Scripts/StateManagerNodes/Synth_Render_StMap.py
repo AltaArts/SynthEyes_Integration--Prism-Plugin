@@ -114,8 +114,6 @@ class Synth_Render_StMapClass(object):
             ".png",
             ".sgi",
             ".tiff",
-            ".mov",
-            "mp4"
         ]
 
         self.cb_format.addItems(self.outputFormats)
@@ -186,18 +184,10 @@ class Synth_Render_StMapClass(object):
         tip = "Compression algorithm for EXR."
         self.cb_exrCompression.setToolTip(tip)
 
-        tip = "Codec for .MOV render file."
-        self.cb_movCodec.setToolTip(tip)
-
-        tip = "Codec for .MP4 render file."
-        self.cb_mp4Codec.setToolTip(tip)
-
-        tip = "Quality control for MP4 render file."
-        self.cb_mp4Qual.setToolTip(tip)
-
         tip = ("Type of Distortion map output:\n\n"
                "    SINGLE:  used for non-changing distortion.\n\n"
-               "    SEQUENCE:  used for animated distion such as zooming in the shot.")
+               "    SEQUENCE:  used for animated distortion such as zooming in the shot.\n"
+               "          NOTE: Sequences can take a long time to render.  Use only if needed.")
         self.f_renderType.setToolTip(tip)
 
         tip = ("Desired Distortion Maps to be Generated.")
@@ -327,6 +317,26 @@ class Synth_Render_StMapClass(object):
 
     @err_catcher(name=__name__)
     def initializeContextBasedSettings(self):
+        context = self.getCurrentContext()
+        if context.get("type") == "asset":
+            self.setRangeType("Single Frame")
+        elif context.get("type") == "shot":
+            self.setRangeType("Shot")
+        elif self.stateManager.standalone:
+            self.setRangeType("Custom")
+        else:
+            self.setRangeType("Scene")
+
+        start, end = self.getFrameRange("Scene")
+        if start is not None:
+            self.sp_rangeStart.setValue(start)
+
+        if end is not None:
+            self.sp_rangeEnd.setValue(end)
+
+        # if context.get("task"):
+        #     self.setIdentifier(context.get("task"))
+
         self.updateUi()
 
 
@@ -817,21 +827,63 @@ class Synth_Render_StMapClass(object):
 
     #   Return STMap Render Type (single or image sequence)
     @err_catcher(name=__name__)
-    def getFrameRangeType(self):
+    def getRenderType(self):
         if self.rb_renderType_seq.isChecked():
             return "sequence"
         else:
             return "single"
-        
+
 
     @err_catcher(name=__name__)
     def getFrameRange(self, rangeType):
-        frames = self.core.appPlugin.getFrameRange(self)
+        startFrame = None
+        endFrame = None
+        if rangeType == "Scene":
+            if hasattr(self.core.appPlugin, "getFrameRange"):
+                startFrame, endFrame = self.core.appPlugin.getFrameRange(self)
+                startFrame = int(startFrame)
+                endFrame = int(endFrame)
+            else:
+                startFrame = 1001
+                endFrame = 1100
+        elif rangeType == "Shot":
+            context = self.getCurrentContext()
+            if context.get("type") == "shot" and "sequence" in context:
+                frange = self.core.entities.getShotRange(context)
+                if frange:
+                    startFrame, endFrame = frange
+        elif rangeType == "Shot + 1":
+            context = self.getCurrentContext()
+            if context.get("type") == "shot" and "sequence" in context:
+                frange = self.core.entities.getShotRange(context)
+                if frange and frange[0] is not None and frange[1] is not None:
+                    startFrame, endFrame = frange
+                    startFrame -= 1
+                    endFrame += 1
+        elif rangeType == "Single Frame":
+            if hasattr(self.core.appPlugin, "getCurrentFrame"):
+                startFrame = int(self.core.appPlugin.getCurrentFrame())
+            else:
+                startFrame = 1001
+        elif rangeType == "Custom":
+            startFrame = self.sp_rangeStart.value()
+            endFrame = self.sp_rangeEnd.value()
+        elif rangeType == "Expression":
+            return self.core.resolveFrameExpression(self.le_frameExpression.text())
 
-        if rangeType == "sequence":
-            return [frames[0], frames[1]]
-        else:
-            return [frames[0], frames[0]]
+        if startFrame == "":
+            startFrame = None
+
+        if endFrame == "":
+            endFrame = None
+
+        if startFrame is not None:
+            startFrame = int(startFrame)
+
+        if endFrame is not None:
+            endFrame = int(endFrame)
+
+        return startFrame, endFrame
 
 
     @err_catcher(name=__name__)
@@ -877,7 +929,7 @@ class Synth_Render_StMapClass(object):
 
 
     @err_catcher(name=__name__)
-    def getOutputName(self, useVersion="next", identifier=None, rangeType=None):
+    def getOutputName(self, useVersion="next", identifier=None, renderType=None):
         if self.tasknameRequired and not identifier:
             return
 
@@ -888,7 +940,7 @@ class Synth_Render_StMapClass(object):
         
         extension = self.cb_format.currentText()
 
-        if rangeType == "sequence" and extension not in self.core.media.videoFormats:
+        if renderType == "sequence" and extension not in self.core.media.videoFormats:
             singleFrame = False
             framePadding = ("#" * self.core.framePadding)
         else:
@@ -963,17 +1015,7 @@ class Synth_Render_StMapClass(object):
             self.core.popup("There are No STMAP Types Checked.")
             return False
         
-        rangeType = self.getFrameRangeType()
-
-        #   This is to Abort for Sequences - I cannot get it to work yet.                    #   TODO
-        if rangeType == "sequence":
-            self.core.popup("At present, STMap Sequences are Not Supported.\n"
-                            "Please use Single Image output.")
-            return [self.state.text(0) + " - error - StMap Render Failed"]
-
-        frames = self.getFrameRange(rangeType)
-        frame_start = frames[0]
-        frame_end = frames[1]
+        renderType = self.getRenderType()
 
         errors = []
 
@@ -990,16 +1032,10 @@ class Synth_Render_StMapClass(object):
         for stType in idfs.keys():
             stName = idfs[stType]
 
-            outputName, outputPath, hVersion = self.getOutputName(useVersion="next", identifier=stName, rangeType=rangeType)
+            outputName, outputPath, hVersion = self.getOutputName(useVersion="next", identifier=stName, renderType=renderType)
             expandedOutputPath = self.expandvars(outputPath)
 
-            #   Change Prism "###"'s to ".001"'s
             extension = self.cb_format.currentText().lower()
-            if extension not in self.core.media.videoFormats:
-                paddingNum = self.core.framePadding
-                framePadding = "#" * paddingNum
-                paddedFrame = str(startFrame).zfill(paddingNum)
-                outputName = outputName.replace(framePadding, paddedFrame)
 
             outLength = len(expandedOutputPath)
             if platform.system() == "Windows" and os.getenv("PRISM_IGNORE_PATH_LENGTH") != "1" and outLength > 255:
@@ -1012,18 +1048,18 @@ class Synth_Render_StMapClass(object):
             if not os.path.exists(os.path.dirname(expandedOutputPath)):
                 os.makedirs(os.path.dirname(expandedOutputPath))
 
-            if rangeType == "sequence":
+            if renderType == "sequence":
                 paddingNum = self.core.framePadding
                 framePadding = "#" * paddingNum
-                paddedFrame = str(frame_start).zfill(paddingNum)
+                paddedFrame = str(startFrame).zfill(paddingNum)
                 outputName = outputName.replace(framePadding, paddedFrame)
 
             useVersion = hVersion if useVersion == "next" or (self.core.compareVersions(hVersion, useVersion) == "higher") else useVersion
 
             rSettings = {
                 "outputName": outputName,
-                "startFrame": frame_start,
-                "endFrame": frame_end,
+                "startFrame": startFrame,
+                "endFrame": endFrame,
                 "frames": frames,
                 "identifier": stName,
                 "currentCam": currentCam,
@@ -1036,8 +1072,8 @@ class Synth_Render_StMapClass(object):
             self.l_pathLast.setText(rSettings["outputName"])
             self.l_pathLast.setToolTip(rSettings["outputName"])
 
-        #   Execute Render
-            result = self.core.appPlugin.sm_render_stMap(self, stType, rangeType, rSettings["outputName"], rSettings, context)
+            #   Execute Render
+            result = self.core.appPlugin.sm_render_stMap(self, stType, renderType, rSettings["outputName"], rSettings, context)
 
             if result:
                 try:
@@ -1052,8 +1088,8 @@ class Synth_Render_StMapClass(object):
                     details["sourceScene"] = fileName
                     details["identifier"] = stName
                     details["comment"] = self.getComment()
-                    details["startframe"] = frame_start
-                    details["endframe"] = frame_end
+                    details["startframe"] = startFrame
+                    details["endframe"] = endFrame
                     details["path"] = expandedOutputPath
                     details["mediaType"] = self.mediaType
 
@@ -1173,16 +1209,16 @@ class Synth_Render_StMapClass(object):
             "renderScale": self.cb_renderScale.currentText(),
             "renderFilter": self.cb_renderFilter.currentText(),
             "exrCompress": self.cb_exrCompression.currentText(),
-            "movCodec": self.cb_movCodec.currentText(),
-            "mp4Codec": self.cb_mp4Codec.currentText(),
-            "mp4Qual": self.cb_mp4Qual.currentText(),
+            # "movCodec": self.cb_movCodec.currentText(),
+            # "mp4Codec": self.cb_mp4Codec.currentText(),
+            # "mp4Qual": self.cb_mp4Qual.currentText(),
             "output_undistort": self.chb_undistort.isChecked(),
             "output_redistort": self.chb_redistort.isChecked(),
             "renderType": ("single" if self.rb_renderType_single.isChecked() else "sequence"),
             "lastexportpath": self.l_pathLast.text().replace("\\", "/"),
             "stateenabled": self.core.getCheckStateValue(self.state.checkState(0)),
             }
-        
+                
         self.core.callback("onStateGetSettings", self, stateProps)
 
         return stateProps

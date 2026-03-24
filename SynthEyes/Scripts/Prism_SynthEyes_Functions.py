@@ -524,6 +524,7 @@ class Prism_SynthEyes_Functions(object):
 
 
 
+
     ###################################################
     ##                  Synth Stuff                  ##
     ###################################################
@@ -1042,7 +1043,8 @@ class Prism_SynthEyes_Functions(object):
 
             return True
         
-        except:
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Save the .sni: {e}")
             return False
 
 
@@ -1059,57 +1061,88 @@ class Prism_SynthEyes_Functions(object):
     #   Finds Open SynthEyes Window and Captures Screenshot
     @err_catcher(name=__name__)
     def captureViewportThumbnail(self):
-        #   Get Current Open Windows
-        user32 = ctypes.windll.user32
-        EnumWindows = user32.EnumWindows
-        EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
-        GetWindowText = user32.GetWindowTextW
-        GetWindowTextLength = user32.GetWindowTextLengthW
-        IsWindowVisible = user32.IsWindowVisible
+        try:
+            user32 = ctypes.windll.user32
+            EnumWindows = user32.EnumWindows
+            EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+            GetWindowText = user32.GetWindowTextW
+            GetWindowTextLength = user32.GetWindowTextLengthW
+            IsWindowVisible = user32.IsWindowVisible
+            IsWindow = user32.IsWindow
+            GetWindowRect = user32.GetWindowRect
 
-        #   Builds the Window Title Prefix from Scene Name
-        sceneName = self.getCurrentFileName(path=False)
-        sceneName = os.path.splitext(sceneName)[0]
-        winPrefix = f"{sceneName} - SynthEyes"
+            #   Build the Window Title Prefix from Scene Name
+            sceneName = self.getCurrentFileName(path=False)
+            sceneName = os.path.splitext(sceneName)[0]
+            winPrefix = f"{sceneName} - SynthEyes"
 
-        target_hwnd = None
+            target_hwnd = None
 
-        #   Helper to Search Window Names
-        def foreach_window(hwnd, lParam):
-            if IsWindowVisible(hwnd):
-                length = GetWindowTextLength(hwnd)
-                if length > 0:
-                    buff = ctypes.create_unicode_buffer(length + 1)
-                    GetWindowText(hwnd, buff, length + 1)
-                    title = buff.value
-                    if title.startswith(winPrefix):
-                        nonlocal target_hwnd
-                        target_hwnd = hwnd
-                        return False
-            return True
+            #   Helper to Search Window Names
+            def foreach_window(hwnd, lParam):
+                try:
+                    if IsWindowVisible(hwnd):
+                        length = GetWindowTextLength(hwnd)
+                        if length > 0:
+                            buff = ctypes.create_unicode_buffer(length + 1)
+                            GetWindowText(hwnd, buff, length + 1)
+                            title = buff.value
+                            if title.startswith(winPrefix):
+                                nonlocal target_hwnd
+                                target_hwnd = hwnd
+                                return False
+                except Exception:
+                    pass
+                return True
 
-        EnumWindows(EnumWindowsProc(foreach_window), 0)
+            EnumWindows(EnumWindowsProc(foreach_window), 0)
 
-        if not target_hwnd:
-            logger.warning("ERROR: Thumbnail generation failed.  Could not find SynthEyes Window")
+            if not target_hwnd or not IsWindow(target_hwnd):
+                logger.warning("ERROR: Thumbnail generation failed: Could not find valid SynthEyes window")
+                return None
+
+            #   Get Window Rect
+            try:
+                rect = wintypes.RECT()
+                if not GetWindowRect(target_hwnd, ctypes.byref(rect)):
+                    logger.warning("ERROR: Thumbnail generation failed: GetWindowRect Failed")
+                    return None
+
+                left, top = rect.left, rect.top
+                width = rect.right - rect.left
+                height = rect.bottom - rect.top
+
+                #   Avoid Zero-width or Zero-height Windows
+                if width <= 0 or height <= 0:
+                    logger.warning("ERROR: Thumbnail generation failed: Window size invalid")
+                    return None
+
+            except Exception as e:
+                logger.warning(f"ERROR: Thumbnail generation failed: Error getting window rect: {e}")
+                return None
+
+            # Capture with mss
+            with mss.mss() as sct:
+                monitor = {"left": left, "top": top, "width": width, "height": height}
+                sct_img = sct.grab(monitor)
+
+                #   Convert BGRA to RGB
+                rgb_bytes = sct_img.rgb
+
+                stride = sct_img.width * 3
+                if len(rgb_bytes) < stride * sct_img.height:
+                    logger.warning("ERROR: Thumbnail generation failed: Image buffer smaller than expected")
+                    return None
+
+                img = QImage(rgb_bytes, sct_img.width, sct_img.height, stride, QImage.Format_RGB888).copy()
+                pixmap = QPixmap.fromImage(img)
+
+            return pixmap
+
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Capture Thumbnail: {e}")
             return None
 
-        rect = wintypes.RECT()
-        user32.GetWindowRect(target_hwnd, ctypes.byref(rect))
-        left, top = rect.left, rect.top
-        width = rect.right - rect.left
-        height = rect.bottom - rect.top
-
-        with mss.mss() as sct:
-            monitor = {"left": left, "top": top, "width": width, "height": height}
-            sct_img = sct.grab(monitor)
-
-            # mss returns BGRA
-            img = QImage(sct_img.rgb, sct_img.width, sct_img.height, QImage.Format_RGB888).copy()
-            pixmap = QPixmap.fromImage(img)
-
-        return pixmap
-    
 
 
     #######################################
@@ -1704,7 +1737,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Sanity Check Before State Execution
     @err_catcher(name=__name__)
-    def sm_render_stMap_preSubmit(self, origin, rData):            #   TODO
+    def sm_render_stMap_preSubmit(self, origin, rData):
         warnings = []
 
         camName = rData["currentCam"]
@@ -1763,7 +1796,7 @@ class Prism_SynthEyes_Functions(object):
 
     @err_catcher(name=__name__)
     def sm_render_stMap(self, origin, stType, rangeType, outputName, rSettings, context):
-
+        #########################################################################################
         # .WriteRedistortImage(filenm, clip)
         # .WriteRedistortSequence(fnm, cmp, flt, walp, clip)
         # .WriteUndistortImage(filenm, clip)
@@ -1774,35 +1807,71 @@ class Prism_SynthEyes_Functions(object):
         #  flt=1 for a full floating-point map or =0 for 16bit;
         #  walp is 2 to write premultiplied alpha, 1 for non-premultiplied, or 0 for no alpha;
         #  clp=1 to clip to 0..1, or =0 to allow out-of-range color values (safety areas).
+        #########################################################################################
 
-        ######################################################################################
-        #   FYI:  STMAP Sequences are not working yet.  Even though it looks like it should,
-        #   I am getting a SynthEyes error.  I think it is from the compression specification str.
-        ######################################################################################
-
-        args = [outputName]
-
-        if stType == "redistort":
-            if rangeType == "sequence":
-                stFunct = "WriteRedistortSequence"
-                args.extend(["exr: <ZIP-scanline>,45", 1, 0, 0])
-            else:
-                stFunct = "WriteRedistortImage"
-
-        elif stType == "undistort":
-            if rangeType == "sequence":
-                stFunct = "WriteUndistortSequence"
-                args.extend(["exr: <ZIP-scanline>,45", 1, 0, 0])
-            else:
-                stFunct = "WriteUndistortImage"
-
-    
         shot = self.getShotFromCamName(rSettings["currentCam"])
 
-        with self.UNDO_BLOCK("Render StMaps"):
-            result = shot.Call(stFunct, *args)
-  
-        return bitToBool(result)
+        #   STMap Sequence
+        if rangeType == "sequence":
+            result = self.saveDistortSeq(shot, outputName, rSettings, mode=stType)
+
+        #   STMap Single Image
+        else:
+            if stType == "redistort":
+                stFunct = "WriteRedistortImage"
+
+            elif stType == "undistort":
+                stFunct = "WriteUndistortImage"
+
+            with self.UNDO_BLOCK("Render StMap Image(s)"):
+                result = shot.Call(stFunct, outputName)
+                result = bitToBool(result)
+
+        return result
+    
+
+    @err_catcher(name=__name__)
+    def saveDistortSeq(self, shot, filePath, rSettings, mode="redistort"):
+        success = True
+        pattern = re.compile(r"(\d+)(?=\.[^.]+$)")
+        
+        frame_start = rSettings["startFrame"]
+        frame_end = rSettings["endFrame"]
+
+
+        def incrementFilename(path):
+
+            # Finds last number block before extension
+            match = pattern.search(path)
+            if not match:
+                raise ValueError(f"No frame number found in filename: {path}")
+
+            number_str = match.group(1)
+            padding = len(number_str)
+            number = int(number_str) + 1
+            new_number_str = str(number).zfill(padding)
+            start, end = match.span(1)
+
+            return path[:start] + new_number_str + path[end:]
+
+
+        currentPath = filePath
+
+        with self.UNDO_BLOCK("Dist Sequence"):
+            for frame in range(frame_start, frame_end + 1):
+                self.setCurrentFrame(frame)
+
+                if mode == "redistort":
+                    result = shot.Call("WriteRedistortImage", currentPath)
+                else:
+                    result = shot.Call("WriteUndistortImage", currentPath)
+
+                if not bitToBool(result):
+                    success = False
+
+                currentPath = incrementFilename(currentPath)
+
+        return success
 
 
     #   Called after Render to Restore Original Settings
