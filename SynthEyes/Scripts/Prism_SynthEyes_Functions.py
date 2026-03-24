@@ -183,7 +183,7 @@ class Prism_SynthEyes_Functions(object):
             logger.warning("SynthEyes Settings Not Found, using Defaults.")
             self.commsPort = 50555
 
-        #   Write Port to Temp File
+        #   Write Port to Temp File for Menu Script to Read
         portFile = os.path.join(tempfile.gettempdir(), "prism_synth_port.txt")
         with open(portFile, "w") as f:
             f.write(str(self.commsPort))
@@ -530,6 +530,8 @@ class Prism_SynthEyes_Functions(object):
 
 
     #   Context Wrapper for SynthEyes Undo Blocks
+    #   Remember: most anytime you set something in Sizzle or SpPy
+    #             you need an Undo Block
     @contextmanager
     def UNDO_BLOCK(self, undoName:str) -> None:
         '''Context Manager for SynthEyes Undo blocks.\n
@@ -740,19 +742,7 @@ class Prism_SynthEyes_Functions(object):
     @err_catcher(name=__name__)
     def deleteObjByUUID(self, objType:str, uuid:str) -> bool:
         try:
-            match objType:
-                case "shot":
-                    objs = self.synthEyes.Shots()
-                case "object":
-                    objs = self.synthEyes.Objects()
-                case "camera":
-                    objs = self.synthEyes.Cameras()
-                case "mesh":
-                    objs = self.synthEyes.Meshes()
-                case "light":
-                    objs = self.synthEyes.Lights()
-                case "extra":
-                    objs = self.synthEyes.Extras()
+            objs = self.getObjsByType(objType)
 
             for obj in objs:
                 if obj.UniqID() == uuid:
@@ -1417,6 +1407,12 @@ class Prism_SynthEyes_Functions(object):
 
         for camera in cameras:
             camName = camera.Name()
+            shot = self.getShotFromCamName(camName)
+
+            #   Check if Shot has been Down-sampled in SynthEyes
+            if self.getOutputRez(shot) > 1:
+                msg = (f"CAMERA   '{camName}' appears to be down-sampled in the Image Preprocessor.")
+                warnings.append([msg, "", 2])
 
             #   Check if Shot Camera was Solved with Distortion
             hasDistor = self.getShotHasDistort(camName)
@@ -1598,6 +1594,12 @@ class Prism_SynthEyes_Functions(object):
         warnings = []
 
         camName = rData["currentCam"]
+        shot = self.getShotFromCamName(camName)
+
+        #   Check if Shot has been Down-sampled in SynthEyes
+        if self.getOutputRez(shot) > 1:
+            msg = (f"CAMERA   '{camName}' appears to be down-sampled in the Image Preprocessor.")
+            warnings.append([msg, "", 2])
 
         #   Check if Shot Camera was Solved with Distortion
         hasDistor = self.getShotHasDistort(camName)
@@ -1706,6 +1708,12 @@ class Prism_SynthEyes_Functions(object):
         warnings = []
 
         camName = rData["currentCam"]
+        shot = self.getShotFromCamName(camName)
+
+        #   Check if Shot has been Down-sampled in SynthEyes
+        if self.getOutputRez(shot) > 1:
+            msg = (f"CAMERA   '{camName}' appears to be down-sampled in the Image Preprocessor.")
+            warnings.append([msg, "", 2])
 
         #   Check if Shot Camera was Solved with Distortion
         hasDistor = self.getShotHasDistort(camName)
@@ -1824,6 +1832,12 @@ class Prism_SynthEyes_Functions(object):
         warnings = []
 
         camName = rData["currentCam"]
+        shot = self.getShotFromCamName(camName)
+
+        #   Check if Shot has been Down-sampled in SynthEyes
+        if self.getOutputRez(shot) > 1:
+            msg = (f"CAMERA   '{camName}' appears to be down-sampled in the Image Preprocessor.")
+            warnings.append([msg, "", 2])
 
         #   Check if Shot Camera was Solved with Distortion
         hasDistor = self.getShotHasDistort(camName)
