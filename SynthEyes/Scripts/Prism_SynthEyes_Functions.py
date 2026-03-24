@@ -1712,7 +1712,14 @@ class Prism_SynthEyes_Functions(object):
 
         #   Check if Shot has been Down-sampled in SynthEyes
         if self.getOutputRez(shot) > 1:
-            msg = (f"CAMERA   '{camName}' appears to be down-sampled in the Image Preprocessor.")
+            msg = (f"CAMERA   '{camName}' appears to be down-sampled in the Image Preprocessor.\n\n"
+                   "           NOTE: At present it seems SynthEyes does not scale the 'Re-Distort' STMap")
+            warnings.append([msg, "", 2])
+
+        #   Check if Shot has been Down-sampled in SynthEyes
+        if rData["scaleOverride"] and rData["renderScale"] != "100%":
+            msg = (f"CAMERA   '{camName}' has 'Output Scale Override' enabled.\n\n"
+                   "          NOTE: At present it seems SynthEyes does not scale the 'Re-Distort' STMap")
             warnings.append([msg, "", 2])
 
         #   Check if Shot Camera was Solved with Distortion
@@ -1734,19 +1741,19 @@ class Prism_SynthEyes_Functions(object):
     #   Called Before Render to Capture Current and Set Custom Settings
     @err_catcher(name=__name__)
     def sm_render_preRender_stMap(self, origin, cameraName, rData):
-
-        ##  DISABLED - SynthEyes does not appear to rescale the UnDistort Images  ##
-        # shot = self.getShotFromCamName(cameraName)
-        # rData["orig_renderScale"] = self.getOutputRez(shot)
-        # rData["orig_renderFilter"] = self.getOutputSampleFilter(shot)
-        
         ##  Capture Current Settings
-        #   EXR Compression Format
+        shot = self.getShotFromCamName(cameraName)
+        rData["orig_renderScale"] = self.getOutputRez(shot)
+        rData["orig_renderFilter"] = self.getOutputSampleFilter(shot)
         rData["orig_exrUVMcmp"] = self.synthEyes.GetPrefFromVar("exrUVMcmp")
         rData["orig_currFrame"] = self.getCurrentFrame()
 
         ##  Set Render Settings
-        #   EXR Compression Format
+        if rData["scaleOverride"]:
+            with self.UNDO_BLOCK("Scale Image"):
+                self.setOutputRez(shot, scaleStr=rData["renderScale"])
+                self.setOutputSampleFilter(shot, filterStr=rData["renderFilter"])
+
         self.synthEyes.BeginPref()
         self.synthEyes.SetPrefFromVar("exrUVMcmp", rData["exrUVMcmp"])
         self.synthEyes.AcceptPref()
@@ -1792,32 +1799,22 @@ class Prism_SynthEyes_Functions(object):
     
         shot = self.getShotFromCamName(rSettings["currentCam"])
 
-        ##  DISABLED - SynthEyes does not appear to rescale the UnDistort Images  ##
-        # if rSettings["scaleOverride"]:
-        #     #   Sets Output Scaling and Scale Filter
-        #     with self.UNDO_BLOCK("Scale Image"):
-        #         self.setOutputRez(shot, scaleStr=rSettings["renderScale"])
-        #         self.setOutputSampleFilter(shot, filterStr=rSettings["renderFilter"])
-
-
         with self.UNDO_BLOCK("Render StMaps"):
             result = shot.Call(stFunct, *args)
   
-        result = 1
-        return int(result) == 1                                                 #   TODO - Look at the Result handling
         return bitToBool(result)
 
 
     #   Called after Render to Restore Original Settings
     @err_catcher(name=__name__)
     def sm_render_postRender_stMap(self, origin, cameraName, rData):
-        ##  DISABLED - SynthEyes does not appear to rescale the UnDistort Images  ##
-        # shot = self.getShotFromCamName(cameraName)
-        # with self.UNDO_BLOCK("Restore Image Scale"):
-        #     self.setOutputRez(shot, scaleCode=oData["orig_renderScale"])
-        #     self.setOutputSampleFilter(shot, filterCode=oData["orig_renderFilter"])
+        #   Restore Scaling
+        shot = self.getShotFromCamName(cameraName)
+        with self.UNDO_BLOCK("Restore Image Scale"):
+            self.setOutputRez(shot, scaleCode=rData["orig_renderScale"])
+            self.setOutputSampleFilter(shot, filterCode=rData["orig_renderFilter"])
 
-        #   EXR Compression Format
+        #   Restore EXR Compression
         self.synthEyes.BeginPref()
         self.synthEyes.SetPrefFromVar("exrUVMcmp", rData["orig_exrUVMcmp"])
         self.synthEyes.AcceptPref()

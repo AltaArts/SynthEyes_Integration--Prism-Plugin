@@ -123,10 +123,6 @@ class Synth_Render_StMapClass(object):
         self.cb_renderScale.addItems(SynthSubSample.keys())
         self.cb_renderFilter.addItems(SynthInterp.keys())
 
-        ##  DISABLED - SynthEyes does not appear to rescale the UnDistort Images  ##
-        self.f_renderScale.setVisible(False)
-        self.f_renderFilter.setVisible(False)
-
         self.setupFormatOptions()
         self.configFormatUI()
         self.loadDefaults()
@@ -169,13 +165,13 @@ class Synth_Render_StMapClass(object):
 
     @err_catcher(name=__name__)
     def toolTips(self):
-        tip = "SynthEyes Camera for Playblast"
+        tip = "SynthEyes Camera for Distortion Map(s)"
         self.cb_cam.setToolTip(tip)
 
         tip = "Enable Scale Override"
         self.chb_scaleOverride.setToolTip(tip)
 
-        tip = ("Scale Factor for Rendered Images.\n\n"
+        tip = ("Scale Factor for Rendered Image(s).\n\n"
                "This does not affect the Scenefile\n"
                "or the track.")
         self.cb_renderScale.setToolTip(tip)
@@ -184,7 +180,7 @@ class Synth_Render_StMapClass(object):
                "the down-sample process.")
         self.cb_renderFilter.setToolTip(tip)
 
-        tip = "Image format for the Render images."
+        tip = "Image format for the Render image(s)."
         self.cb_format.setToolTip(tip)
 
         tip = "Compression algorithm for EXR."
@@ -256,12 +252,10 @@ class Synth_Render_StMapClass(object):
         if "scaleOvr" in data:
             self.chb_scaleOverride.setChecked(data["scaleOvr"])
             self.onScaleOvrChanged()
-
         if "renderScale" in data:
             idx = self.cb_renderScale.findText(data["renderScale"])
             if idx != -1:
                 self.cb_renderScale.setCurrentIndex(idx)
-
         if "renderFilter" in data:
             idx = self.cb_renderFilter.findText(data["renderFilter"])
             if idx != -1:
@@ -863,8 +857,13 @@ class Synth_Render_StMapClass(object):
 
         self.updateUi()
 
-        rData = {}
-        rData["currentCam"] = self.cb_cam.currentText()
+        rData = {
+            "currentCam": self.cb_cam.currentText(),
+            "scaleOverride": self.chb_scaleOverride.isChecked(),
+            "renderScale": self.cb_renderScale.currentText(),
+            "renderFilter": self.cb_renderFilter.currentText(),
+            "exrUVMcmp": SynthExrCompress[self.cb_exrCompression.currentText()]
+        }
 
         rangeType = self.cb_rangeType.currentText()
         startFrame, endFrame = self.getFrameRange(rangeType)
@@ -979,8 +978,13 @@ class Synth_Render_StMapClass(object):
         errors = []
 
         #   Capture Current and Set Custom Settings
-        rData = {}
-        rData["exrUVMcmp"] = SynthExrCompress[self.cb_exrCompression.currentText()]
+        rData = {
+            "scaleOverride": self.chb_scaleOverride.isChecked(),
+            "renderScale": self.cb_renderScale.currentText(),
+            "renderFilter": self.cb_renderFilter.currentText(),
+            "exrUVMcmp": SynthExrCompress[self.cb_exrCompression.currentText()]
+        }
+
         rData = self.synthFuncts.sm_render_preRender_stMap(self, currentCam, rData)
 
         for stType in idfs.keys():
@@ -1024,10 +1028,6 @@ class Synth_Render_StMapClass(object):
                 "identifier": stName,
                 "currentCam": currentCam,
                 "format": extension,
-                "scaleOverride": False,
-                # "scaleOverride": self.chb_scaleOverride.isChecked(),  # DISABLED
-                "renderScale": self.cb_renderScale.currentText(),
-                "renderFilter": self.cb_renderFilter.currentText(),
                 }
             
             #   Add Format Specific Options
