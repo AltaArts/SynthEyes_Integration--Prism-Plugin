@@ -1073,7 +1073,7 @@ class Synth_Render_StMapClass(object):
             self.l_pathLast.setToolTip(rSettings["outputName"])
 
             #   Execute Render
-            result = self.core.appPlugin.sm_render_stMap(self, stType, renderType, rSettings["outputName"], rSettings, context)
+            result = self.core.appPlugin.sm_render_stMap(self.stateManager, stType, renderType, rSettings["outputName"], rSettings, context)
 
             if result:
                 try:

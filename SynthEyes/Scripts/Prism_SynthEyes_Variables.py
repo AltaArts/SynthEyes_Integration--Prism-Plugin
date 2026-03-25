@@ -49,7 +49,7 @@ import os
 
 class Prism_SynthEyes_Variables(object):
     def __init__(self, core, plugin):
-        self.version = "v0.1"
+        self.version = "v0.2"
         self.pluginName = "SynthEyes"
         self.pluginType = "App"
         self.appShortName = "syntheyes"

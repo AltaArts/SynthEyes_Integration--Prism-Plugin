@@ -118,6 +118,7 @@ class Prism_SynthEyes_Functions(object):
         self.Listener.start()
 
         ##  CALLBACKS
+        self.core.registerCallback("postInitialize", self.setupPrismMenu, plugin=self.plugin)
         self.core.registerCallback("onStateManagerOpen", self.onStateManagerOpen, plugin=self.plugin, priority=20)
         self.core.registerCallback("onStateManagerShow", self.onStateManagerShow, plugin=self.plugin, priority=20)
         self.core.registerCallback("onProjectBrowserStartup", self.onProjectBrowserStartup, plugin=self.plugin)
@@ -127,15 +128,6 @@ class Prism_SynthEyes_Functions(object):
         # self.core.registerCallback("prePublish", self.prePublish, plugin=self.plugin)
         # self.core.registerCallback("postPublish", self.postPublish, plugin=self.plugin)
         ##################################################################################
-
-        ######   NOT USED AS OF NOW   ####################################################
-        # self.core.registerCallback("onStateCreated", self.onStateCreated, plugin=self.plugin)
-        # self.core.registerCallback("prePlayblast", self.prePlayblast, plugin=self.plugin)
-        # self.core.registerCallback("onGenerateStateNameContext", self.onGenerateStateNameContext, plugin=self.plugin)
-        ##################################################################################
-
-
-        self.setupPrismMenu()
 
 
     @err_catcher(name=__name__)
@@ -310,7 +302,10 @@ class Prism_SynthEyes_Functions(object):
                     entry["actionID"]
                 )
 
-            self.synthEyes.InitMenu()
+            #   Forces a Refresh of the SynthEyes Window to Display the Prism Menu
+            hwnd = self.getSynthEyesHwnd()
+            if hwnd:
+                self.forceWindowRedraw(hwnd)
 
         logger.debug("Prism Menu Setup Complete")
 
@@ -335,6 +330,173 @@ class Prism_SynthEyes_Functions(object):
 
             case "open_PrismSettings":
                 self.open_PrismSettings()
+
+
+
+
+    #######################################
+    ##             Helpers               ##   
+    #######################################
+
+
+    #   Finds the Open SynthEyes Window on the Screen
+    @err_catcher(name=__name__)
+    def getSynthEyesHwnd(self):
+        #   Get Windows user32 DLL Functions
+        user32 = ctypes.windll.user32
+        EnumWindows = user32.EnumWindows
+        EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+        GetWindowText = user32.GetWindowTextW
+        GetWindowTextLength = user32.GetWindowTextLengthW
+        IsWindowVisible = user32.IsWindowVisible
+
+        #   Build the Expected Window Title Prefix "<scene_name> - SynthEyes"
+        sceneName = self.getCurrentFileName(path=False)
+        sceneName = os.path.splitext(sceneName)[0]
+        winPrefix = f"{sceneName} - SynthEyes"
+
+        target_hwnd = None
+
+        #   Called for Each Top-level Window
+        def foreach_window(hwnd, lParam):
+            nonlocal target_hwnd
+            try:
+                #   Only Consider Visible Windows
+                if IsWindowVisible(hwnd):
+                    length = GetWindowTextLength(hwnd)
+                    if length > 0:
+                        #   Allocate Buffer and Read Window Title
+                        buff = ctypes.create_unicode_buffer(length + 1)
+                        GetWindowText(hwnd, buff, length + 1)
+                        title = buff.value
+
+                        #   Check if Title Matches Expected Name
+                        if title.startswith(winPrefix):
+                            target_hwnd = hwnd
+                            return False
+                        
+            except Exception:
+                pass
+            return True
+
+        #   Iterate Through All Top-Level Windows
+        EnumWindows(EnumWindowsProc(foreach_window), 0)
+
+        return target_hwnd
+    
+
+    #   Attempts to Redraw SynthEyes Window via Focus Switch
+    @err_catcher(name=__name__)
+    def forceWindowRedraw(self, hwnd):
+        user32 = ctypes.windll.user32
+
+        #   Attempt to Find Another Window (fallback to Desktop)
+        def get_fallback_hwnd(exclude_hwnd):
+            #   Get the Desktop Window
+            desktop_hwnd = user32.GetDesktopWindow()
+            
+            target = None
+
+            EnumWindows = user32.EnumWindows
+            EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+            IsWindowVisible = user32.IsWindowVisible
+            IsWindow = user32.IsWindow
+
+            def foreach_window(h, lParam):
+                nonlocal target
+                if IsWindow(h) and IsWindowVisible(h) and h != exclude_hwnd:
+                    target = h
+                    return False  # stop enumeration once we find a window
+                return True
+
+            EnumWindows(EnumWindowsProc(foreach_window), 0)
+
+            return target if target else desktop_hwnd
+
+        #   Get Fallback HWND (Other Window or Desktop)
+        fallback_hwnd = get_fallback_hwnd(hwnd)
+
+        #   Switch Focus and then Back to SynthEyes
+        user32.SetForegroundWindow(fallback_hwnd)
+        ctypes.windll.kernel32.Sleep(50)
+        user32.SetForegroundWindow(hwnd)
+
+
+    #   Finds and Changes the Version Suffix (_v001, _v002, _master)
+    @err_catcher(name=__name__)
+    def updateNameVersion(self, currentName:str, newVerStr:str) -> str:
+        verPadding = self.core.versionPadding
+
+        pattern = rf"(_v\d{{{verPadding}}}|_master)"
+        matches = list(re.finditer(pattern, currentName))
+
+        if matches and newVerStr:
+            last_match = matches[-1]
+            start, end = last_match.span()
+
+            newName = (
+                currentName[:start]
+                + f"_{newVerStr}"
+                + currentName[end:]
+            )
+
+            return newName
+
+        else:
+            return None
+        
+
+    #   Returns Str of Format Specific Render Settings
+    #   (from Synth_Formats.py imports)
+    @err_catcher(name=__name__)
+    def getRenderOptsStr(self, rSettings):
+        format = rSettings["format"]
+
+        if format == ".exr":
+            return SynthExrCompress[rSettings["exrCompress"]]
+        
+        elif format == ".mov":
+            return SynthMovCodecs[rSettings["movCodec"]]
+        
+        elif format == ".mp4":
+            return f"{SynthMP4Codecs[rSettings['mp4Codec']]} {SynthMP4Qual[rSettings['mp4Qual']]}"
+        
+        else:
+            return None
+    
+
+    #   Waits in QtLoop Until Popup Window is Invalid
+    @err_catcher(name=__name__)
+    def waitForPopupClose(self, popup, timeout=600.0):
+        start_time = time.time()
+        loop = QEventLoop()
+
+        def finish():
+            if loop.isRunning():
+                loop.quit()
+
+        def check():
+            try:
+                if not popup or not popup.IsValid():
+                    finish()
+                    return
+
+                if time.time() - start_time > timeout:
+                    logger.warning("Preview render timed out")
+                    finish()
+                    return
+
+                QTimer.singleShot(200, check)
+
+            except Exception as e:
+                logger.warning(f"Error during popup wait: {e}")
+                finish()
+
+        check()
+
+        loop.exec_()
+
+
 
 
 
@@ -520,8 +682,6 @@ class Prism_SynthEyes_Functions(object):
         #           f"{dir(action)}\n\n"
         #           "********************")
         # return
-
-
 
 
 
@@ -1063,39 +1223,11 @@ class Prism_SynthEyes_Functions(object):
     def captureViewportThumbnail(self):
         try:
             user32 = ctypes.windll.user32
-            EnumWindows = user32.EnumWindows
-            EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
-            GetWindowText = user32.GetWindowTextW
-            GetWindowTextLength = user32.GetWindowTextLengthW
-            IsWindowVisible = user32.IsWindowVisible
             IsWindow = user32.IsWindow
             GetWindowRect = user32.GetWindowRect
 
-            #   Build the Window Title Prefix from Scene Name
-            sceneName = self.getCurrentFileName(path=False)
-            sceneName = os.path.splitext(sceneName)[0]
-            winPrefix = f"{sceneName} - SynthEyes"
-
-            target_hwnd = None
-
-            #   Helper to Search Window Names
-            def foreach_window(hwnd, lParam):
-                try:
-                    if IsWindowVisible(hwnd):
-                        length = GetWindowTextLength(hwnd)
-                        if length > 0:
-                            buff = ctypes.create_unicode_buffer(length + 1)
-                            GetWindowText(hwnd, buff, length + 1)
-                            title = buff.value
-                            if title.startswith(winPrefix):
-                                nonlocal target_hwnd
-                                target_hwnd = hwnd
-                                return False
-                except Exception:
-                    pass
-                return True
-
-            EnumWindows(EnumWindowsProc(foreach_window), 0)
+            #   Get the SynthEyes Window
+            target_hwnd = self.getSynthEyesHwnd()
 
             if not target_hwnd or not IsWindow(target_hwnd):
                 logger.warning("ERROR: Thumbnail generation failed: Could not find valid SynthEyes window")
@@ -1121,15 +1253,15 @@ class Prism_SynthEyes_Functions(object):
                 logger.warning(f"ERROR: Thumbnail generation failed: Error getting window rect: {e}")
                 return None
 
-            # Capture with mss
+            #   Capture with mss
             with mss.mss() as sct:
                 monitor = {"left": left, "top": top, "width": width, "height": height}
                 sct_img = sct.grab(monitor)
 
                 #   Convert BGRA to RGB
                 rgb_bytes = sct_img.rgb
-
                 stride = sct_img.width * 3
+
                 if len(rgb_bytes) < stride * sct_img.height:
                     logger.warning("ERROR: Thumbnail generation failed: Image buffer smaller than expected")
                     return None
@@ -1143,86 +1275,6 @@ class Prism_SynthEyes_Functions(object):
             logger.warning(f"ERROR: Unable to Capture Thumbnail: {e}")
             return None
 
-
-
-    #######################################
-    ##             Helpers               ##   
-    #######################################
-
-
-    #   Finds and Changes the Version Suffix (_v001, _v002, _master)
-    @err_catcher(name=__name__)
-    def updateNameVersion(self, currentName:str, newVerStr:str) -> str:
-        verPadding = self.core.versionPadding
-
-        pattern = rf"(_v\d{{{verPadding}}}|_master)"
-        matches = list(re.finditer(pattern, currentName))
-
-        if matches and newVerStr:
-            last_match = matches[-1]
-            start, end = last_match.span()
-
-            newName = (
-                currentName[:start]
-                + f"_{newVerStr}"
-                + currentName[end:]
-            )
-
-            return newName
-
-        else:
-            return None
-        
-
-    #   Returns Str of Format Specific Render Settings
-    #   (from Synth_Formats.py imports)
-    @err_catcher(name=__name__)
-    def getRenderOptsStr(self, rSettings):
-        format = rSettings["format"]
-
-        if format == ".exr":
-            return SynthExrCompress[rSettings["exrCompress"]]
-        
-        elif format == ".mov":
-            return SynthMovCodecs[rSettings["movCodec"]]
-        
-        elif format == ".mp4":
-            return f"{SynthMP4Codecs[rSettings['mp4Codec']]} {SynthMP4Qual[rSettings['mp4Qual']]}"
-        
-        else:
-            return None
-    
-
-    #   Waits in QtLoop Until Popup Window is Invalid
-    @err_catcher(name=__name__)
-    def waitForPopupClose(self, popup, timeout=600.0):
-        start_time = time.time()
-        loop = QEventLoop()
-
-        def finish():
-            if loop.isRunning():
-                loop.quit()
-
-        def check():
-            try:
-                if not popup or not popup.IsValid():
-                    finish()
-                    return
-
-                if time.time() - start_time > timeout:
-                    logger.warning("Preview render timed out")
-                    finish()
-                    return
-
-                QTimer.singleShot(200, check)
-
-            except Exception as e:
-                logger.warning(f"Error during popup wait: {e}")
-                finish()
-
-        check()
-
-        loop.exec_()
 
 
 
@@ -1795,7 +1847,7 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def sm_render_stMap(self, origin, stType, rangeType, outputName, rSettings, context):
+    def sm_render_stMap(self, stateManager, stType, rangeType, outputName, rSettings, context):
         #########################################################################################
         # .WriteRedistortImage(filenm, clip)
         # .WriteRedistortSequence(fnm, cmp, flt, walp, clip)
@@ -1813,7 +1865,7 @@ class Prism_SynthEyes_Functions(object):
 
         #   STMap Sequence
         if rangeType == "sequence":
-            result = self.saveDistortSeq(shot, outputName, rSettings, mode=stType)
+            result = self.saveDistortSeq(stateManager, shot, outputName, rSettings, mode=stType)
 
         #   STMap Single Image
         else:
@@ -1831,47 +1883,85 @@ class Prism_SynthEyes_Functions(object):
     
 
     @err_catcher(name=__name__)
-    def saveDistortSeq(self, shot, filePath, rSettings, mode="redistort"):
+    def saveDistortSeq(self, stateManager, shot, filePath, rSettings, mode="redistort"):
         success = True
+        canceled = False
         pattern = re.compile(r"(\d+)(?=\.[^.]+$)")
-        
+
         frame_start = rSettings["startFrame"]
         frame_end = rSettings["endFrame"]
 
-
         def incrementFilename(path):
-
-            # Finds last number block before extension
             match = pattern.search(path)
             if not match:
                 raise ValueError(f"No frame number found in filename: {path}")
-
             number_str = match.group(1)
             padding = len(number_str)
             number = int(number_str) + 1
             new_number_str = str(number).zfill(padding)
             start, end = match.span(1)
-
             return path[:start] + new_number_str + path[end:]
 
+        # Setup progress dialog
+        typeName = mode.capitalize()
+        progText = f"     Rendering STMap {typeName} sequence...     "
+        progress = QProgressDialog(progText, "Cancel", frame_start, frame_end)
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setWindowFlags(progress.windowFlags() | Qt.WindowStaysOnTopHint)
+        progress.setMinimumDuration(0)
+        progress.setValue(frame_start)
+        progress.setWindowTitle("STMap Render Progress")
+        progress.show()
+        QApplication.processEvents()
+        progress.move(progress.x(), progress.y() + 200)
 
         currentPath = filePath
 
-        with self.UNDO_BLOCK("Dist Sequence"):
-            for frame in range(frame_start, frame_end + 1):
-                self.setCurrentFrame(frame)
+        stateManager.showMinimized()
 
-                if mode == "redistort":
-                    result = shot.Call("WriteRedistortImage", currentPath)
-                else:
-                    result = shot.Call("WriteUndistortImage", currentPath)
+        try:
+            with self.UNDO_BLOCK("Dist Sequence"):
+                for frame in range(frame_start, frame_end + 1):
+                    # Check if user canceled
+                    if progress.wasCanceled():
+                        # Immediate feedback for user
+                        progress.setLabelText("Cancel requested, finishing current frame...")
+                        progress.repaint()
+                        QApplication.processEvents()
+                        print("Render canceled by user.")
+                        success = False
+                        canceled = True
+                        break
 
-                if not bitToBool(result):
-                    success = False
+                    self.setCurrentFrame(frame)
 
-                currentPath = incrementFilename(currentPath)
+                    if mode == "redistort":
+                        result = shot.Call("WriteRedistortImage", currentPath)
+                    else:
+                        result = shot.Call("WriteUndistortImage", currentPath)
 
-        return success
+                    if not bitToBool(result):
+                        success = False
+
+                    # Update progress dialog
+                    progress.setValue(frame)
+                    QApplication.processEvents()
+
+                    # Prepare next filename
+                    currentPath = incrementFilename(currentPath)
+
+            progress.close()
+        
+        except Exception as e:
+            logger.warning(f"ERROR: Failed to render STMap sequence: {e}")
+            return "Execute Canceled by User"
+
+        finally:
+            QTimer.singleShot(1000, stateManager.showNormal)
+            if canceled:
+                return "Execute Canceled by User"
+            
+            return success
 
 
     #   Called after Render to Restore Original Settings
