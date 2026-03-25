@@ -48,6 +48,7 @@ import os
 import sys
 import platform
 import logging
+import time
 import ctypes
 from ctypes import wintypes
 import json
@@ -56,7 +57,6 @@ import base64
 import tempfile
 import re
 from contextlib import contextmanager
-import time
 
 
 PLUGINROOT = os.path.dirname(os.path.dirname(__file__))
@@ -94,11 +94,9 @@ logger = logging.getLogger(__name__)
 
 
 
-#   Helper to Convert Python Bool to SynthEyes 0/1
+#   Helpers to Convert Python Bool to SynthEyes 0/1
 def boolToBit(boolInp: bool) -> int:
     return int(boolInp)
-
-#   Helper to Convert SynthEyes 0/1 to Python Bool
 def bitToBool(boolInt: int) -> bool:
     return (boolInt == 1)
 
@@ -109,7 +107,7 @@ class Prism_SynthEyes_Functions(object):
         self.plugin = plugin
 
         self.synthEyes = None
-        self.importSyPy3()
+        self.initSyPy3()
         self.loadSettings()
 
         #   Socket Comms Bridge Thread
@@ -206,10 +204,9 @@ class Prism_SynthEyes_Functions(object):
     ##         PRISM SYNTHEYES BRIDGE        ##
     ###########################################
 
-
     #   Parses the Integration Path and Imports SyPy3
     @err_catcher(name=__name__)
-    def importSyPy3(self):
+    def initSyPy3(self):
         if self.synthEyes:
             return self.synthEyes
 
@@ -247,7 +244,7 @@ class Prism_SynthEyes_Functions(object):
             return self.synthEyes
 
         except Exception:
-            logger.exception("importSyPy3 failed")
+            logger.exception("initSyPy3 failed")
             self.synthEyes = None
             return None
 
@@ -303,7 +300,7 @@ class Prism_SynthEyes_Functions(object):
                 )
 
             #   Forces a Refresh of the SynthEyes Window to Display the Prism Menu
-            hwnd = self.getSynthEyesHwnd()
+            hwnd = self.getSynthEyesWindow()
             if hwnd:
                 self.forceWindowRedraw(hwnd)
 
@@ -333,15 +330,13 @@ class Prism_SynthEyes_Functions(object):
 
 
 
-
     #######################################
     ##             Helpers               ##   
     #######################################
 
-
     #   Finds the Open SynthEyes Window on the Screen
     @err_catcher(name=__name__)
-    def getSynthEyesHwnd(self):
+    def getSynthEyesWindow(self) -> int | None:
         #   Get Windows user32 DLL Functions
         user32 = ctypes.windll.user32
         EnumWindows = user32.EnumWindows
@@ -387,7 +382,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Attempts to Redraw SynthEyes Window via Focus Switch
     @err_catcher(name=__name__)
-    def forceWindowRedraw(self, hwnd):
+    def forceWindowRedraw(self, hwnd:int) -> None:
         user32 = ctypes.windll.user32
 
         #   Attempt to Find Another Window (fallback to Desktop)
@@ -424,7 +419,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Finds and Changes the Version Suffix (_v001, _v002, _master)
     @err_catcher(name=__name__)
-    def updateNameVersion(self, currentName:str, newVerStr:str) -> str:
+    def updateNameVersion(self, currentName:str, newVerStr:str) -> str | None:
         verPadding = self.core.versionPadding
 
         pattern = rf"(_v\d{{{verPadding}}}|_master)"
@@ -444,12 +439,29 @@ class Prism_SynthEyes_Functions(object):
 
         else:
             return None
+
+
+    #   Increments the Sequence Padding Number
+    @err_catcher(name=__name__)
+    def incrementFilename(self, basePath:str, pattern:re.Pattern) -> str | None:
+        match = pattern.search(basePath)
+        if not match:
+            logger.warning(f"ERROR: No frame number found in filename: {basePath}")
+            return None
+        
+        numberStr = match.group(1)
+        padding = len(numberStr)
+        number = int(numberStr) + 1
+        new_numberStr = str(number).zfill(padding)
+
+        start, end = match.span(1)
+        return basePath[:start] + new_numberStr + basePath[end:]
         
 
     #   Returns Str of Format Specific Render Settings
     #   (from Synth_Formats.py imports)
     @err_catcher(name=__name__)
-    def getRenderOptsStr(self, rSettings):
+    def getRenderOptsStr(self, rSettings:dict) -> str | None:
         format = rSettings["format"]
 
         if format == ".exr":
@@ -467,7 +479,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Waits in QtLoop Until Popup Window is Invalid
     @err_catcher(name=__name__)
-    def waitForPopupClose(self, popup, timeout=600.0):
+    def waitForPopupClose(self, popup:object, timeout:float=600.0) -> None:
         start_time = time.time()
         loop = QEventLoop()
 
@@ -498,12 +510,9 @@ class Prism_SynthEyes_Functions(object):
 
 
 
-
-
     #######################################
     ##             CALLBACKS             ##
     #######################################
-
 
     @err_catcher(name=__name__)
     def onProjectBrowserStartup(self, origin):
@@ -643,7 +652,6 @@ class Prism_SynthEyes_Functions(object):
     ###################################################
     ##       Called From SynthEyes Prism Tools       ##   
     ###################################################
-    
 
     @err_catcher(name=__name__)
     def saveVersion(self):
@@ -688,7 +696,6 @@ class Prism_SynthEyes_Functions(object):
     ###################################################
     ##                  Synth Stuff                  ##
     ###################################################
-
 
     #   Context Wrapper for SynthEyes Undo Blocks
     #   Remember: most anytime you set something in Sizzle or SpPy
@@ -1148,7 +1155,6 @@ class Prism_SynthEyes_Functions(object):
     ##                 File Handling                 ##   
     ###################################################
 
-
     #   Returns Current SynthEyes File Name/Path
     @err_catcher(name=__name__)
     def getCurrentFileName(self, origin=None, path=True):
@@ -1227,7 +1233,7 @@ class Prism_SynthEyes_Functions(object):
             GetWindowRect = user32.GetWindowRect
 
             #   Get the SynthEyes Window
-            target_hwnd = self.getSynthEyesHwnd()
+            target_hwnd = self.getSynthEyesWindow()
 
             if not target_hwnd or not IsWindow(target_hwnd):
                 logger.warning("ERROR: Thumbnail generation failed: Could not find valid SynthEyes window")
@@ -1277,12 +1283,10 @@ class Prism_SynthEyes_Functions(object):
 
 
 
-
     #######################################
-    ##               Shots               ##   
+    ##               SHOTS               ##   
     #######################################
    
-
     #   Called from StateManager Button
     @err_catcher(name=__name__)
     def addShot(self, origin, mode):
@@ -1393,9 +1397,8 @@ class Prism_SynthEyes_Functions(object):
 
 
     #######################################
-    ##           Import Mesh             ##   
+    ##           IMPORT MESH             ##   
     #######################################
-
 
     #   Called from ImportMesh State Execute
     @err_catcher(name=__name__)
@@ -1479,9 +1482,8 @@ class Prism_SynthEyes_Functions(object):
 
 
     #######################################
-    ##             Exporting             ##   
+    ##               EXPORT              ##   
     #######################################
-
 
     #   Sanity Check Before State Execution
     @err_catcher(name=__name__)
@@ -1669,9 +1671,8 @@ class Prism_SynthEyes_Functions(object):
 
 
     #######################################
-    ##             Rendering             ##   
+    ##          IMAGE RENDER             ##   
     #######################################
-
 
     #   Sanity Check Before State Execution
     @err_catcher(name=__name__)
@@ -1766,7 +1767,6 @@ class Prism_SynthEyes_Functions(object):
             QTimer.singleShot(1000, stateManager.showNormal)
 
         #   Return Bool of SynthEyes Int Result
-        # return int(result) == 1                                             #   TODO - MAKE SURE WORKS
         return bitToBool(result)
 
 
@@ -1786,6 +1786,11 @@ class Prism_SynthEyes_Functions(object):
         
         self.synthEyes.Validate(shot)
 
+
+
+    #######################################
+    ##           STMAP RENDER            ##   
+    #######################################
 
     #   Sanity Check Before State Execution
     @err_catcher(name=__name__)
@@ -1876,92 +1881,70 @@ class Prism_SynthEyes_Functions(object):
                 stFunct = "WriteUndistortImage"
 
             with self.UNDO_BLOCK("Render StMap Image(s)"):
-                result = shot.Call(stFunct, outputName)
-                result = bitToBool(result)
+                resultInt = shot.Call(stFunct, outputName)
+                if bitToBool(resultInt):
+                    result = "Success"
+                else:
+                    result = "Error"
 
         return result
     
 
     @err_catcher(name=__name__)
     def saveDistortSeq(self, stateManager, shot, filePath, rSettings, mode="redistort"):
-        success = True
-        canceled = False
+        result = "Success"
+
+        #   RE Pattern for Sequence Padding
         pattern = re.compile(r"(\d+)(?=\.[^.]+$)")
 
         frame_start = rSettings["startFrame"]
         frame_end = rSettings["endFrame"]
 
-        def incrementFilename(path):
-            match = pattern.search(path)
-            if not match:
-                raise ValueError(f"No frame number found in filename: {path}")
-            number_str = match.group(1)
-            padding = len(number_str)
-            number = int(number_str) + 1
-            new_number_str = str(number).zfill(padding)
-            start, end = match.span(1)
-            return path[:start] + new_number_str + path[end:]
-
-        # Setup progress dialog
+        #   Create Progress UI
         typeName = mode.capitalize()
         progText = f"     Rendering STMap {typeName} sequence...     "
-        progress = QProgressDialog(progText, "Cancel", frame_start, frame_end)
-        progress.setWindowModality(Qt.WindowModal)
-        progress.setWindowFlags(progress.windowFlags() | Qt.WindowStaysOnTopHint)
-        progress.setMinimumDuration(0)
-        progress.setValue(frame_start)
-        progress.setWindowTitle("STMap Render Progress")
-        progress.show()
-        QApplication.processEvents()
-        progress.move(progress.x(), progress.y() + 200)
+        progress = ProgressUI(progText, frame_start, frame_end, title="STMap Render Progress")
 
         currentPath = filePath
-
         stateManager.showMinimized()
 
         try:
+            #   Use Sizzle STMap Single Render in Loop of Frames
             with self.UNDO_BLOCK("Dist Sequence"):
                 for frame in range(frame_start, frame_end + 1):
-                    # Check if user canceled
-                    if progress.wasCanceled():
-                        # Immediate feedback for user
-                        progress.setLabelText("Cancel requested, finishing current frame...")
-                        progress.repaint()
-                        QApplication.processEvents()
-                        print("Render canceled by user.")
-                        success = False
-                        canceled = True
+                    if progress.checkCanceled():
+                        logger.warning("Render Canceled by User.")
+                        result = "Canceled"
                         break
 
                     self.setCurrentFrame(frame)
 
                     if mode == "redistort":
-                        result = shot.Call("WriteRedistortImage", currentPath)
+                        success = bitToBool(shot.Call("WriteRedistortImage", currentPath))
                     else:
-                        result = shot.Call("WriteUndistortImage", currentPath)
+                        success = bitToBool(shot.Call("WriteUndistortImage", currentPath))
 
-                    if not bitToBool(result):
-                        success = False
+                    if not success:
+                        result = "Error"
 
-                    # Update progress dialog
-                    progress.setValue(frame)
-                    QApplication.processEvents()
+                    progress.update(frame)
 
-                    # Prepare next filename
-                    currentPath = incrementFilename(currentPath)
+                    newPath = self.incrementFilename(currentPath, pattern)
+                    if not newPath:
+                        result = "Error"
+                        break
+                    currentPath = newPath
 
             progress.close()
-        
+
         except Exception as e:
-            logger.warning(f"ERROR: Failed to render STMap sequence: {e}")
-            return "Execute Canceled by User"
+            logger.warning(f"Failed to render STMap sequence: {e}")
+            result = "Error"
 
         finally:
             QTimer.singleShot(1000, stateManager.showNormal)
-            if canceled:
-                return "Execute Canceled by User"
-            
-            return success
+
+        return result
 
 
     #   Called after Render to Restore Original Settings
@@ -1982,6 +1965,11 @@ class Prism_SynthEyes_Functions(object):
         with self.UNDO_BLOCK("Restore Framerange"):
             self.setCurrentFrame(rData["orig_currFrame"])
 
+
+
+    #######################################
+    ##             PLAYBLAST             ##   
+    #######################################
 
     @err_catcher(name=__name__)
     def sm_playblast_preExecute(self, origin, rData):
@@ -2108,7 +2096,7 @@ class Prism_SynthEyes_Functions(object):
             return False
         
         finally:
-            stateManager.showNormal()
+            QTimer.singleShot(1000, stateManager.showNormal)
 
 
     @err_catcher(name=__name__)
@@ -2130,7 +2118,6 @@ class Prism_SynthEyes_Functions(object):
             self.synthEyes.SetView(rSettings["currView"])
         
         self.synthEyes.Validate(shot)
-
 
 
 
@@ -2186,13 +2173,7 @@ class Prism_SynthEyes_Functions(object):
     #   Returns Root Index Note Object
     @err_catcher(name=__name__)
     def getIndexNote(self):
-        note = self.getNoteByNumber(1000)
-
-        # if not note:
-        #     with self.UNDO_BLOCK("Create Index Note"):
-        #         note = self.createIndexNote()
-
-        return note
+        return self.getNoteByNumber(1000)
 
 
     #   Creates Root Index Note Object
@@ -2223,41 +2204,37 @@ class Prism_SynthEyes_Functions(object):
     #   Called to Save State Data
     @err_catcher(name=__name__)
     def sm_saveStates(self, origin=None, buf=None):
-        data = json.loads(buf)
+        with self.UNDO_BLOCK("Save States"):
+            data = json.loads(buf)
 
-        index_note = self.getIndexNote()
-        if not index_note:
-            with self.UNDO_BLOCK("Create Index Note"):
+            index_note = self.getIndexNote()
+            if not index_note:
                 index_note = self.createIndexNote()
 
-        old_index = json.loads(index_note.text)
-        old_notes = set(old_index.get("notes", []))
+            old_index = json.loads(index_note.text)
+            old_notes = set(old_index.get("notes", []))
 
-        note_numbers = []
+            note_numbers = []
 
-        for i, state in enumerate(data["states"]):
-            number = 1001 + i
-            note_numbers.append(number)
+            for i, state in enumerate(data["states"]):
+                number = 1001 + i
+                note_numbers.append(number)
 
-            note = self.getNoteByNumber(number)
-
-            with self.UNDO_BLOCK("Create State Note"):
+                note = self.getNoteByNumber(number)
                 if not note:
                     note = self.createStateNote(number)
 
                 note.text = self.compressState(state)
 
-        #   Remove Unused Notes
-        new_notes = set(note_numbers)
-        to_delete = old_notes - new_notes
+            #   Remove Unused Notes
+            new_notes = set(note_numbers)
+            to_delete = old_notes - new_notes
 
-        for number in to_delete:
-            note = self.getNoteByNumber(number)
-            if note:
-                with self.UNDO_BLOCK("Delete Note:"):
+            for number in to_delete:
+                note = self.getNoteByNumber(number)
+                if note:
                     self.synthEyes.Delete(note)
 
-        with self.UNDO_BLOCK("Write Index Note"):
             index_note.text = json.dumps({"notes": note_numbers})
 
 
@@ -2265,7 +2242,6 @@ class Prism_SynthEyes_Functions(object):
     @err_catcher(name=__name__)
     def sm_readStates(self, origin=None):
         index_note = self.getNoteByNumber(1000)
-
         if not index_note:
             return self.getDefaultState()
 
@@ -2275,7 +2251,6 @@ class Prism_SynthEyes_Functions(object):
 
         for number in index["notes"]:
             note = self.getNoteByNumber(number)
-
             if note and note.text:
                 states.append(self.decompressState(note.text))
 
@@ -2285,22 +2260,55 @@ class Prism_SynthEyes_Functions(object):
     #   Deletes All State Notes
     @err_catcher(name=__name__)
     def sm_deleteStates(self, origin=None):
-        self.synthEyes.Begin()
-
-        index_note = self.getNoteByNumber(1000)
-
-        if not index_note:
-            with self.UNDO_BLOCK("Create Index Note"):
+        with self.UNDO_BLOCK("Delete States"):
+            index_note = self.getNoteByNumber(1000)
+            if not index_note:
                 index_note = self.createIndexNote()
 
-        index = json.loads(index_note.text)
+            index = json.loads(index_note.text)
 
-        for number in index.get("notes", []):
-            note = self.getNoteByNumber(number)
-
-            if note:
-                with self.UNDO_BLOCK("Delete Note"):
+            for number in index.get("notes", []):
+                note = self.getNoteByNumber(number)
+                if note:
                     self.synthEyes.Delete(note)
 
-        with self.UNDO_BLOCK("Write Index Note"):
             index_note.text = json.dumps({"notes": []})
+
+
+
+#   Simple Progessbar Popup with Cancel Button for Long Renders
+class ProgressUI:
+    """Helper class to manage a QProgressDialog with cancel support."""
+    def __init__(self, label, start, end, title="Progress", yOffset=200):
+        self.dialog = QProgressDialog(label, "Cancel", start, end)
+        self.dialog.setWindowModality(Qt.WindowModal)
+        self.dialog.setWindowFlags(self.dialog.windowFlags() | Qt.WindowStaysOnTopHint)
+        self.dialog.setMinimumDuration(0)
+        self.dialog.setValue(start)
+        self.dialog.setWindowTitle(title)
+        self.dialog.show()
+        QApplication.processEvents()
+
+        # Optional vertical offset
+        self.dialog.move(self.dialog.x(), self.dialog.y() + yOffset)
+
+        self.canceled = False
+
+    def update(self, value):
+        """Update progress value and process events."""
+        self.dialog.setValue(value)
+        QApplication.processEvents()
+
+    def checkCanceled(self):
+        """Check if user clicked cancel. Returns True if canceled."""
+        if self.dialog.wasCanceled():
+            self.dialog.setLabelText("Cancel requested, finishing current frame...")
+            self.dialog.repaint()
+            QApplication.processEvents()
+            self.canceled = True
+            return True
+        return False
+
+    def close(self):
+        """Close the progress dialog."""
+        self.dialog.close()

@@ -1075,7 +1075,7 @@ class Synth_Render_StMapClass(object):
             #   Execute Render
             result = self.core.appPlugin.sm_render_stMap(self.stateManager, stType, renderType, rSettings["outputName"], rSettings, context)
 
-            if result:
+            if result == "Success":
                 try:
                     details = context.copy()
                     if "filename" in details:
@@ -1120,20 +1120,7 @@ class Synth_Render_StMapClass(object):
             return [self.state.text(0) + " - success"]
 
         else:
-            erStr = "%s ERROR - sm_default_imageRenderPublish %s:\n%s" % (
-                time.strftime("%d/%m/%y %X"),
-                self.core.version,
-                errors,
-                )
-            
-            if not result.startswith("Execute Canceled: "):
-                if result == "unknown error (files do not exist)":
-                    msg = "No files were created during the rendering. If you think this is a Prism bug please report it on our Discord server:\nwww.prism-pipeline.com/discord\nor write a mail to contact@prism-pipeline.com"
-                    self.core.popup(msg)
-
-                else:
-                    self.core.writeErrorLog(erStr)
-
+            logger.warning(f"Errors: {errors}")
             return [self.state.text(0) + " - error - " + result]
 
 
