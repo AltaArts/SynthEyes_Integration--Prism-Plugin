@@ -31,6 +31,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Prism.  If not, see <https://www.gnu.org/licenses/>.
 ###########################################################################
+###########################################################################
 #
 #                    SynthEyes Integration for Prism2
 #
@@ -190,10 +191,16 @@ class Prism_SynthEyes_Integration(object):
             for file in os.listdir(prismInterDir):
                 source_path = os.path.abspath(os.path.join(prismInterDir, file))
                 dest_path = os.path.abspath(os.path.join(prismScripts_dir, file))
+                if os.path.isfile(source_path):
+                    cmd = {"type": "copyFile", "args": [source_path, dest_path]}
+                    cmds.append(cmd)
+                    addedFiles.append(dest_path)
 
-                cmd = {"type": "copyFile", "args": [source_path, dest_path]}
-                cmds.append(cmd)
-                addedFiles.append(dest_path)
+            #   Cmd to Copy the PrismUtils Dirs
+            source_utilsDir = os.path.join(prismInterDir, "PrismUtils")
+            dest_utilsDir = os.path.join(prismScripts_dir, "PrismUtils")
+            cmd = {"type": "copyFolder", "args": [source_utilsDir, dest_utilsDir]}
+            cmds.append(cmd)
 
             #   Run the Commands
             result = self.core.runFileCommands(cmds)

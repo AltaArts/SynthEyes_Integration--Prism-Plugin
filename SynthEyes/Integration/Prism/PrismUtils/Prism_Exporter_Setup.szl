@@ -1,0 +1,46 @@
+//SIZZLET Prism Exporter Setup
+
+//  This is part of the Prism Integration into SynthEyes
+//
+//  This Sizzle will read the data file that is written by the Prism
+//  Python script, and set the various settings in SynthEyes.
+
+
+// Get Data File (Written by the Prism Plugin)
+INCLUDE("./PrismExportData.txt")
+
+// Assign the Current and User Workflow Presets Objects
+currWf = WFPreset.current
+userWf = WFPreset.user
+
+// Initialize Roots List
+roots = []
+i = 1
+
+// Add Scene Root
+roots[i] = currWf
+i = i + 1
+
+// Find and add MRU Root
+for (rootChild in userWf.child)
+    if (rootChild.nm == "Most Recently Used")
+        roots[i] = rootChild
+        i = i + 1
+    end
+end
+
+// Process all Roots
+for (root in roots)
+    // Find Exporter Type in Settings
+    exporters = root.FindNamedOrCreate("Exporters", "Exporters")
+    usd = exporters.FindNamedOrCreate(exporter_Type, exporter_Type)
+
+    // Iterate the Settings and Set Each One
+    for (settings in usd.child)
+        if (settings.nm == exporter_SettingsName)
+            for (pair in exporter_Settings)
+                settings.SetValue(pair[1], pair[2])
+            end
+        end
+    end
+end

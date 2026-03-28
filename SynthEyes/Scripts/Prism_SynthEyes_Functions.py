@@ -31,6 +31,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Prism.  If not, see <https://www.gnu.org/licenses/>.
 ###########################################################################
+###########################################################################
 #
 #                    SynthEyes Integration for Prism2
 #
@@ -107,6 +108,7 @@ class Prism_SynthEyes_Functions(object):
         self.plugin = plugin
 
         self.synthEyes = None
+        self.synthPath = None
         self.initSyPy3()
         self.loadSettings()
 
@@ -215,15 +217,15 @@ class Prism_SynthEyes_Functions(object):
             synthData = integrations.get("SynthEyes")
 
             if not synthData:
-                raise RuntimeError("SynthEyes integration not found")
+                logger.warning("ERROR: SynthEyes integration not found")
 
-            synthPath = synthData[0]
+            self.synthPath = synthData[0]
 
-            if not synthPath or not os.path.exists(synthPath):
-                raise RuntimeError(f"Invalid SynthEyes path: {synthPath}")
+            if not self.synthPath or not os.path.exists(self.synthPath):
+                logger.warning(f"ERROR: Invalid SynthEyes path: {self.synthPath}")
 
-            if synthPath not in sys.path:
-                sys.path.append(synthPath)
+            if self.synthPath not in sys.path:
+                sys.path.append(self.synthPath)
 
             import SyPy3
 
@@ -245,8 +247,6 @@ class Prism_SynthEyes_Functions(object):
 
         except Exception:
             logger.exception("initSyPy3 failed")
-            self.synthEyes = None
-            return None
 
 
     #   Queries Script Menu Items and Finds Prism Script ID's.
@@ -690,6 +690,7 @@ class Prism_SynthEyes_Functions(object):
         #           f"{dir(action)}\n\n"
         #           "********************")
         # return
+
 
 
 
@@ -1605,7 +1606,63 @@ class Prism_SynthEyes_Functions(object):
 
             rSettings["orig_meshData"] = meshData
 
+
+
+        #   Create Exporter Settings Data File
+        self.createExportDataFile()
+
+        sPath = os.path.join(self.synthPath, "scripts", "Prism", "PrismUtils", "Prism_Exporter_Setup.szl")
+        self.synthEyes.RunScriptFile(sPath)
+
+
         return rSettings
+
+
+    #   TODO
+    @err_catcher(name=__name__)
+    def createExportDataFile(self):
+        testText ='''
+//  This file is part of the Prism Integration into SynthEyes.
+//
+//  This data file is written by the Prism Python script,
+//  and is Included in the Prism_Exporter_Setup.szl.  The Sizzle
+//  will use these values and set the Exporter settings.
+
+exporter_Settings = [
+    ["workArea", "2"],
+    ["userStart", 1],
+    ["units", "ft"],
+    ["buildRigs", 1],
+    ["fixAD", 1],
+    ["doScreen", 1],
+    ["usePreprocessor", "1"],
+    ["uvScreenMode", "1"],
+    ["nomgrid", 64],
+    ["relScreenDis", 5],
+    ["rotOrder", "1"],
+    ["relTrkSize", 0.001],
+    ["relLidarSize", 0.0002],
+    ["relFarClip", 10],
+    ["miscOpacity", 1],
+    ["doFrustrum", 1],
+    ["doGnomon", 1],
+    ["doChisel", 1],
+    ["geoPrimitives", 0],
+    ["silentMovies", 1]
+]
+
+exporter_Type = "USD ASCII Scene"
+exporter_SettingsName = "USD ASCII Scene Settings"
+'''
+
+        dataFile = os.path.join(self.synthPath, "scripts", "Prism", "PrismUtils", "PrismExportData.txt")
+
+        with open(dataFile, "w", encoding="utf-8") as f:
+            f.write(testText)
+
+
+
+
 
 
     #   Called From SceneExport State Execute
