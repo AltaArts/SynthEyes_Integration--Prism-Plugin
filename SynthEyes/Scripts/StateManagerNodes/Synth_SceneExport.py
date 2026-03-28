@@ -85,7 +85,6 @@ class Synth_SceneExportClass(object):
         self.exportData = None
 
         self.e_name.setText(state.text(0) + " ({product})")
-
         self.l_name.setVisible(False)
         self.e_name.setVisible(False)
 
@@ -124,12 +123,54 @@ class Synth_SceneExportClass(object):
         self.toolTips()
         self.connectEvents()
 
+        #   Set Prism Icon Dir
+        iconDir = os.path.join(self.core.prismRoot, "Scripts", "UserInterfacesPrism")
+        iconDir = iconDir.replace("\\", "/")
+
+        #   Set Section Icons
+        self.chb_exportSettings.setStyleSheet(f"""
+            QCheckBox::indicator {{
+                width: 15px;
+                height: 15px;
+            }}
+
+            QCheckBox::indicator:unchecked {{
+                image: url("{iconDir}/right_arrow_light.png");
+            }}
+
+            QCheckBox::indicator:checked {{
+                image: url("{iconDir}/down_arrow_light.png");
+            }}
+            """)
+        
+        self.chb_sceneHierarchy.setStyleSheet(f"""
+            QCheckBox::indicator {{
+                width: 15px;
+                height: 15px;
+            }}
+
+            QCheckBox::indicator:unchecked {{
+                image: url("{iconDir}/right_arrow_light.png");
+            }}
+
+            QCheckBox::indicator:checked {{
+                image: url("{iconDir}/down_arrow_light.png");
+            }}
+            """)
+
+        #   Close Sections by Default
+        self.onSectionToggled("exportSettings", False)
+        self.onSectionToggled("sceneH", False)
+
+        #   Set Refresh Icon
+        icon_refresh = QIcon(os.path.join(iconDir, "refresh.png"))
+        self.b_refreshExports.setIcon(icon_refresh)
+
         self.chb_customExport.setChecked(False)
 
-        refreshIcon = QIcon(os.path.join(self.core.prismRoot, "Scripts", "UserInterfacesPrism", "refresh.png"))
-        self.b_refreshExports.setIcon(refreshIcon)
-
         self.core.callback("onStateStartup", self)
+
+        self.setupExportSettings()
 
         if stateData is not None:
             self.loadData(stateData)
@@ -226,6 +267,8 @@ class Synth_SceneExportClass(object):
         self.chb_master.stateChanged.connect(self.stateManager.saveStatesToScene)
         self.cb_outPath.activated.connect(self.stateManager.saveStatesToScene)
         self.cb_outType.activated.connect(lambda x: self.typeChanged(self.getOutputType()))
+        self.chb_exportSettings.toggled.connect(lambda checked: self.onSectionToggled("exportSettings", checked))
+        self.chb_sceneHierarchy.toggled.connect(lambda checked: self.onSectionToggled("sceneH", checked))
         self.chb_customExport.stateChanged.connect(self.updateExportUI)
         self.b_refreshExports.clicked.connect(self.refreshExportLists)
         self.lw_shots.itemChanged.connect(self.onExportItemChanged)
@@ -625,6 +668,18 @@ class Synth_SceneExportClass(object):
         self.stateManager.saveStatesToScene()
 
 
+    #   Toggles Sections Open/Closed
+    @err_catcher(name=__name__)
+    def onSectionToggled(self, section, checked):
+        if section == "exportSettings":
+            widget =  self.w_exportSettings
+
+        elif section == "sceneH":
+            widget = self.w_sceneHierarchy
+
+        widget.setVisible(checked)
+
+
     @err_catcher(name=__name__)
     def refreshContext(self):
         context = self.getCurrentContext()
@@ -744,6 +799,208 @@ class Synth_SceneExportClass(object):
 
         self.updateUi()
         self.stateManager.saveStatesToScene()
+
+
+    #   Creates the Exporter Settings Based on Type
+    @err_catcher(name=__name__)
+    def setupExportSettings(self):
+        exportType = self.cb_outType.currentText()
+        settingsWindow = self.w_exportSettings
+        layout = settingsWindow.layout()
+
+        #   Clear Existing UI
+        self.clearLayout(layout)
+        self.exportWidgets = {}
+
+        #   Get Exporter Settings from Formats File
+        schema = SynthFormatNames.get(exportType, {}).get("exportSettings", {})
+
+        #   Create UI Widgets
+        for key, setting in schema.items():
+            row = self.createSettingWidget(key, setting, settingsWindow)
+            if row:
+                layout.addWidget(row)
+
+
+    #   Removes All Widgets from Layout
+    def clearLayout(self, layout):
+        while layout.count():
+            item = layout.takeAt(0)
+
+            if item.widget():
+                item.widget().deleteLater()
+            elif item.layout():
+                self.clearLayout(item.layout())
+
+
+    #   Creates Widget Row Based on Settings in Format File
+    def createSettingWidget(self, key, setting, parent):
+        widgetType = setting["widgetType"]
+        name = setting["name"]
+        tooltip = setting.get("toolTip", "")
+
+        #   Create Row
+        row = QWidget(parent)
+        rowLayout = QHBoxLayout(row)
+        rowLayout.setContentsMargins(30, 0, 30, 0)
+
+        #   Create Label from Name
+        label = QLabel(name, row)
+        label.setToolTip(tooltip)
+        rowLayout.addWidget(label)
+
+        #   Add Spacing
+        rowLayout.addStretch()
+
+        ##  Create Widget by Type
+
+        #   Checkbox
+        if widgetType == "checkbox":
+            cb = QCheckBox("", row)
+            cb.setToolTip(tooltip)
+
+            default = setting.get("factoryDefault", 0)
+            cb.setChecked(str(default) in ("1", "True", True, 1))
+
+            self.exportWidgets[key] = cb
+            rowLayout.addWidget(cb)
+
+            return row
+
+        #   ComboBox
+        elif widgetType == "combo":
+            combo = QComboBox(row)
+            combo.setToolTip(tooltip)
+
+            for label_text, value in setting.get("comboItems", []):
+                combo.addItem(label_text, value)
+
+            default = setting.get("factoryDefault")
+
+            index = 0
+            for i in range(combo.count()):
+                if combo.itemData(i) == default:
+                    index = i
+                    break
+            combo.setCurrentIndex(index)
+
+            self.exportWidgets[key] = combo
+            rowLayout.addWidget(combo)
+
+            return row
+
+        #   SpinBox
+        elif widgetType == "spin":
+            spin = QSpinBox(row)
+            spin.setToolTip(tooltip)
+
+            r = setting.get("range", [0, 100])
+            spin.setRange(r[0], r[1])
+            spin.setSingleStep(setting.get("step", 1))
+            spin.setValue(setting.get("factoryDefault", 0))
+
+            self.exportWidgets[key] = spin
+            rowLayout.addWidget(spin)
+
+            return row
+
+        #   Dual SpinBox
+        elif widgetType == "doubleSpin":
+            spin = QDoubleSpinBox(row)
+            spin.setToolTip(tooltip)
+
+            r = setting.get("range", [0.0, 1.0])
+            spin.setRange(r[0], r[1])
+            spin.setDecimals(setting.get("precision", 3))
+            spin.setSingleStep(setting.get("step", 0.01))
+
+            spin.setValue(setting.get("factoryDefault", 0.0))
+            self.exportWidgets[key] = spin
+            rowLayout.addWidget(spin)
+
+            return row
+        
+        else:
+            return None
+
+
+    # @err_catcher(name=__name__)
+    # def getExportSettings(self):                                        #   TODO - ADD UI
+    #     eData = {
+    #     "exporter_Type": "USD ASCII Scene",
+    #     "exporter_SettingsName": "USD ASCII Scene Settings",
+    #     "exporter_Settings":[
+    #             ["workArea", "2"],
+    #             ["userStart", 1],
+    #             ["units", "ft"],
+    #             ["buildRigs", 1],
+    #             ["fixAD", 1],
+    #             ["doScreen", 1],
+    #             ["usePreprocessor", "1"],
+    #             ["uvScreenMode", "1"],
+    #             ["nomgrid", 64],
+    #             ["relScreenDis", 5],
+    #             ["rotOrder", "1"],
+    #             ["relTrkSize", 0.001],
+    #             ["relLidarSize", 0.0002],
+    #             ["relFarClip", 10],
+    #             ["miscOpacity", 1],
+    #             ["doFrustrum", 1],
+    #             ["doGnomon", 1],
+    #             ["doChisel", 1],
+    #             ["geoPrimitives", 0],
+    #             ["silentMovies", 1]
+    #         ]
+    #     }
+
+    #     return eData
+    
+
+    #   Gets Exporter Settings from UI
+    @err_catcher(name=__name__)
+    def getExportSettings(self):
+        #   Get Settings Format from Format File
+        exportTypeUI = self.cb_outType.currentText()
+        formatData = SynthFormatNames.get(exportTypeUI, {})
+
+        #   Get the Exporter Settings Names
+        exporterType = formatData.get("synthName", "")
+        exporterSettingsName = f"{exporterType} Settings"
+
+        settingsList = []
+
+        #   Iterate the Settings Widgets and Get Value by Type
+        for key, widget in self.exportWidgets.items():
+            try:
+                if isinstance(widget, QCheckBox):
+                    value = 1 if widget.isChecked() else 0
+
+                elif isinstance(widget, QComboBox):
+                    value = widget.currentData()
+
+                elif isinstance(widget, QSpinBox):
+                    value = int(widget.value())
+
+                elif isinstance(widget, QDoubleSpinBox):
+                    value = float(widget.value())
+
+                else:
+                    continue
+
+                #   Make the Settins a List for Sizzle
+                settingsList.append([key, value])
+                
+            except Exception as e:
+                logger.warning(f"ERROR: Unable to Get Exporter Setting: {e}")
+
+        #   Build Settings Dict
+        eData = {
+            "exporter_Type": exporterType,
+            "exporter_SettingsName": exporterSettingsName,
+            "exporter_Settings": settingsList
+        }
+
+        return eData
 
 
     #   Called from Refresh Button to Reload Lists from Scene Data
@@ -977,38 +1234,6 @@ class Synth_SceneExportClass(object):
             comment = self.stateManager.publishComment
 
         return comment
-
-
-    @err_catcher(name=__name__)
-    def getExportSettings(self):                                        #   TODO - ADD UI
-        eData = {
-        "exporter_Type": "USD ASCII Scene",
-        "exporter_SettingsName": "USD ASCII Scene Settings",
-        "exporter_Settings":[
-                ["workArea", "2"],
-                ["userStart", 1],
-                ["units", "ft"],
-                ["buildRigs", 1],
-                ["fixAD", 1],
-                ["doScreen", 1],
-                ["usePreprocessor", "1"],
-                ["uvScreenMode", "1"],
-                ["nomgrid", 64],
-                ["relScreenDis", 5],
-                ["rotOrder", "1"],
-                ["relTrkSize", 0.001],
-                ["relLidarSize", 0.0002],
-                ["relFarClip", 10],
-                ["miscOpacity", 1],
-                ["doFrustrum", 1],
-                ["doGnomon", 1],
-                ["doChisel", 1],
-                ["geoPrimitives", 0],
-                ["silentMovies", 1]
-            ]
-        }
-
-        return eData
 
 
     @err_catcher(name=__name__)

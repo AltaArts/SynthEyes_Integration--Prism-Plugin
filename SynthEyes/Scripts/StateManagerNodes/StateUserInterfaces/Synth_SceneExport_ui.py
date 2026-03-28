@@ -8,16 +8,16 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from qtpy.QtCore import *
-from qtpy.QtGui import *
-from qtpy.QtWidgets import *
+from qtpy.QtCore import *  # type: ignore
+from qtpy.QtGui import *  # type: ignore
+from qtpy.QtWidgets import *  # type: ignore
 
 class Ui_wg_Synth_SceneExport(object):
     def setupUi(self, wg_Synth_SceneExport):
         if not wg_Synth_SceneExport.objectName():
             wg_Synth_SceneExport.setObjectName(u"wg_Synth_SceneExport")
         wg_Synth_SceneExport.setEnabled(True)
-        wg_Synth_SceneExport.resize(399, 810)
+        wg_Synth_SceneExport.resize(399, 910)
         self.verticalLayout = QVBoxLayout(wg_Synth_SceneExport)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
@@ -49,11 +49,11 @@ class Ui_wg_Synth_SceneExport(object):
 
         self.verticalLayout.addWidget(self.w_name)
 
-        self.gb_export = QGroupBox(wg_Synth_SceneExport)
-        self.gb_export.setObjectName(u"gb_export")
-        self.lo_export = QVBoxLayout(self.gb_export)
-        self.lo_export.setObjectName(u"lo_export")
-        self.w_comment = QWidget(self.gb_export)
+        self.gb_general = QGroupBox(wg_Synth_SceneExport)
+        self.gb_general.setObjectName(u"gb_general")
+        self.lo_general = QVBoxLayout(self.gb_general)
+        self.lo_general.setObjectName(u"lo_general")
+        self.w_comment = QWidget(self.gb_general)
         self.w_comment.setObjectName(u"w_comment")
         self.horizontalLayout_16 = QHBoxLayout(self.w_comment)
         self.horizontalLayout_16.setSpacing(0)
@@ -76,9 +76,9 @@ class Ui_wg_Synth_SceneExport(object):
         self.horizontalLayout_16.addWidget(self.e_comment)
 
 
-        self.lo_export.addWidget(self.w_comment)
+        self.lo_general.addWidget(self.w_comment)
 
-        self.w_context = QWidget(self.gb_export)
+        self.w_context = QWidget(self.gb_general)
         self.w_context.setObjectName(u"w_context")
         self.horizontalLayout_10 = QHBoxLayout(self.w_context)
         self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
@@ -112,9 +112,9 @@ class Ui_wg_Synth_SceneExport(object):
         self.horizontalLayout_10.addWidget(self.cb_context)
 
 
-        self.lo_export.addWidget(self.w_context)
+        self.lo_general.addWidget(self.w_context)
 
-        self.w_taskname = QWidget(self.gb_export)
+        self.w_taskname = QWidget(self.gb_general)
         self.w_taskname.setObjectName(u"w_taskname")
         self.horizontalLayout_4 = QHBoxLayout(self.w_taskname)
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
@@ -143,33 +143,9 @@ class Ui_wg_Synth_SceneExport(object):
         self.horizontalLayout_4.addWidget(self.b_changeTask)
 
 
-        self.lo_export.addWidget(self.w_taskname)
+        self.lo_general.addWidget(self.w_taskname)
 
-        self.w_outType = QWidget(self.gb_export)
-        self.w_outType.setObjectName(u"w_outType")
-        self.horizontalLayout_9 = QHBoxLayout(self.w_outType)
-        self.horizontalLayout_9.setSpacing(0)
-        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
-        self.horizontalLayout_9.setContentsMargins(9, 5, 9, 5)
-        self.l_outType = QLabel(self.w_outType)
-        self.l_outType.setObjectName(u"l_outType")
-
-        self.horizontalLayout_9.addWidget(self.l_outType)
-
-        self.horizontalSpacer_3 = QSpacerItem(113, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_9.addItem(self.horizontalSpacer_3)
-
-        self.cb_outType = QComboBox(self.w_outType)
-        self.cb_outType.setObjectName(u"cb_outType")
-        self.cb_outType.setMinimumSize(QSize(124, 0))
-
-        self.horizontalLayout_9.addWidget(self.cb_outType)
-
-
-        self.lo_export.addWidget(self.w_outType)
-
-        self.w_range = QWidget(self.gb_export)
+        self.w_range = QWidget(self.gb_general)
         self.w_range.setObjectName(u"w_range")
         self.horizontalLayout_6 = QHBoxLayout(self.w_range)
         self.horizontalLayout_6.setSpacing(0)
@@ -190,9 +166,9 @@ class Ui_wg_Synth_SceneExport(object):
         self.horizontalLayout_6.addWidget(self.cb_rangeType)
 
 
-        self.lo_export.addWidget(self.w_range)
+        self.lo_general.addWidget(self.w_range)
 
-        self.f_frameRange_2 = QWidget(self.gb_export)
+        self.f_frameRange_2 = QWidget(self.gb_general)
         self.f_frameRange_2.setObjectName(u"f_frameRange_2")
         self.gridLayout = QGridLayout(self.f_frameRange_2)
         self.gridLayout.setObjectName(u"gridLayout")
@@ -240,9 +216,9 @@ class Ui_wg_Synth_SceneExport(object):
         self.gridLayout.addWidget(self.l_rangeEndInfo, 1, 0, 1, 1)
 
 
-        self.lo_export.addWidget(self.f_frameRange_2)
+        self.lo_general.addWidget(self.f_frameRange_2)
 
-        self.w_master = QWidget(self.gb_export)
+        self.w_master = QWidget(self.gb_general)
         self.w_master.setObjectName(u"w_master")
         self.horizontalLayout_20 = QHBoxLayout(self.w_master)
         self.horizontalLayout_20.setSpacing(0)
@@ -264,9 +240,9 @@ class Ui_wg_Synth_SceneExport(object):
         self.horizontalLayout_20.addWidget(self.chb_master)
 
 
-        self.lo_export.addWidget(self.w_master)
+        self.lo_general.addWidget(self.w_master)
 
-        self.w_outPath = QWidget(self.gb_export)
+        self.w_outPath = QWidget(self.gb_general)
         self.w_outPath.setObjectName(u"w_outPath")
         self.horizontalLayout_11 = QHBoxLayout(self.w_outPath)
         self.horizontalLayout_11.setSpacing(0)
@@ -288,21 +264,78 @@ class Ui_wg_Synth_SceneExport(object):
         self.horizontalLayout_11.addWidget(self.cb_outPath)
 
 
-        self.lo_export.addWidget(self.w_outPath)
+        self.lo_general.addWidget(self.w_outPath)
 
 
-        self.verticalLayout.addWidget(self.gb_export)
+        self.verticalLayout.addWidget(self.gb_general)
 
-        self.gb_ExportList = QGroupBox(wg_Synth_SceneExport)
-        self.gb_ExportList.setObjectName(u"gb_ExportList")
-        self.gb_ExportList.setCheckable(False)
-        self.lo_exportList = QVBoxLayout(self.gb_ExportList)
-        self.lo_exportList.setObjectName(u"lo_exportList")
-        self.lo_exportList.setContentsMargins(9, 9, 9, 9)
+        self.gb_export = QGroupBox(wg_Synth_SceneExport)
+        self.gb_export.setObjectName(u"gb_export")
+        self.gb_export.setCheckable(False)
+        self.lo_export = QVBoxLayout(self.gb_export)
+        self.lo_export.setObjectName(u"lo_export")
+        self.lo_export.setContentsMargins(9, 9, 9, 9)
+        self.w_outType = QWidget(self.gb_export)
+        self.w_outType.setObjectName(u"w_outType")
+        self.horizontalLayout_9 = QHBoxLayout(self.w_outType)
+        self.horizontalLayout_9.setSpacing(0)
+        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
+        self.horizontalLayout_9.setContentsMargins(9, 5, 9, 5)
+        self.l_outType = QLabel(self.w_outType)
+        self.l_outType.setObjectName(u"l_outType")
+
+        self.horizontalLayout_9.addWidget(self.l_outType)
+
+        self.horizontalSpacer_3 = QSpacerItem(113, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_9.addItem(self.horizontalSpacer_3)
+
+        self.cb_outType = QComboBox(self.w_outType)
+        self.cb_outType.setObjectName(u"cb_outType")
+        self.cb_outType.setMinimumSize(QSize(124, 0))
+
+        self.horizontalLayout_9.addWidget(self.cb_outType)
+
+
+        self.lo_export.addWidget(self.w_outType)
+
+        self.lo_exportSettingsBox = QHBoxLayout()
+        self.lo_exportSettingsBox.setObjectName(u"lo_exportSettingsBox")
+        self.lo_exportSettingsBox.setContentsMargins(9, -1, 9, -1)
+        self.chb_exportSettings = QCheckBox(self.gb_export)
+        self.chb_exportSettings.setObjectName(u"chb_exportSettings")
+
+        self.lo_exportSettingsBox.addWidget(self.chb_exportSettings)
+
+
+        self.lo_export.addLayout(self.lo_exportSettingsBox)
+
+        self.w_exportSettings = QWidget(self.gb_export)
+        self.w_exportSettings.setObjectName(u"w_exportSettings")
+        self.lo_exportSettings = QVBoxLayout(self.w_exportSettings)
+        self.lo_exportSettings.setObjectName(u"lo_exportSettings")
+
+        self.lo_export.addWidget(self.w_exportSettings)
+
+        self.lo_sceneHierarchyBox = QHBoxLayout()
+        self.lo_sceneHierarchyBox.setObjectName(u"lo_sceneHierarchyBox")
+        self.lo_sceneHierarchyBox.setContentsMargins(9, -1, 9, -1)
+        self.chb_sceneHierarchy = QCheckBox(self.gb_export)
+        self.chb_sceneHierarchy.setObjectName(u"chb_sceneHierarchy")
+
+        self.lo_sceneHierarchyBox.addWidget(self.chb_sceneHierarchy)
+
+
+        self.lo_export.addLayout(self.lo_sceneHierarchyBox)
+
+        self.w_sceneHierarchy = QWidget(self.gb_export)
+        self.w_sceneHierarchy.setObjectName(u"w_sceneHierarchy")
+        self.lo_sceneHierarchy = QVBoxLayout(self.w_sceneHierarchy)
+        self.lo_sceneHierarchy.setObjectName(u"lo_sceneHierarchy")
         self.lo_exportAll = QHBoxLayout()
         self.lo_exportAll.setObjectName(u"lo_exportAll")
         self.lo_exportAll.setContentsMargins(9, -1, 9, -1)
-        self.chb_customExport = QCheckBox(self.gb_ExportList)
+        self.chb_customExport = QCheckBox(self.w_sceneHierarchy)
         self.chb_customExport.setObjectName(u"chb_customExport")
         self.chb_customExport.setChecked(True)
 
@@ -312,7 +345,7 @@ class Ui_wg_Synth_SceneExport(object):
 
         self.lo_exportAll.addItem(self.horizontalSpacer_4)
 
-        self.b_refreshExports = QPushButton(self.gb_ExportList)
+        self.b_refreshExports = QPushButton(self.w_sceneHierarchy)
         self.b_refreshExports.setObjectName(u"b_refreshExports")
         sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         sizePolicy1.setHorizontalStretch(0)
@@ -325,9 +358,9 @@ class Ui_wg_Synth_SceneExport(object):
         self.lo_exportAll.addWidget(self.b_refreshExports)
 
 
-        self.lo_exportList.addLayout(self.lo_exportAll)
+        self.lo_sceneHierarchy.addLayout(self.lo_exportAll)
 
-        self.gb_shotList = QGroupBox(self.gb_ExportList)
+        self.gb_shotList = QGroupBox(self.w_sceneHierarchy)
         self.gb_shotList.setObjectName(u"gb_shotList")
         self.lo_shotList = QVBoxLayout(self.gb_shotList)
         self.lo_shotList.setObjectName(u"lo_shotList")
@@ -340,9 +373,9 @@ class Ui_wg_Synth_SceneExport(object):
         self.lo_shotList.addWidget(self.lw_shots)
 
 
-        self.lo_exportList.addWidget(self.gb_shotList)
+        self.lo_sceneHierarchy.addWidget(self.gb_shotList)
 
-        self.gb_meshList = QGroupBox(self.gb_ExportList)
+        self.gb_meshList = QGroupBox(self.w_sceneHierarchy)
         self.gb_meshList.setObjectName(u"gb_meshList")
         self.lo_meshList = QVBoxLayout(self.gb_meshList)
         self.lo_meshList.setObjectName(u"lo_meshList")
@@ -353,10 +386,13 @@ class Ui_wg_Synth_SceneExport(object):
         self.lo_meshList.addWidget(self.lw_meshes)
 
 
-        self.lo_exportList.addWidget(self.gb_meshList)
+        self.lo_sceneHierarchy.addWidget(self.gb_meshList)
 
 
-        self.verticalLayout.addWidget(self.gb_ExportList)
+        self.lo_export.addWidget(self.w_sceneHierarchy)
+
+
+        self.verticalLayout.addWidget(self.gb_export)
 
         self.gb_previous = QGroupBox(wg_Synth_SceneExport)
         self.gb_previous.setObjectName(u"gb_previous")
@@ -413,8 +449,8 @@ class Ui_wg_Synth_SceneExport(object):
     def retranslateUi(self, wg_Synth_SceneExport):
         wg_Synth_SceneExport.setWindowTitle(QCoreApplication.translate("wg_Synth_SceneExport", u"Export", None))
         self.l_name.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Name:", None))
-        self.l_class.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Export", None))
-        self.gb_export.setTitle(QCoreApplication.translate("wg_Synth_SceneExport", u"General", None))
+        self.l_class.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Scene Export", None))
+        self.gb_general.setTitle(QCoreApplication.translate("wg_Synth_SceneExport", u"General", None))
         self.l_comment.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Comment:", None))
         self.label_4.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Context:", None))
         self.l_context.setText("")
@@ -422,7 +458,6 @@ class Ui_wg_Synth_SceneExport(object):
         self.l_tasklabel.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Productname:", None))
         self.l_taskName.setText("")
         self.b_changeTask.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"change", None))
-        self.l_outType.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Output Type:", None))
         self.label_3.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Framerange:", None))
         self.l_rangeEnd.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"1100", None))
         self.l_rangeStart.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"1001", None))
@@ -431,7 +466,10 @@ class Ui_wg_Synth_SceneExport(object):
         self.l_master.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Update Master Version:", None))
         self.chb_master.setText("")
         self.l_outPath.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Location:", None))
-        self.gb_ExportList.setTitle(QCoreApplication.translate("wg_Synth_SceneExport", u"Scene", None))
+        self.gb_export.setTitle(QCoreApplication.translate("wg_Synth_SceneExport", u"Export", None))
+        self.l_outType.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Output Type:", None))
+        self.chb_exportSettings.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Export Settings", None))
+        self.chb_sceneHierarchy.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Scene Hierarchy", None))
         self.chb_customExport.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Customize Export", None))
         self.b_refreshExports.setText("")
         self.gb_shotList.setTitle(QCoreApplication.translate("wg_Synth_SceneExport", u"Shots", None))

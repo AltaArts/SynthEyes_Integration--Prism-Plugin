@@ -123,11 +123,8 @@ class Prism_SynthEyes_Functions(object):
         self.core.registerCallback("onStateManagerShow", self.onStateManagerShow, plugin=self.plugin, priority=20)
         self.core.registerCallback("onProjectBrowserStartup", self.onProjectBrowserStartup, plugin=self.plugin)
         self.core.registerCallback("onUserSettingsOpen", self.onUserSettingsOpen, plugin=self.plugin)
-
-        ######  DISABLED - Does Not Improve Performance  #################################
-        # self.core.registerCallback("prePublish", self.prePublish, plugin=self.plugin)
-        # self.core.registerCallback("postPublish", self.postPublish, plugin=self.plugin)
-        ##################################################################################
+        self.core.registerCallback("prePublish", self.prePublish, plugin=self.plugin)
+        self.core.registerCallback("postPublish", self.postPublish, plugin=self.plugin)
 
 
     @err_catcher(name=__name__)
@@ -634,18 +631,21 @@ class Prism_SynthEyes_Functions(object):
         origin.gb_import.setChecked(True)
 
 
+    @err_catcher(name=__name__)
+    def prePublish(self, origin):
+        #   DISABLED - DOES NOT INCREASE PERFORMANCE
+        # self.publishData = {"orig_prefetchEnabled": self.getPrefetch()}
+        # self.setPrefetch(False)
 
-    ########################################################################
-    ##               DISABLED - DOES NOT INCREASE PERFORMANCE             ##
-    # @err_catcher(name=__name__)
-    # def prePublish(self, origin):
-    #     self.publishData = {"orig_prefetchEnabled": self.getPrefetch()}
-    #     self.setPrefetch(False)
-    # @err_catcher(name=__name__)
-    # def postPublish(self, origin, pubType, result={}):
-    #     self.setPrefetch(self.publishData["orig_prefetchEnabled"])
-    #########################################################################
+        origin.showMinimized()
 
+
+    @err_catcher(name=__name__)
+    def postPublish(self, origin, pubType, result={}):
+        #   DISABLED - DOES NOT INCREASE PERFORMANCE
+        # self.setPrefetch(self.publishData["orig_prefetchEnabled"])
+
+        origin.showNormal()
 
 
 
@@ -1805,8 +1805,6 @@ class Prism_SynthEyes_Functions(object):
                     #    f"{boolToBit(rSettings['include_Burnin'])}"            #   TODO - Look at Burn-in
                       )
 
-        stateManager.showMinimized()
-
         try:
             shot = self.getShotFromCamName(rSettings["currentCam"])
 
@@ -1823,9 +1821,6 @@ class Prism_SynthEyes_Functions(object):
         except Exception as e:
             logger.warning(f"ERROR: Unable to Render Image Sequence: {e}")
             return False
-        
-        finally:
-            QTimer.singleShot(1000, stateManager.showNormal)
 
         #   Return Bool of SynthEyes Int Result
         return bitToBool(result)
@@ -1967,7 +1962,6 @@ class Prism_SynthEyes_Functions(object):
         progress = ProgressUI(progText, frame_start, frame_end, title="STMap Render Progress")
 
         currentPath = filePath
-        stateManager.showMinimized()
 
         try:
             #   Use Sizzle STMap Single Render in Loop of Frames
@@ -2001,9 +1995,6 @@ class Prism_SynthEyes_Functions(object):
         except Exception as e:
             logger.warning(f"Failed to render STMap sequence: {e}")
             result = "Error"
-
-        finally:
-            QTimer.singleShot(1000, stateManager.showNormal)
 
         return result
 
@@ -2129,8 +2120,6 @@ class Prism_SynthEyes_Functions(object):
             shot.Set("previewSettings", settingsStr)
             shot.Set("previewCompression", optStr)
 
-        stateManager.showMinimized()
-
         try:
             #   Get Perspective View Object
             perspVu = self.synthEyes.Main().ByClass("Perspect")
@@ -2155,9 +2144,6 @@ class Prism_SynthEyes_Functions(object):
         except Exception as e:
             logger.warning(f"ERROR: Unable to Render Playblast: {e}")
             return False
-        
-        finally:
-            QTimer.singleShot(1000, stateManager.showNormal)
 
 
     @err_catcher(name=__name__)
@@ -2342,6 +2328,19 @@ class ProgressUI:
     """Helper class to manage a QProgressDialog with cancel support."""
     def __init__(self, label, start, end, title="Progress", yOffset=200):
         self.dialog = QProgressDialog(label, "Cancel", start, end)
+
+        self.dialog.setStyleSheet("""
+            QProgressBar {
+                border: 1px solid #444;
+                border-radius: 4px;
+                text-align: center;
+            }
+
+            QProgressBar::chunk {
+                background-color: #3cb043;
+            }
+            """)
+        
         self.dialog.setWindowModality(Qt.WindowModal)
         self.dialog.setWindowFlags(self.dialog.windowFlags() | Qt.WindowStaysOnTopHint)
         self.dialog.setMinimumDuration(0)

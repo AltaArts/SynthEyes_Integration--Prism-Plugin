@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>399</width>
-    <height>810</height>
+    <height>910</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -75,7 +75,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Export</string>
+         <string>Scene Export</string>
         </property>
        </widget>
       </item>
@@ -83,11 +83,11 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="gb_export">
+    <widget class="QGroupBox" name="gb_general">
      <property name="title">
       <string>General</string>
      </property>
-     <layout class="QVBoxLayout" name="lo_export">
+     <layout class="QVBoxLayout" name="lo_general">
       <item>
        <widget class="QWidget" name="w_comment" native="true">
         <layout class="QHBoxLayout" name="horizontalLayout_16">
@@ -260,57 +260,6 @@
            </property>
            <property name="text">
             <string>change</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item>
-       <widget class="QWidget" name="w_outType" native="true">
-        <layout class="QHBoxLayout" name="horizontalLayout_9">
-         <property name="spacing">
-          <number>0</number>
-         </property>
-         <property name="leftMargin">
-          <number>9</number>
-         </property>
-         <property name="topMargin">
-          <number>5</number>
-         </property>
-         <property name="rightMargin">
-          <number>9</number>
-         </property>
-         <property name="bottomMargin">
-          <number>5</number>
-         </property>
-         <item>
-          <widget class="QLabel" name="l_outType">
-           <property name="text">
-            <string>Output Type:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_3">
-           <property name="orientation">
-            <enum>Qt::Orientation::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>113</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QComboBox" name="cb_outType">
-           <property name="minimumSize">
-            <size>
-             <width>124</width>
-             <height>0</height>
-            </size>
            </property>
           </widget>
          </item>
@@ -564,14 +513,14 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="gb_ExportList">
+    <widget class="QGroupBox" name="gb_export">
      <property name="title">
-      <string>Scene</string>
+      <string>Export</string>
      </property>
      <property name="checkable">
       <bool>false</bool>
      </property>
-     <layout class="QVBoxLayout" name="lo_exportList">
+     <layout class="QVBoxLayout" name="lo_export">
       <property name="leftMargin">
        <number>9</number>
       </property>
@@ -585,93 +534,49 @@
        <number>9</number>
       </property>
       <item>
-       <layout class="QHBoxLayout" name="lo_exportAll">
-        <property name="leftMargin">
-         <number>9</number>
-        </property>
-        <property name="rightMargin">
-         <number>9</number>
-        </property>
-        <item>
-         <widget class="QCheckBox" name="chb_customExport">
-          <property name="text">
-           <string>Customize Export</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_4">
-          <property name="orientation">
-           <enum>Qt::Orientation::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QPushButton" name="b_refreshExports">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>30</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>30</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <widget class="QGroupBox" name="gb_shotList">
-        <property name="title">
-         <string>Shots</string>
-        </property>
-        <layout class="QVBoxLayout" name="lo_shotList">
+       <widget class="QWidget" name="w_outType" native="true">
+        <layout class="QHBoxLayout" name="horizontalLayout_9">
+         <property name="spacing">
+          <number>0</number>
+         </property>
          <property name="leftMargin">
-          <number>15</number>
+          <number>9</number>
          </property>
          <property name="topMargin">
-          <number>10</number>
+          <number>5</number>
          </property>
          <property name="rightMargin">
-          <number>15</number>
+          <number>9</number>
          </property>
          <property name="bottomMargin">
-          <number>10</number>
+          <number>5</number>
          </property>
          <item>
-          <widget class="QListWidget" name="lw_shots">
-           <property name="minimumSize">
+          <widget class="QLabel" name="l_outType">
+           <property name="text">
+            <string>Output Type:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
             <size>
-             <width>0</width>
-             <height>75</height>
+             <width>113</width>
+             <height>20</height>
             </size>
            </property>
-           <property name="maximumSize">
+          </spacer>
+         </item>
+         <item>
+          <widget class="QComboBox" name="cb_outType">
+           <property name="minimumSize">
             <size>
-             <width>16777215</width>
-             <height>75</height>
+             <width>124</width>
+             <height>0</height>
             </size>
            </property>
           </widget>
@@ -680,25 +585,165 @@
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="gb_meshList">
-        <property name="title">
-         <string>Meshes</string>
+       <layout class="QHBoxLayout" name="lo_exportSettingsBox">
+        <property name="leftMargin">
+         <number>9</number>
         </property>
-        <layout class="QVBoxLayout" name="lo_meshList">
-         <property name="leftMargin">
-          <number>15</number>
-         </property>
-         <property name="topMargin">
-          <number>10</number>
-         </property>
-         <property name="rightMargin">
-          <number>15</number>
-         </property>
-         <property name="bottomMargin">
-          <number>10</number>
-         </property>
+        <property name="rightMargin">
+         <number>9</number>
+        </property>
+        <item>
+         <widget class="QCheckBox" name="chb_exportSettings">
+          <property name="text">
+           <string>Export Settings</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QWidget" name="w_exportSettings" native="true">
+        <layout class="QVBoxLayout" name="lo_exportSettings"/>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="lo_sceneHierarchyBox">
+        <property name="leftMargin">
+         <number>9</number>
+        </property>
+        <property name="rightMargin">
+         <number>9</number>
+        </property>
+        <item>
+         <widget class="QCheckBox" name="chb_sceneHierarchy">
+          <property name="text">
+           <string>Scene Hierarchy</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QWidget" name="w_sceneHierarchy" native="true">
+        <layout class="QVBoxLayout" name="lo_sceneHierarchy">
          <item>
-          <widget class="QListWidget" name="lw_meshes"/>
+          <layout class="QHBoxLayout" name="lo_exportAll">
+           <property name="leftMargin">
+            <number>9</number>
+           </property>
+           <property name="rightMargin">
+            <number>9</number>
+           </property>
+           <item>
+            <widget class="QCheckBox" name="chb_customExport">
+             <property name="text">
+              <string>Customize Export</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_4">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="b_refreshExports">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>30</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>30</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="gb_shotList">
+           <property name="title">
+            <string>Shots</string>
+           </property>
+           <layout class="QVBoxLayout" name="lo_shotList">
+            <property name="leftMargin">
+             <number>15</number>
+            </property>
+            <property name="topMargin">
+             <number>10</number>
+            </property>
+            <property name="rightMargin">
+             <number>15</number>
+            </property>
+            <property name="bottomMargin">
+             <number>10</number>
+            </property>
+            <item>
+             <widget class="QListWidget" name="lw_shots">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>75</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>75</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="gb_meshList">
+           <property name="title">
+            <string>Meshes</string>
+           </property>
+           <layout class="QVBoxLayout" name="lo_meshList">
+            <property name="leftMargin">
+             <number>15</number>
+            </property>
+            <property name="topMargin">
+             <number>10</number>
+            </property>
+            <property name="rightMargin">
+             <number>15</number>
+            </property>
+            <property name="bottomMargin">
+             <number>10</number>
+            </property>
+            <item>
+             <widget class="QListWidget" name="lw_meshes"/>
+            </item>
+           </layout>
+          </widget>
          </item>
         </layout>
        </widget>

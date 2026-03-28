@@ -51,37 +51,185 @@
 
 
 
-## SynthEyes Format Naming
+## SynthEyes Format Naming and Settings Options
 SynthFormatNames: dict = {
     "USD  (.usda)": {
-            "synthName": "USD ASCII Scene",
-            "format": ".usda"
+        "synthName": "USD ASCII Scene",
+        "format": ".usda",
+        "exportSettings": {
+            "workArea": {
+                "name": "Timeline Setup",
+                "widgetType": "combo",
+                "comboItems": [("Active part", "0"), ("Entire shot", "1"), ("Match frames", "2")],
+                "factoryDefault": "2",
+                "toolTip": "Controls which portion of the shot is placed at the Starting frame#.\nMatch Frames makes the placement match the image sequence's frame numbers;\nequivalent to Entire shot for movies."
             },
+            "userStart": {
+                "name": "Starting Frame",
+                "widgetType": "spin",
+                "range": [0, 1000000],
+                "step": 1,
+                "factoryDefault": 1,
+                "toolTip": "The first frame of the selected part of the shot will be put at this frame number in the export.\nNot used when Match frames is selected unless the shot is a movie."
+            },
+            "units": {
+                "name": "Interpret SynthEyes Units as",
+                "widgetType": "combo",
+                "comboItems": [("Use scene settings", "scene"), ("None", ""), ("Millimeters", "mm"), ("Centimeters", "cm"), ("Meters", "m"), ("Kilometers", "km"), ("Inches", "in"), ("Feet", "ft"), ("Yards", "yd"), ("Miles", "mi")],
+                "factoryDefault": "ft",
+                "toolTip": "This sets metersPerUnit in the USD scene."
+            },
+            "buildRigs": {
+                "name": "Deform with Rigs",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "When set, a rig will be exported for Geometric Hierarchy Tracking rigs.\nWhen off, deformed meshes will be exported via a vertex cache."
+            },
+            "fixAD": {
+                "name": "Fix Anamorphic Distance",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "When on and an anamorphic distance is present,\neach mesh has a vertex cache, and tracker positions are compensated..."
+            },
+            "doScreen": {
+                "name": "Projection Screens",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Generate a projection screen to hold the shot imagery..."
+            },
+            "usePreprocessor": {
+                "name": "Based On",
+                "widgetType": "combo",
+                "comboItems": [("Solver distortion", "0"), ("Image Preprocessor (normal)", "1")],
+                "factoryDefault": "1",
+                "toolTip": "Where to look for lens distortion information..."
+            },
+            "uvScreenMode": {
+                "name": "UV Screen Mode",
+                "widgetType": "combo",
+                "comboItems": [("Never", "0"), ("If a UVmap is present", "1"), ("Always", "2")],
+                "factoryDefault": "1",
+                "toolTip": "Controls when UV projection mode is used."
+            },
+            "nomgrid": {
+                "name": "Horizontal Grids",
+                "widgetType": "spin",
+                "range": [12, 256],
+                "step": 1,
+                "factoryDefault": 64,
+                "toolTip": "Number of horizontal grids for a projection screen."
+            },
+            "relScreenDis": {
+                "name": "Screen Relative Distance",
+                "widgetType": "spin",
+                "range": [0, 20],
+                "step": 1,
+                "factoryDefault": 5,
+                "toolTip": "Distance from camera to projection screen..."
+            },
+            "rotOrder": {
+                "name": "Rotation Order",
+                "widgetType": "combo",
+                "comboItems": [("XYZ", "0"), ("ZXY", "1")],
+                "factoryDefault": "1",
+                "toolTip": "Use this rotation order."
+            },
+            "relTrkSize": {
+                "name": "Relative Tracker Size",
+                "widgetType": "doubleSpin",
+                "range": [0.001, 10],
+                "precision": 3,
+                "step": .001,
+                "factoryDefault": 0.001,
+                "toolTip": "Tracker marker size as fraction of world size."
+            },
+            "relLidarSize": {
+                "name": "Relative Lidar Size",
+                "widgetType": "doubleSpin",
+                "range": [0.0001, 10],
+                "precision": 4,
+                "step": .0001,
+                "factoryDefault": 0.0002,
+                "toolTip": "Lidar point size as fraction of world size."
+            },
+            "relFarClip": {
+                "name": "Far Clipping Plane Multiple",
+                "widgetType": "spin",
+                "range": [1, 50],
+                "step": 1,
+                "factoryDefault": 10,
+                "toolTip": "Far clipping plane distance."
+            },
+            "miscOpacity": {
+                "name": "Gnomon/Tracker Opacity",
+                "widgetType": "doubleSpin",
+                "range": [0, 1],
+                "precision": 2,
+                "step": .01,
+                "factoryDefault": 1,
+                "toolTip": "Opacity setting for helper visuals."
+            },
+            "doFrustrum": {
+                "name": "Camera Frustrums",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Show camera viewing frustrum."
+            },
+            "doGnomon": {
+                "name": "Object Gnomons",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Include gnomon mesh."
+            },
+            "doChisel": {
+                "name": "Tracker Chisels",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Include chisel mesh."
+            },
+            "geoPrimitives": {
+                "name": "Use USD Primitives",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "Use USD primitive types where possible."
+            },
+            "silentMovies": {
+                "name": "Silence Movie Warnings",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Silence warnings for movie imagery."
+            }
+        }
+    },
     "FBX  (.fbx)": {
-            "synthName": "Filmbox FBX",
-            "format": ".fbx"
-            },
+        "synthName": "Filmbox FBX",
+        "format": ".fbx"
+    },
     "Alembic  (.abc)": {
-            "synthName": "Alembic 1.5+",
-            "format": ".abc"
-            },
+        "synthName": "Alembic 1.5+",
+        "format": ".abc"
+    },
     "Blender  (.py)": {
-            "synthName": "Blender (Python)",
-            "format": ".py"
-            },
+        "synthName": "Blender (Python)",
+        "format": ".py"
+    },
     "Maya  (.ma)": {
-            "synthName": "Maya ASCII Updated",
-            "format": ".ma"
-            },
+        "synthName": "Maya ASCII Updated",
+        "format": ".ma"
+    },
     "BMD Fusion  (.comp)": {
-            "synthName": "Fusion Composition",
-            "format": ".comp"
-            },
+        "synthName": "Fusion Composition",
+        "format": ".comp"
+    },
     "Nuke  (.nk)": {
-            "synthName": "Nuke (Current)",
-            "format": ".nk"
-            },
-    }
+        "synthName": "Nuke (Current)",
+        "format": ".nk"
+    },
+}
+
+
+
+
 
 ## SynthEyes EXR 'Compression' Strings
 SynthExrCompress:dict = {
@@ -142,3 +290,4 @@ SynthInterp:dict = {
     "Good (Mitchell)": 3.0,
     "High (Lanczos 3)": 2.0
 }
+
