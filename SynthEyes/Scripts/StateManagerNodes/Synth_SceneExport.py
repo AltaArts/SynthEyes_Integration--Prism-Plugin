@@ -980,6 +980,38 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
+    def getExportSettings(self):                                        #   TODO - ADD UI
+        eData = {
+        "exporter_Type": "USD ASCII Scene",
+        "exporter_SettingsName": "USD ASCII Scene Settings",
+        "exporter_Settings":[
+                ["workArea", "2"],
+                ["userStart", 1],
+                ["units", "ft"],
+                ["buildRigs", 1],
+                ["fixAD", 1],
+                ["doScreen", 1],
+                ["usePreprocessor", "1"],
+                ["uvScreenMode", "1"],
+                ["nomgrid", 64],
+                ["relScreenDis", 5],
+                ["rotOrder", "1"],
+                ["relTrkSize", 0.001],
+                ["relLidarSize", 0.0002],
+                ["relFarClip", 10],
+                ["miscOpacity", 1],
+                ["doFrustrum", 1],
+                ["doGnomon", 1],
+                ["doChisel", 1],
+                ["geoPrimitives", 0],
+                ["silentMovies", 1]
+            ]
+        }
+
+        return eData
+
+
+    @err_catcher(name=__name__)
     def executeState(self, parent, useVersion="next"):
         rangeType = self.cb_rangeType.currentText()
         startFrame, endFrame = self.getFrameRange(rangeType)
@@ -1191,9 +1223,9 @@ class Synth_SceneExportClass(object):
             outputType = self.cb_outType.currentText()
 
             rSettings = details.copy()
-
             rSettings["customExport"] = self.chb_customExport.isChecked()
             rSettings["exportData"] = self.exportData
+            rSettings["exportSettings"] = self.getExportSettings()
 
             #   Capture Current and Config New Settings
             rSettings = self.synthFuncts.sm_pre_sceneExport(self, rSettings)

@@ -1606,63 +1606,67 @@ class Prism_SynthEyes_Functions(object):
 
             rSettings["orig_meshData"] = meshData
 
-
-
         #   Create Exporter Settings Data File
-        self.createExportDataFile()
+        result = self.createExportDataFile(rSettings["exportSettings"])
 
-        sPath = os.path.join(self.synthPath, "scripts", "Prism", "PrismUtils", "Prism_Exporter_Setup.szl")
-        self.synthEyes.RunScriptFile(sPath)
-
+        #   Run Export Settings Sizzle Script
+        if result:
+            sPath = os.path.join(self.synthPath, "scripts", "Prism", "PrismUtils", "Prism_Exporter_Setup.szl")
+            self.synthEyes.RunScriptFile(sPath)
 
         return rSettings
 
 
-    #   TODO
+    #   Create Export Settings Data File (psuedo Sizzle)
     @err_catcher(name=__name__)
-    def createExportDataFile(self):
-        testText ='''
-//  This file is part of the Prism Integration into SynthEyes.
+    def createExportDataFile(self, eData:dict) -> bool:
+        try:
+            #   Header Block
+            header = '''//  This file is part of the Prism Integration into SynthEyes.
 //
 //  This data file is written by the Prism Python script,
 //  and is Included in the Prism_Exporter_Setup.szl.  The Sizzle
 //  will use these values and set the Exporter settings.
 
-exporter_Settings = [
-    ["workArea", "2"],
-    ["userStart", 1],
-    ["units", "ft"],
-    ["buildRigs", 1],
-    ["fixAD", 1],
-    ["doScreen", 1],
-    ["usePreprocessor", "1"],
-    ["uvScreenMode", "1"],
-    ["nomgrid", 64],
-    ["relScreenDis", 5],
-    ["rotOrder", "1"],
-    ["relTrkSize", 0.001],
-    ["relLidarSize", 0.0002],
-    ["relFarClip", 10],
-    ["miscOpacity", 1],
-    ["doFrustrum", 1],
-    ["doGnomon", 1],
-    ["doChisel", 1],
-    ["geoPrimitives", 0],
-    ["silentMovies", 1]
-]
-
-exporter_Type = "USD ASCII Scene"
-exporter_SettingsName = "USD ASCII Scene Settings"
 '''
 
-        dataFile = os.path.join(self.synthPath, "scripts", "Prism", "PrismUtils", "PrismExportData.txt")
+            #   Build Export Settings Block
+            settings_lines = []
+            for key, value in eData["exporter_Settings"]:
+                #   Handle Str vs Ints/Floats
+                if isinstance(value, str):
+                    val_str = f'"{value}"'
+                else:
+                    val_str = str(value)
 
-        with open(dataFile, "w", encoding="utf-8") as f:
-            f.write(testText)
+                settings_lines.append(f'    ["{key}", {val_str}]')
 
+            settings_block = "exporter_Settings = [\n"
+            settings_block += ",\n".join(settings_lines)
+            settings_block += "\n]\n\n"
 
+            #   Build Type Variables Block
+            exporter_type = f'exporter_Type = "{eData["exporter_Type"]}"\n'
+            exporter_settings_name = f'exporter_SettingsName = "{eData["exporter_SettingsName"]}"\n'
 
+            #   Combine Blocks
+            final_text = (
+                header +
+                settings_block +
+                exporter_type +
+                exporter_settings_name
+            )
 
+            #   Write to Data File
+            dataFile = os.path.join(self.synthPath, "scripts", "Prism", "PrismUtils", "PrismExportData.txt")
+            with open(dataFile, "w", encoding="utf-8") as f:
+                f.write(final_text)
+
+            return True
+
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Create Settings Data File: {e}")
+            return False
 
 
     #   Called From SceneExport State Execute
