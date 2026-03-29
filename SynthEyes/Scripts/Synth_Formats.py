@@ -552,7 +552,191 @@ SynthFormatNames: dict = {
     },
     "Nuke  (.nk)": {
         "synthName": "Nuke (Current)",
-        "format": ".nk"
+        "format": ".nk",
+        "exportSettings": {
+            "workarea": {
+                "name": "Timeline Setup",
+                "widgetType": "combo",
+                "comboItems": [("Active part", "0"), ("Entire shot", "1"), ("Match frames", "2")],
+                "factoryDefault": "2",
+                "toolTip": "Controls which portion of the incoming shot is placed at the Starting frame#.\nMatch Frames makes the placement match the image sequence's frame numbers;\nequivalent to Entire shot for movies."
+            },
+            "userStart": {
+                "name": "Starting Frame",
+                "widgetType": "spin",
+                "range": [0, 1000000],
+                "step": 1,
+                "factoryDefault": 1,
+                "toolTip": "The first frame of the selected part of the shot will be put at this frame number.\nNot used when Match frames is selected."
+            },
+            "useNew": {
+                "name": "Use New USD Nodes",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "Use Nuke 14+'s 'new' USD-based 3D nodes (currently in beta)."
+            },
+            "rescale": {
+                "name": "Rescale Scene",
+                "widgetType": "spin",
+                "range": [0, 100],
+                "step": 1,
+                "factoryDefault": 1,
+                "toolTip": "An extra scaling factor applied to the 3-D coordinates just for this export,\ntypically to change meaningful units in SynthEyes to larger,\nmore compositing-friendly values in Nuke."
+            },
+            "renderTrackers": {
+                "name": "Tracker Export Type",
+                "widgetType": "combo",
+                "comboItems": [("Nothing", "-1"), ("Axis Cloud", "0"), ("Renderable", "1"), ("Both", "2")],
+                "factoryDefault": "2",
+                "toolTip": "Determines what sort of thing is created for exportable trackers."
+            },
+            "maxTrackers": {
+                "name": "Max Trackers",
+                "widgetType": "spin",
+                "range": [0, 100000],
+                "step": 1,
+                "factoryDefault": 20,
+                "toolTip": "Limit the number of exported tracker layers to this.\nRandomly-selected unconstrained trackers are turned off\nto get under this limit if possible.\nSet the value to zero to disable."
+            },
+            "trkerSize": {
+                "name": "Tracker Size",
+                "widgetType": "doubleSpin",
+                "range": [0.0001, 10],
+                "precision": 4,
+                "step": 0.0001,
+                "factoryDefault": 0.5,
+                "toolTip": "The tracker geometry is sized as this many thousandths\nof the world size (from the solver panel)."
+            },
+            "useLensDistort": {
+                "name": "Use LensDistortion Node",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Use Nuke's LensDistortion node instead of STMaps to handle lens distortion.\nSome lens types and parameters cannot be handled by LensDistortion,\nif so, an STMap will be used."
+            },
+            "allowSolverDistortion": {
+                "name": "Allow Solver Distortion",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "When checked, you can export cameras with distortion without running the Lens Distortion script.\nRequires using the LensDistortion node, taking advantage of an overscan bounding box larger than the frame."
+            },
+            "overscanride": {
+                "name": "Overscan Override (%)",
+                "widgetType": "spin",
+                "range": [0, 1000],
+                "step": 1,
+                "factoryDefault": 0,
+                "toolTip": "Used by the maya overscan processing pipe.\nIf non-zero, use this overscan percentage rather than calculating a minimal value.\nExample: 20(%) multiplies resolution by 1.2.\nMust match overscan in Maya renders!"
+            },
+            "roundingError": {
+                "name": "Rounding Error",
+                "widgetType": "doubleSpin",
+                "range": [0, 1],
+                "precision": 4,
+                "step": 0.0001,
+                "factoryDefault": 0.001,
+                "toolTip": "The maximum permitted error, in pixels, as it selects padded image sizes\nto best maintain the original image aspect ratio.\nAny rounding/aspect error reduces the match's accuracy.\nIf the padded size is much too large, slowly increase this.\nValues over 0.5 suppress aspect-maintaining padding."
+            },
+            "mapext": {
+                "name": "Map File Type",
+                "widgetType": "combo",
+                "comboItems": [("DPX", "dpx"), ("EXR", "exr"), ("PNG", "png"), ("SGI", "sgi"), ("TIFF", "tif")],
+                "factoryDefault": "exr",
+                "toolTip": "File extension used for the distortion images.\nSee the Save/Export section of the Preferences for image format controls for each type."
+            },
+            "doScreen": {
+                "name": "Projection Screen",
+                "widgetType": "combo",
+                "comboItems": [("None", "0"), ("Distorted Mesh", "1"), ("Card for Images", "2")],
+                "factoryDefault": "1",
+                "toolTip": "Generate a distorted mesh to hold the original images,\nor a flat card to hold undistorted images, or neither."
+            },
+            "uvScreenMode": {
+                "name": "UV Screen Mode",
+                "widgetType": "combo",
+                "comboItems": [("Never", "0"), ("If UV present", "1"), ("Always", "2")],
+                "factoryDefault": "1",
+                "toolTip": "With a UVmap, a projection screen using texture coordinates will work better\nthan a vertex-positioning screen, although animated distortion can't be handled.\nThis controls when the alternate version is used. (New 3-D)"
+            },
+            "nomgrid": {
+                "name": "Horizontal Grids",
+                "widgetType": "spin",
+                "range": [1, 256],
+                "step": 1,
+                "factoryDefault": 64,
+                "toolTip": "Number of horizontal grids for a projection screen.\nThe vertical count is determined from the aspect ratio. (New 3-D)"
+            },
+            "relScreenDis": {
+                "name": "Screen Distance",
+                "widgetType": "spin",
+                "range": [0, 20],
+                "step": 1,
+                "factoryDefault": 4,
+                "toolTip": "The screen object is placed this multiple of the world size\n(from the solver panel) from the camera in Nuke."
+            },
+            "writeOBJs": {
+                "name": "Write OBJ Mode",
+                "widgetType": "combo",
+                "comboItems": [("Never", "0"), ("Non-Primitives", "1"), ("All Non-Imported", "3"), ("All", "2")],
+                "factoryDefault": "3",
+                "toolTip": "Which meshes are written as OBJ files (USD in 'new' mode).\nExcept in either All mode, primitives are created via Nuke nodes.\nThe 'All' modes maintain the grid density set in SynthEyes."
+            },
+            "display_mode": {
+                "name": "Display Mode",
+                "widgetType": "combo",
+                "comboItems": [("Default", "default"), ("Off", "off"), ("Wireframe", "wireframe"), ("Solid", "solid"), ("Solid-Wireframe", "solid+wireframe"), ("Textured", "textured"), ("Textured-Wireframe", "textured+wireframe")],
+                "factoryDefault": "default",
+                "toolTip": "Set the Nuke display mode for all exported meshes\nin Nuke's Classic 3D mode."
+            },
+            "render_mode": {
+                "name": "Render Mode",
+                "widgetType": "combo",
+                "comboItems": [("Default", "default"), ("Off", "off"), ("Wireframe", "wireframe"), ("Solid", "solid"), ("Solid-Wireframe", "solid+wireframe"), ("Textured", "textured"), ("Textured-Wireframe", "textured+wireframe")],
+                "factoryDefault": "default",
+                "toolTip": "Set the Nuke render mode for all exported meshes\nin Nuke's Classic 3D mode."
+            },
+            "sclx": {
+                "name": "Bake Scaling into Mesh",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "When set and an OBJ is written, scaling in SynthEyes is folded into the mesh vertices.\nWhen off, the Nuke node has the scaling.\nScaling is always burned into USDA files written for new Nuke 3D nodes."
+            },
+            "doAmbient": {
+                "name": "Ambient Light",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "Set the ambient lighting in the Scanline renderer\nfrom the SynthEyes scene setting."
+            },
+            "from_prefix": {
+                "name": "Remove Path Prefix",
+                "widgetType": "text",
+                "factoryDefault": "",
+                "toolTip": "To help when files are moved from machine to machine,\nthe Remove path prefix is removed from file names,\nthe Add path prefix is added.\nEx: M: to /Volumes/Imagery"
+            },
+            "to_prefix": {
+                "name": "Add Path Prefix",
+                "widgetType": "text",
+                "factoryDefault": "",
+                "toolTip": "To help when files are moved from machine to machine,\nthe Remove path prefix is removed from file names,\nthe Add path prefix is added.\nEx: Remove M:, add /Volumes/Imagery"
+            },
+            "toClip": {
+                "name": "Copy to Clipboard",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "When checked, the exported nodes are put onto the clipboard,\nwhere you can paste it into Nuke, even in an existing comp,\nwhich can save time."
+            },
+            "sticky": {
+                "name": "Create Sticky Note",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Create a Nuke sticky note with some shot information."
+            },
+            "msg": {
+                "name": "Print Import Message",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "Print a message in Nuke once the import completes,\nwith some file information."
+            }
+        }
     },
 }
 
