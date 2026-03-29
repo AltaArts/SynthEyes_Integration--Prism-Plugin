@@ -33,10 +33,10 @@ end
 for (root in roots)
     // Find Exporter Type in Settings
     exporters = root.FindNamedOrCreate("Exporters", "Exporters")
-    usd = exporters.FindNamedOrCreate(exporter_Type, exporter_Type)
+    exportSettings = exporters.FindNamedOrCreate(exporter_Type, exporter_Type)
 
     // Iterate the Settings and Set Each One
-    for (settings in usd.child)
+    for (settings in exportSettings.child)
         if (settings.nm == exporter_SettingsName)
             for (pair in exporter_Settings)
                 settings.SetValue(pair[1], pair[2])
