@@ -351,7 +351,160 @@ SynthFormatNames: dict = {
     },
     "Maya  (.ma)": {
         "synthName": "Maya ASCII Updated",
-        "format": ".ma"
+        "format": ".ma",
+        "exportSettings": {
+            "workarea": {
+                "name": "Timeline Setup",
+                "widgetType": "combo",
+                "comboItems": [("Active part", "0"), ("Entire shot", "1"), ("Match frames", "2")],
+                "factoryDefault": "2",
+                "toolTip": "Controls which portion of the incoming shot is placed at the Starting frame#.\nMatch Frames makes the placement match the image sequence's frame numbers;\nequivalent to Entire shot for movies."
+            },
+            "userStart": {
+                "name": "Starting Frame",
+                "widgetType": "spin",
+                "range": [0, 1000000],
+                "step": 1,
+                "factoryDefault": 1,
+                "toolTip": "The first frame of the selected part of the shot will be put at this frame number.\nNot used when Match frames is selected."
+            },
+            "synunits": {
+                "name": "Interpret SynthEyes Units As",
+                "widgetType": "combo",
+                "comboItems": [("Use scene settings", "scene"), ("None", ""), ("Millimeters", "mm"), ("Centimeters", "cm"), ("Meters", "m"), ("Kilometers", "km"), ("Inches", "in"), ("Feet", "ft"), ("Yards", "yd"), ("Miles", "mi")],
+                "factoryDefault": "scene",
+                "toolTip": "Interpret SynthEyes units as this; combined with the Maya units we obtain a relative scaling factor.\nKeeping this at cm matches maya's default setting.\nIf None, no scaling factor is applied."
+            },
+            "mayaunits": {
+                "name": "Maya Working Units",
+                "widgetType": "combo",
+                "comboItems": [("None", ""), ("Millimeters", "mm"), ("Centimeters", "cm"), ("Meters", "m"), ("Kilometers", "km"), ("Inches", "in"), ("Feet", "ft"), ("Yards", "yd"), ("Miles", "mi")],
+                "factoryDefault": "cm",
+                "toolTip": "This will be the scene's Working Unit setting.\nMaya likes centimeters.\nBe careful, see Autodesk's 'Working in Maya in different scales.'"
+            },
+            "arnold": {
+                "name": "Use Arnold Materials",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "Use Arnold materials.\nLights are bright to avoid completely black first renders.\nManually select Arnold in Render Settings."
+            },
+            "arnoldRoll": {
+                "name": "Arnold Rolling Shutter",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "For Arnold only, only if rolling shutter is present,\nset the shutter angles (from the Perspective View's Render Settings)\nand rolling shutter value."
+            },
+            "rotOrder": {
+                "name": "Rotation Order",
+                "widgetType": "combo",
+                "comboItems": [("XYZ", "XYZ"), ("ZXY", "ZXY")],
+                "factoryDefault": "ZXY",
+                "toolTip": "Use this rotation order for objects created in Maya."
+            },
+            "doScreen": {
+                "name": "Projection Screen",
+                "widgetType": "combo",
+                "comboItems": [("Never", "0"), ("When Distorted", "1"), ("Always", "2")],
+                "factoryDefault": "1",
+                "toolTip": "When to generate a projection screen to hold the shot imagery,\ndistorted as necessary to match the scene.\nIf a projection screen isn't generated, then an image plane is generated\nto hold the (undistorted!) shot imagery."
+            },
+            "usePreprocessor": {
+                "name": "Based On",
+                "widgetType": "combo",
+                "comboItems": [("Solver distortion", "0"), ("Image Preprocessor (normal)", "1")],
+                "factoryDefault": "1",
+                "toolTip": "Where to look for lens distortion information.\nNormally, this should be the Image preprocessor,\nafter running the Lens Workflow script.\nThe solver's distortion can also be selected,\nthough this is not recommended."
+            },
+            "uvScreenMode": {
+                "name": "UV Screen Mode",
+                "widgetType": "combo",
+                "comboItems": [("Never", "0"), ("If UV present", "1"), ("Always", "2")],
+                "factoryDefault": "1",
+                "toolTip": "With a UVmap, a projection screen using texture coordinates will work better\nthan a vertex-positioning screen, although animated distortion can't be handled.\nThis controls when the alternate version is used."
+            },
+            "nomgrid": {
+                "name": "Horizontal Grids",
+                "widgetType": "spin",
+                "range": [1, 256],
+                "step": 1,
+                "factoryDefault": 64,
+                "toolTip": "Number of horizontal grids for a projection screen.\nThe vertical count is determined from the aspect ratio."
+            },
+            "relScreenDis": {
+                "name": "Screen Relative Distance",
+                "widgetType": "spin",
+                "range": [0, 20],
+                "step": 1,
+                "factoryDefault": 3,
+                "toolTip": "Distance from camera to projection screen for shot,\nas a multiple of the solver panel's world size."
+            },
+            "overscanride": {
+                "name": "Overscan Override (%)",
+                "widgetType": "spin",
+                "range": [0, 1000],
+                "step": 1,
+                "factoryDefault": 0,
+                "toolTip": "If non-zero and overscan rendering is needed for zero-pass workflow,\nalways use this overscan percentage rather than calculating a minimal value.\nExample: 20(%) multiplies resolution by 1.2.\nBe sure that multiplying that factor times horizontal and vertical resolution\nis an exact integer in both cases."
+            },
+            "roundingError": {
+                "name": "Max Rounding Error",
+                "widgetType": "doubleSpin",
+                "range": [0, 1],
+                "precision": 4,
+                "step": 0.0001,
+                "factoryDefault": 0.001,
+                "toolTip": "The maximum permitted error, in pixels, as it selects padded image sizes\nto best maintain the original image aspect ratio.\nAny rounding/aspect error reduces the match's accuracy.\nIf the padded size is much too large, slowly increase this.\nValues over 0.5 suppress aspect-maintaining padding."
+            },
+            "renderTrackers": {
+                "name": "Output Trackers as",
+                "widgetType": "combo",
+                "comboItems": [("Nothing", "0"), ("Locators", "1"), ("Chisel Geo", "2"), ("Both", "3")],
+                "factoryDefault": "2",
+                "toolTip": "Determines what sort of thing is created for exportable trackers."
+            },
+            "trackerSize": {
+                "name": "Relative Tracker Size",
+                "widgetType": "doubleSpin",
+                "range": [0.0001, 10],
+                "precision": 4,
+                "step": 0.0001,
+                "factoryDefault": 0.001,
+                "toolTip": "Size of the tracker null, as a multiple of the world size."
+            },
+            "embedMeshes": {
+                "name": "Embed Meshes",
+                "widgetType": "combo",
+                "comboItems": [("Never", "0"), ("Non-Primitives", "1"), ("Always", "2")],
+                "factoryDefault": "1",
+                "toolTip": "Which meshes are embedded in the .ma file,\nvs a maya primitive being used.\nIf no suitable primitive is available for a non-embedded mesh,\na box will be output."
+            },
+            "from_prefix": {
+                "name": "Remove Path Prefix",
+                "widgetType": "text",
+                "factoryDefault": "",
+                "toolTip": "To help when files are moved from machine to machine,\nthe Remove path prefix is removed from file names,\nthe Add path prefix is added.\nEx: M: to /Volumes/Imagery"
+            },
+            "to_prefix": {
+                "name": "Add Path Prefix",
+                "widgetType": "text",
+                "factoryDefault": "",
+                "toolTip": "To help when files are moved from machine to machine,\nthe Remove path prefix is removed from file names,\nthe Add path prefix is added.\nEx: Remove M:, add /Volumes/Imagery"
+            },
+            "far_clip": {
+                "name": "Far Clipping Plane Multiplier",
+                "widgetType": "spin",
+                "range": [1, 100],
+                "step": 1,
+                "factoryDefault": 10,
+                "toolTip": "Far clipping plane distance,\nas a multiple of the world size."
+            },
+            "enhance": {
+                "name": "Enhanced Precision (bigger/more precise)",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "When checked, more digits of precision are included\nfor the numbers being exported.\nThe file will be more accurate, but larger."
+            }
+        }
     },
     "BMD Fusion  (.comp)": {
         "synthName": "Fusion Composition",
