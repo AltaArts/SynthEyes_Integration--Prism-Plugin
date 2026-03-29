@@ -355,7 +355,200 @@ SynthFormatNames: dict = {
     },
     "BMD Fusion  (.comp)": {
         "synthName": "Fusion Composition",
-        "format": ".comp"
+        "format": ".comp",
+        "exportSettings": {
+            "workarea": {
+                "name": "Timeline Setup",
+                "widgetType": "combo",
+                "comboItems": [("Active part", "0"), ("Entire shot", "1"), ("Match frames", "2")],
+                "factoryDefault": "0",
+                "toolTip": "Controls which portion of the incoming shot is placed at the Starting frame#.\nMatch Frames makes the placement match the image sequence's frame numbers;\nequivalent to Entire shot for movies."
+            },
+            "userStart": {
+                "name": "Starting Frame",
+                "widgetType": "spin",
+                "range": [0, 1000000],
+                "step": 1,
+                "factoryDefault": 1,
+                "toolTip": "The first frame of the selected part of the shot will be put at this frame number.\nNot used when Match frames is selected."
+            },
+            "bitdepth": {
+                "name": "Project Bit Depth",
+                "widgetType": "combo",
+                "comboItems": [("8 bit int per Channel (32bit)", "0"), ("16 bit int per Channel (64bit)", "1"), ("16 bit float per Channel (64bit)", "2"), ("32 bit float per Channel (128bit)", "3")],
+                "factoryDefault": "2",
+                "toolTip": "Sets the Color Depth for the project, as seen in the Frame Format section\nof Fusion's preferences after opening this comp."
+            },
+            "inter8": {
+                "name": "8-bit Interactive",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "When set, interactive color depth is set to eight bits per channel (32 bit).\nWhen off, the main Project Color Depth is used."
+            },
+            "HiQ": {
+                "name": "HiQ",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "When checked, the HiQ button will be on by default,\nfor better-looking interactive previews."
+            },
+            "renderTk": {
+                "name": "Renderable Trackers",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Make tracker point clouds or locators renderable."
+            },
+            "useCloud": {
+                "name": "Use Point Cloud",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "When set, a PointCloud3D is generated for all trackers.\nWhen off, Locator3D's are generated for each tracker."
+            },
+            "maxTrackers": {
+                "name": "Max Trackers",
+                "widgetType": "spin",
+                "range": [0, 100000],
+                "step": 1,
+                "factoryDefault": 20,
+                "toolTip": "Limit the number of exported tracker layers to this.\nRandomly-selected unconstrained trackers are turned off\nto get under this limit if possible.\nSet the value to zero to disable."
+            },
+            "relTkSize": {
+                "name": "Relative Tracker Size",
+                "widgetType": "doubleSpin",
+                "range": [0.0001, 10],
+                "precision": 4,
+                "step": 0.0001,
+                "factoryDefault": 0.005,
+                "toolTip": "Point Cloud point size as a fraction of the SynthEyes world size (Solver Panel)."
+            },
+            "wantPlanar": {
+                "name": "Planar Trackers as Planes",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "When on, planar trackers produce a 3D plane in Fusion,\ninstead of a regular tracker."
+            },
+            "useLensDistort": {
+                "name": "Use LensDistort Node",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "Use Fusion's LensDistort node instead of STMaps to handle lens distortion.\nSome lens types and parameters cannot be handled by LensDistort."
+            },
+            "allowSolverDistortion": {
+                "name": "Allow Solver Distortion",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "When checked, you can export cameras with distortion without running the Lens Distortion script.\nRequires using the LensDistort node, taking advantage of a domain area larger than the frame."
+            },
+            "overscanride": {
+                "name": "Overscan Override (%)",
+                "widgetType": "spin",
+                "range": [0, 1000],
+                "step": 1,
+                "factoryDefault": 0,
+                "toolTip": "Used by the maya overscan processing pipe.\nIf non-zero, use this overscan percentage rather than calculating a minimal value.\nExample: 20(%) multiplies resolution by 1.2.\nMust match overscan in Maya renders!"
+            },
+            "roundingError": {
+                "name": "Rounding Error",
+                "widgetType": "doubleSpin",
+                "range": [0, 1],
+                "precision": 4,
+                "step": 0.0001,
+                "factoryDefault": 0.001,
+                "toolTip": "The maximum permitted error, in pixels, as it selects padded image sizes\nto best maintain the original image aspect ratio.\nAny rounding/aspect error reduces the match's accuracy.\nIf the padded size is much too large, slowly increase this.\nValues over 0.5 suppress aspect-maintaining padding."
+            },
+            "useTex": {
+                "name": "Use Texture Node",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Use a texture node for faster distortion removal;\nturn OFF if you need an alpha channel—it will use a Custom Tool."
+            },
+            "mapext": {
+                "name": "Map File Type",
+                "widgetType": "combo",
+                "comboItems": [("DPX Files", "dpx"), ("OpenEXR Files", "exr"), ("PNG Files", "png"), ("SGI Files", "sgi"), ("TIFF Files", "tif")],
+                "factoryDefault": "exr",
+                "toolTip": "Select the desired file type for image maps.\nSee Writing Image Distortion Maps in the manual."
+            },
+            "relScnDist": {
+                "name": "Screen Distance",
+                "widgetType": "spin",
+                "range": [0, 20],
+                "step": 1,
+                "factoryDefault": 3,
+                "toolTip": "Distance to the geometry holding the shot imagery,\nas a multiple of the scene's world size (Solver Panel)."
+            },
+            "useFuse": {
+                "name": "Use Fusion Primitives",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "When set, the builtin Fusion mesh generator will be used for simple cubes, spheres, etc.\nThat's quick but UV texture values are wrong.\nWhen off, and for all other meshes, an OBJ export and FBXNode is generated."
+            },
+            "useWireframe": {
+                "name": "Wireframe Meshes",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Configure meshes to wireframe by default when on."
+            },
+            "fullFBX": {
+                "name": "Full FBX Paths",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "When set, a full absolute pathname will be used for any generated OBJ/FBX files,\nwhich is good for Deadline but not for portability.\nWhen off, a comp-relative filename is output."
+            },
+            "allSpot": {
+                "name": "All Lights as Spotlights",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "When set, all lights are forced to be spotlights,\nwhich are the only lights that can cast shadows in Fusion.\nIf needed, reposition lights that were originally directional,\nrather than reaiming them."
+            },
+            "doAmbient": {
+                "name": "Ambient Light",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Set up an ambient light in fusion from the SynthEyes scene setting."
+            },
+            "use_flen": {
+                "name": "Animate Focal Length",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "When set, the focal length will be animated,\ninstead of the normal field of view.\nAs usual, it is rare to have exact plate information needed for the correct focal length."
+            },
+            "glRender": {
+                "name": "Use OpenGL Renderer",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "When on, the OpenGL renderer will be used.\nWhen off, the software renderer will be used.\nSee the Fusion manual for the differences."
+            },
+            "doViewer": {
+                "name": "Include Viewer (360VR)",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "Include 'viewer' for 360VR shots."
+            },
+            "from_prefix": {
+                "name": "Remove Path Prefix",
+                "widgetType": "text",
+                "factoryDefault": "",
+                "toolTip": "If a filename starts with this prefix, then it is replaced with the Add Path prefix,\nto make it easier to export from one system for another."
+            },
+            "to_prefix": {
+                "name": "Add Path Prefix",
+                "widgetType": "text",
+                "factoryDefault": "",
+                "toolTip": "If a filename starts with the Remove prefix, then it is replaced with this prefix,\nto make it easier to export from one system for another."
+            },
+            "clip": {
+                "name": "Copy to Clipboard",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "When checked, the exported nodes are put onto the clipboard,\nwhere you can paste it into Fusion, even in an existing comp,\nwhich can save time."
+            },
+            "incl_prefs": {
+                "name": "Include Preferences",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "When set, includes some simple preferences information\nand a comment with the scene name and export timestamp."
+            }
+        }
     },
     "Nuke  (.nk)": {
         "synthName": "Nuke (Current)",
