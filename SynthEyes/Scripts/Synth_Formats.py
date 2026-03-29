@@ -89,27 +89,27 @@ SynthFormatNames: dict = {
                 "name": "Fix Anamorphic Distance",
                 "widgetType": "checkbox",
                 "factoryDefault": 1,
-                "toolTip": "When on and an anamorphic distance is present,\neach mesh has a vertex cache, and tracker positions are compensated..."
+                "toolTip": "When on and an anamorphic distance is present, each mesh is exported with a vertex cache,\nand tracker positions are compensated, so that the shot lines up\n(as seen only from *this* current active camera) in non-savvy downstream applications.\nWon't fix meshes with rigs or pre-existing vertex caches."
             },
             "doScreen": {
                 "name": "Projection Screens",
                 "widgetType": "checkbox",
                 "factoryDefault": 1,
-                "toolTip": "Generate a projection screen to hold the shot imagery..."
+                "toolTip": "Generate a projection screen to hold the shot imagery, and possibly distort it to mimic the image preprocessor."
             },
             "usePreprocessor": {
                 "name": "Based On",
                 "widgetType": "combo",
                 "comboItems": [("Solver distortion", "0"), ("Image Preprocessor (normal)", "1")],
                 "factoryDefault": "1",
-                "toolTip": "Where to look for lens distortion information..."
+                "toolTip": "Where to look for lens distortion information. Normally, this should be the Image preprocessor,\nafter running the Lens Workflow script.\nThe solver's distortion can also be selected, though this is not recommended."
             },
             "uvScreenMode": {
                 "name": "UV Screen Mode",
                 "widgetType": "combo",
                 "comboItems": [("Never", "0"), ("If a UVmap is present", "1"), ("Always", "2")],
                 "factoryDefault": "1",
-                "toolTip": "Controls when UV projection mode is used."
+                "toolTip": "With a UVmap, a projection screen using texture coordinates will work better than a vertex-positioning screen,\nalthough animated distortion can't be handled. This controls when the alternate version is used."
             },
             "nomgrid": {
                 "name": "Horizontal Grids",
@@ -117,7 +117,7 @@ SynthFormatNames: dict = {
                 "range": [12, 256],
                 "step": 1,
                 "factoryDefault": 64,
-                "toolTip": "Number of horizontal grids for a projection screen."
+                "toolTip": "Number of horizontal grids for a projection screen. The vertical count is determined from the aspect ratio."
             },
             "relScreenDis": {
                 "name": "Screen Relative Distance",
@@ -125,7 +125,7 @@ SynthFormatNames: dict = {
                 "range": [0, 20],
                 "step": 1,
                 "factoryDefault": 5,
-                "toolTip": "Distance from camera to projection screen..."
+                "toolTip": "Distance from camera to projection screen for shot, as a multiple of the solver panel's world size"
             },
             "rotOrder": {
                 "name": "Rotation Order",
@@ -141,7 +141,7 @@ SynthFormatNames: dict = {
                 "precision": 3,
                 "step": .001,
                 "factoryDefault": 0.001,
-                "toolTip": "Tracker marker size as fraction of world size."
+                "toolTip": "The tracker marker size will be this fraction of the camera's world size.\nA good world size minimizes the need to adjust this."
             },
             "relLidarSize": {
                 "name": "Relative Lidar Size",
@@ -150,7 +150,7 @@ SynthFormatNames: dict = {
                 "precision": 4,
                 "step": .0001,
                 "factoryDefault": 0.0002,
-                "toolTip": "Lidar point size as fraction of world size."
+                "toolTip": "The lidar point size will be this fraction of the camera's world size.\nA good world size minimizes the need to adjust this."
             },
             "relFarClip": {
                 "name": "Far Clipping Plane Multiple",
@@ -158,7 +158,7 @@ SynthFormatNames: dict = {
                 "range": [1, 50],
                 "step": 1,
                 "factoryDefault": 10,
-                "toolTip": "Far clipping plane distance."
+                "toolTip": "Far clipping plane distance, as a multiple of the world size."
             },
             "miscOpacity": {
                 "name": "Gnomon/Tracker Opacity",
@@ -167,37 +167,37 @@ SynthFormatNames: dict = {
                 "precision": 2,
                 "step": .01,
                 "factoryDefault": 1,
-                "toolTip": "Opacity setting for helper visuals."
+                "toolTip": "Opacity setting for object gnomons and tracker chisels.\nA reduced opacity may help you better assess placement against the background image."
             },
             "doFrustrum": {
                 "name": "Camera Frustrums",
                 "widgetType": "checkbox",
                 "factoryDefault": 1,
-                "toolTip": "Show camera viewing frustrum."
+                "toolTip": "Show each camera's viewing frustrum as lines."
             },
             "doGnomon": {
                 "name": "Object Gnomons",
                 "widgetType": "checkbox",
                 "factoryDefault": 1,
-                "toolTip": "Include gnomon mesh."
+                "toolTip": "Include a visible 'gnomon' mesh for each moving object, in addition to the transform."
             },
             "doChisel": {
                 "name": "Tracker Chisels",
                 "widgetType": "checkbox",
                 "factoryDefault": 1,
-                "toolTip": "Include chisel mesh."
+                "toolTip": "Include a visible 'chisel' mesh for each tracker, in addition to the transform."
             },
             "geoPrimitives": {
                 "name": "Use USD Primitives",
                 "widgetType": "checkbox",
                 "factoryDefault": 0,
-                "toolTip": "Use USD primitive types where possible."
+                "toolTip": "If set, use USD primitive types for sphere, cylinder, cone, and box representations.\nOnly for simple cases, don't use if primitives have textures or advanced SynthEyes settings."
             },
             "silentMovies": {
                 "name": "Silence Movie Warnings",
                 "widgetType": "checkbox",
                 "factoryDefault": 1,
-                "toolTip": "Silence warnings for movie imagery."
+                "toolTip": "USDA can only output image sequences for shots, and warns if movie imagery is present. This checkbox silences that warning."
             }
         }
     },
@@ -218,7 +218,7 @@ SynthFormatNames: dict = {
                 "widgetType": "combo",
                 "comboItems": [("Active part", "0"), ("Entire shot", "1"), ("Match frames", "2")],
                 "factoryDefault": "2",
-                "toolTip": "Controls which portion of the shot is placed at the Starting frame#."
+                "toolTip": "Controls which portion of the shot is placed at the Starting frame#.\nMatch Frames makes the placement match the image sequence's frame numbers;\nequivalent to Entire shot for movies."
             },
             "userStart": {
                 "name": "Starting Frame",
@@ -226,56 +226,54 @@ SynthFormatNames: dict = {
                 "range": [0, 1000000],
                 "step": 1,
                 "factoryDefault": 1,
-                "toolTip": "The first frame of the selected part of the shot will be put at this frame number."
+                "toolTip": "The first frame of the selected part of the shot will\nbe put at this frame number in the export.\nNot used when Match frames is selected unless\nthe shot is a movie."
             },
             "version": {
                 "name": "Blender Version",
                 "widgetType": "combo",
-                "comboItems": [("4.0+", "3.0"), ("3.2+", "4.0"), ("2.80+", "5.0")],
-                "factoryDefault": "4.0+",
-                "toolTip": "Select your Blender version."
+                "comboItems": [("4.0+", "4.0"), ("3.2+", "3.02"), ("2.80+", "2.80")],
+                "factoryDefault": "4.0",
+                "toolTip": "Select your Blender version, or the most-recent version earlier than yours."
             },
             "hexData": {
                 "name": "Hex Mesh Workaround",
                 "widgetType": "checkbox",
                 "factoryDefault": 1,
-                "toolTip": "Use hexadecimal binary data workaround."
+                "toolTip": "Use hexadecimal binary data as a workaround for broken python in blender 3.2x.\nFiles are 2x larger and somewhat slower to write,\nbut blender can execute them substantially faster."
             },
-            "create": {
-                "name": "Script Type",
-                "widgetType": "checkbox",
-                "factoryDefault": 1,
-                "toolTip": "Assumes default Blender scene."
-            },
-            "update": {
-                "name": "Update Existing Scene",
-                "widgetType": "checkbox",
-                "factoryDefault": 0,
-                "toolTip": "Update an existing .blend file."
+            "mode": {
+                "name": "Scene Mode",
+                "widgetType": "radioGroup",
+                "options": [
+                    ("Create New Scene", "create"),
+                    ("Update Existing Scene", "update"),
+                ],
+                "factoryDefault": "create",
+                "toolTip": "Either Create New Empty Blender Scene, or Minimally update a .blend file\nfrom an earlier export of this scene: only camera and object path data and tracker positions."
             },
             "buildRigs": {
                 "name": "Create Armatures",
                 "widgetType": "checkbox",
                 "factoryDefault": 1,
-                "toolTip": "Build rigs for tracking hierarchies."
+                "toolTip": "2.80+! When set, an armature will be built for Geometric Hierarchy Tracking rigs.\nOtherwise, deformed meshes will be exported by a vertex cache."
             },
             "updateMeshCaches": {
                 "name": "Update Mesh Caches",
                 "widgetType": "checkbox",
                 "factoryDefault": 1,
-                "toolTip": "Write new vertex caches when updating."
+                "toolTip": "Relevant when updating scenes with 'Update existing scene' exports,\nexporting rigs as vertex caches,\nie Create armatures is OFF. When this checkbox is ON,\ndeformed caches will have a new vertex cache written for each update.\nWhen it is OFF, no updated cache is written (to save time), and the old animation will persist.\nThe mesh must not have been edited, and any anamorphic distance must not have changed!"
             },
             "doQuads": {
                 "name": "Use Quads",
                 "widgetType": "checkbox",
                 "factoryDefault": 1,
-                "toolTip": "Export meshes using quads when possible."
+                "toolTip": "When set, meshes will be output using quads, if possible.\nOtherwise, meshes will be output using only triangles."
             },
             "fixAD": {
                 "name": "Fix Anamorphic Distance",
                 "widgetType": "checkbox",
                 "factoryDefault": 1,
-                "toolTip": "Compensate for anamorphic distortion."
+                "toolTip": "When on and an anamorphic distance is present, each mesh is exported with a vertex cache,\nand tracker positions are compensated, so that the shot lines up\n(as seen only from *this* current active camera) in non-savvy downstream applications.\nWon't fix meshes with rigs or pre-existing vertex caches."
             },
             "uscl": {
                 "name": "Rescale Scene",
@@ -292,20 +290,20 @@ SynthFormatNames: dict = {
                 "range": [1, 10],
                 "step": 1,
                 "factoryDefault": 1,
-                "toolTip": "Tracker empty object size."
+                "toolTip": "Size of the tracker empty object, before the scaling factor"
             },
             "useBackground": {
                 "name": "Use Camera Background",
                 "widgetType": "checkbox",
                 "factoryDefault": 1,
-                "toolTip": "Use Blender camera background if available."
+                "toolTip": "The camera background is available only in Blender 2.80 or later.\nIf unchecked, or distortion is present, a projection screen is generated."
             },
             "uvScreenMode": {
                 "name": "UV Screen Mode",
                 "widgetType": "combo",
                 "comboItems": [("Never", "0"), ("If UV present", "1"), ("Always", "2")],
                 "factoryDefault": "1",
-                "toolTip": "Controls UV projection usage."
+                "toolTip": "With a UVmap, a projection screen using texture coordinates will work better than a vertex-positioning screen, \nAlthough animated distortion can't be handled. This controls when the alternate version is used."
             },
             "hgrid": {
                 "name": "Horizontal Grids",
@@ -313,7 +311,7 @@ SynthFormatNames: dict = {
                 "range": [1, 256],
                 "step": 1,
                 "factoryDefault": 64,
-                "toolTip": "Grid resolution for projection screen."
+                "toolTip": "Number of horizontal grids for a projection screen. The vertical count is determined from the aspect ratio."
             },
             "scnDis": {
                 "name": "Screen Relative Distance",
@@ -321,7 +319,7 @@ SynthFormatNames: dict = {
                 "range": [0, 20],
                 "step": 1,
                 "factoryDefault": 3,
-                "toolTip": "Distance from camera to projection screen."
+                "toolTip": "Distance from camera to projection screen for shot, as a multiple of the solver panel's world size."
             },
             "clip": {
                 "name": "Clipping Relative Distance",
@@ -329,25 +327,25 @@ SynthFormatNames: dict = {
                 "range": [1, 50],
                 "step": 1,
                 "factoryDefault": 4,
-                "toolTip": "Blender clipping distance."
+                "toolTip": "Clipping distance in blender, as a multiple of the solver panel's world size."
             },
             "cube": {
                 "name": "Delete Pre-Existing Meshes",
                 "widgetType": "checkbox",
                 "factoryDefault": 1,
-                "toolTip": "Delete default Blender meshes."
+                "toolTip": "If set, the blender scene's default cube will be deleted."
             },
             "from_prefix": {
                 "name": "Remove Path Prefix",
                 "widgetType": "text",
                 "factoryDefault": "",
-                "toolTip": "Prefix to remove from file paths."
+                "toolTip": "The remove-prefix is removed from file names in the exported file,\nand replaced with the add-prefix, to make it easier to output files for a different machine."
             },
             "to_prefix": {
                 "name": "Add Path Prefix",
                 "widgetType": "text",
                 "factoryDefault": "",
-                "toolTip": "Prefix to add to file paths."
+                "toolTip": "The remove-prefix is removed from file names in the exported file,\nand replaced with the add-prefix, to make it easier to output files for a different machine."
             },
         }
     },

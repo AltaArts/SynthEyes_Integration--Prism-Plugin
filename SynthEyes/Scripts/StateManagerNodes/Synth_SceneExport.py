@@ -859,76 +859,88 @@ class Synth_SceneExportClass(object):
         #   Add Spacing
         rowLayout.addStretch()
 
-        ##  Create Widget by Type
+        #   Create Widget by Type
+        widget = None
 
-        #   Checkbox
-        if widgetType == "checkbox":
-            cb = QCheckBox("", row)
-            cb.setToolTip(tooltip)
+        match widgetType:
 
-            default = setting.get("factoryDefault", 0)
-            cb.setChecked(str(default) in ("1", "True", True, 1))
+            case "checkbox":
+                widget = QCheckBox("", row)
+                widget.setToolTip(tooltip)
 
-            self.exportWidgets[key] = cb
-            rowLayout.addWidget(cb)
+                default = setting.get("factoryDefault", 0)
+                widget.setChecked(str(default) in ("1", "True", True, 1))
 
+            case "combo":
+                widget = QComboBox(row)
+                widget.setToolTip(tooltip)
+
+                for label_text, value in setting.get("comboItems", []):
+                    widget.addItem(label_text, value)
+
+                default = setting.get("factoryDefault")
+                for i in range(widget.count()):
+                    if widget.itemData(i) == default:
+                        widget.setCurrentIndex(i)
+                        break
+
+            case "spin":
+                widget = QSpinBox(row)
+                widget.setToolTip(tooltip)
+
+                r = setting.get("range", [0, 100])
+                widget.setRange(r[0], r[1])
+                widget.setSingleStep(setting.get("step", 1))
+                widget.setValue(setting.get("factoryDefault", 0))
+
+            case "doubleSpin":
+                widget = QDoubleSpinBox(row)
+                widget.setToolTip(tooltip)
+
+                r = setting.get("range", [0.0, 1.0])
+                widget.setRange(r[0], r[1])
+                widget.setDecimals(setting.get("precision", 3))
+                widget.setSingleStep(setting.get("step", 0.01))
+                widget.setValue(setting.get("factoryDefault", 0.0))
+
+            case "text":
+                widget = QLineEdit(row)
+                widget.setToolTip(tooltip)
+                widget.setText(str(setting.get("factoryDefault", "")))
+
+            case "radioGroup":
+                container = QWidget(row)
+                vLayout = QVBoxLayout(container)
+                vLayout.setContentsMargins(0, 0, 0, 0)
+
+                buttonGroup = QButtonGroup(container)
+                default = setting.get("factoryDefault", "create")
+
+                for i, (label_text, value) in enumerate(setting.get("options", [])):
+                    rb = QRadioButton(label_text, container)
+                    rb.setToolTip(tooltip)
+
+                    buttonGroup.addButton(rb, i)
+                    buttonGroup.setId(rb, i)
+                    rb._value = value
+
+                    if value == default:
+                        rb.setChecked(True)
+
+                    vLayout.addWidget(rb)
+
+                widget = container
+                self.exportWidgets[key] = buttonGroup
+
+            case _:
+                return None
+
+        if widget:
+            if key not in self.exportWidgets:
+                self.exportWidgets[key] = widget
+
+            rowLayout.addWidget(widget)
             return row
-
-        #   ComboBox
-        elif widgetType == "combo":
-            combo = QComboBox(row)
-            combo.setToolTip(tooltip)
-
-            for label_text, value in setting.get("comboItems", []):
-                combo.addItem(label_text, value)
-
-            default = setting.get("factoryDefault")
-
-            index = 0
-            for i in range(combo.count()):
-                if combo.itemData(i) == default:
-                    index = i
-                    break
-            combo.setCurrentIndex(index)
-
-            self.exportWidgets[key] = combo
-            rowLayout.addWidget(combo)
-
-            return row
-
-        #   SpinBox
-        elif widgetType == "spin":
-            spin = QSpinBox(row)
-            spin.setToolTip(tooltip)
-
-            r = setting.get("range", [0, 100])
-            spin.setRange(r[0], r[1])
-            spin.setSingleStep(setting.get("step", 1))
-            spin.setValue(setting.get("factoryDefault", 0))
-
-            self.exportWidgets[key] = spin
-            rowLayout.addWidget(spin)
-
-            return row
-
-        #   Dual SpinBox
-        elif widgetType == "doubleSpin":
-            spin = QDoubleSpinBox(row)
-            spin.setToolTip(tooltip)
-
-            r = setting.get("range", [0.0, 1.0])
-            spin.setRange(r[0], r[1])
-            spin.setDecimals(setting.get("precision", 3))
-            spin.setSingleStep(setting.get("step", 0.01))
-
-            spin.setValue(setting.get("factoryDefault", 0.0))
-            self.exportWidgets[key] = spin
-            rowLayout.addWidget(spin)
-
-            return row
-        
-        else:
-            return None
     
 
     #   Gets Exporter Settings from UI
@@ -959,10 +971,27 @@ class Synth_SceneExportClass(object):
                 elif isinstance(widget, QDoubleSpinBox):
                     value = float(widget.value())
 
+                elif isinstance(widget, QLineEdit):
+                    value = widget.text()
+
+                elif isinstance(widget, QButtonGroup):
+                    checked_id = widget.checkedId()
+                    button = widget.button(checked_id)
+                    if not button:
+                        value = "create"
+                    else:
+                        value = getattr(button, "_value", "create")
+
+                    settingsList.append([key, value])
+                    settingsList.append(["create", 1 if value == "create" else 0])
+                    settingsList.append(["update", 1 if value == "update" else 0])
+
+                    continue
+
                 else:
                     continue
 
-                #   Make the Settins a List for Sizzle
+                #   Make the Settings a List for Sizzle
                 settingsList.append([key, value])
                 
             except Exception as e:

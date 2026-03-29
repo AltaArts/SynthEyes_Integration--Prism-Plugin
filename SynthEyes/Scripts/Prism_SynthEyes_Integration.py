@@ -46,7 +46,6 @@
 
 
 import os
-from subprocess import Popen
 import sys
 import platform
 import glob
