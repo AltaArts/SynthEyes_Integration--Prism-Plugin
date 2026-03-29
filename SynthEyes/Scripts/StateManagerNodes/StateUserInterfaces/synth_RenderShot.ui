@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>wg_Synth_ImageRender</class>
- <widget class="QWidget" name="wg_Synth_ImageRender">
+ <class>wg_synth_RenderShot</class>
+ <widget class="QWidget" name="wg_synth_RenderShot">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -59,7 +59,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Render Sequence</string>
+         <string>Render Shot</string>
         </property>
        </widget>
       </item>

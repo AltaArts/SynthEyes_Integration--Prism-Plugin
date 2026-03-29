@@ -62,8 +62,8 @@ scriptDir = os.path.dirname(os.path.dirname(__file__))
 STATE_ICON = os.path.join(scriptDir, "Icons", "Geo.png")
 
 
-class Synth_ImportMeshClass(object):
-    className = "Synth_ImportMesh"
+class synth_ImportMeshClass(object):
+    className = "ImportMesh"
     listType = "Import"
 
     @err_catcher(name=__name__)
@@ -87,7 +87,7 @@ class Synth_ImportMeshClass(object):
         self.synthEyes = self.synthFuncts.synthEyes
 
         self.state = state
-        self.stateMode = "Synth_ImportMesh"
+        self.stateMode = "ImportMesh"
 
         self.core = core
         self.stateManager = stateManager

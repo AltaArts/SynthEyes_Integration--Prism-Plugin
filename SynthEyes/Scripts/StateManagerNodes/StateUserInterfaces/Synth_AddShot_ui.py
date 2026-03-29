@@ -1,28 +1,35 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'fus_Image_Import.ui'
+## Form generated from reading UI file 'synth_AddShot.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.7.2
+## Created by: Qt User Interface Compiler version 6.10.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from qtpy.QtCore import *  # type: ignore
-from qtpy.QtGui import *  # type: ignore
-from qtpy.QtWidgets import *  # type: ignore
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QHBoxLayout,
+    QLabel, QLineEdit, QPushButton, QSizePolicy,
+    QSpacerItem, QVBoxLayout, QWidget)
 
-class Ui_wg_Synth_AddShot(object):
-    def setupUi(self, wg_Synth_AddShot):
-        if not wg_Synth_AddShot.objectName():
-            wg_Synth_AddShot.setObjectName(u"wg_Synth_AddShot")
-        wg_Synth_AddShot.resize(441, 789)
-        self.verticalLayout = QVBoxLayout(wg_Synth_AddShot)
+class Ui_wg_synth_AddShot(object):
+    def setupUi(self, wg_synth_AddShot):
+        if not wg_synth_AddShot.objectName():
+            wg_synth_AddShot.setObjectName(u"wg_synth_AddShot")
+        wg_synth_AddShot.resize(441, 789)
+        self.verticalLayout = QVBoxLayout(wg_synth_AddShot)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.l_class = QLabel(wg_Synth_AddShot)
+        self.l_class = QLabel(wg_synth_AddShot)
         self.l_class.setObjectName(u"l_class")
         font = QFont()
         font.setBold(True)
@@ -30,7 +37,7 @@ class Ui_wg_Synth_AddShot(object):
 
         self.horizontalLayout.addWidget(self.l_class)
 
-        self.e_name = QLineEdit(wg_Synth_AddShot)
+        self.e_name = QLineEdit(wg_synth_AddShot)
         self.e_name.setObjectName(u"e_name")
         self.e_name.setMinimumSize(QSize(0, 0))
         self.e_name.setMaximumSize(QSize(9999, 16777215))
@@ -38,7 +45,7 @@ class Ui_wg_Synth_AddShot(object):
 
         self.horizontalLayout.addWidget(self.e_name)
 
-        self.l_name = QLabel(wg_Synth_AddShot)
+        self.l_name = QLabel(wg_synth_AddShot)
         self.l_name.setObjectName(u"l_name")
 
         self.horizontalLayout.addWidget(self.l_name)
@@ -46,7 +53,7 @@ class Ui_wg_Synth_AddShot(object):
 
         self.verticalLayout.addLayout(self.horizontalLayout)
 
-        self.gb_import = QGroupBox(wg_Synth_AddShot)
+        self.gb_import = QGroupBox(wg_synth_AddShot)
         self.gb_import.setObjectName(u"gb_import")
         self.verticalLayout_2 = QVBoxLayout(self.gb_import)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
@@ -157,21 +164,23 @@ class Ui_wg_Synth_AddShot(object):
         self.gb_options.setObjectName(u"gb_options")
         self.verticalLayout_6 = QVBoxLayout(self.gb_options)
         self.verticalLayout_6.setObjectName(u"verticalLayout_6")
-        self.horizontalLayout_2 = QHBoxLayout()
+        self.f_cameraName = QWidget(self.gb_options)
+        self.f_cameraName.setObjectName(u"f_cameraName")
+        self.horizontalLayout_2 = QHBoxLayout(self.f_cameraName)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.horizontalLayout_2.setContentsMargins(9, -1, 9, -1)
-        self.l_camName = QLabel(self.gb_options)
+        self.l_camName = QLabel(self.f_cameraName)
         self.l_camName.setObjectName(u"l_camName")
 
         self.horizontalLayout_2.addWidget(self.l_camName)
 
-        self.e_camName = QLineEdit(self.gb_options)
+        self.e_camName = QLineEdit(self.f_cameraName)
         self.e_camName.setObjectName(u"e_camName")
 
         self.horizontalLayout_2.addWidget(self.e_camName)
 
 
-        self.verticalLayout_6.addLayout(self.horizontalLayout_2)
+        self.verticalLayout_6.addWidget(self.f_cameraName)
 
 
         self.verticalLayout_2.addWidget(self.gb_options)
@@ -184,26 +193,26 @@ class Ui_wg_Synth_AddShot(object):
         self.verticalLayout.addWidget(self.gb_import)
 
 
-        self.retranslateUi(wg_Synth_AddShot)
+        self.retranslateUi(wg_synth_AddShot)
 
-        QMetaObject.connectSlotsByName(wg_Synth_AddShot)
+        QMetaObject.connectSlotsByName(wg_synth_AddShot)
     # setupUi
 
-    def retranslateUi(self, wg_Synth_AddShot):
-        wg_Synth_AddShot.setWindowTitle(QCoreApplication.translate("wg_Synth_AddShot", u"ImportFile", None))
-        self.l_class.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Synth_AddShot", None))
-        self.l_name.setText(QCoreApplication.translate("wg_Synth_AddShot", u"State name:", None))
+    def retranslateUi(self, wg_synth_AddShot):
+        wg_synth_AddShot.setWindowTitle(QCoreApplication.translate("wg_synth_AddShot", u"ImportFile", None))
+        self.l_class.setText(QCoreApplication.translate("wg_synth_AddShot", u"AddShot", None))
+        self.l_name.setText(QCoreApplication.translate("wg_synth_AddShot", u"State name:", None))
         self.gb_import.setTitle("")
-        self.gb_version.setTitle(QCoreApplication.translate("wg_Synth_AddShot", u"Version", None))
-        self.l_text_Current.setText(QCoreApplication.translate("wg_Synth_AddShot", u"CURRENT:", None))
-        self.l_curVersion.setText(QCoreApplication.translate("wg_Synth_AddShot", u"-", None))
-        self.l_text_Latest.setText(QCoreApplication.translate("wg_Synth_AddShot", u"LATEST:", None))
-        self.l_latestVersion.setText(QCoreApplication.translate("wg_Synth_AddShot", u"-", None))
-        self.b_browse.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Select Version", None))
-        self.b_importLatest.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Import latest Version", None))
-        self.l_autoUpdate.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Auto load latest version:           ", None))
+        self.gb_version.setTitle(QCoreApplication.translate("wg_synth_AddShot", u"Version", None))
+        self.l_text_Current.setText(QCoreApplication.translate("wg_synth_AddShot", u"CURRENT:", None))
+        self.l_curVersion.setText(QCoreApplication.translate("wg_synth_AddShot", u"-", None))
+        self.l_text_Latest.setText(QCoreApplication.translate("wg_synth_AddShot", u"LATEST:", None))
+        self.l_latestVersion.setText(QCoreApplication.translate("wg_synth_AddShot", u"-", None))
+        self.b_browse.setText(QCoreApplication.translate("wg_synth_AddShot", u"Select Version", None))
+        self.b_importLatest.setText(QCoreApplication.translate("wg_synth_AddShot", u"Import latest Version", None))
+        self.l_autoUpdate.setText(QCoreApplication.translate("wg_synth_AddShot", u"Auto load latest version:           ", None))
         self.chb_autoUpdate.setText("")
-        self.gb_options.setTitle(QCoreApplication.translate("wg_Synth_AddShot", u"Import", None))
-        self.l_camName.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Camera Name:  ", None))
+        self.gb_options.setTitle(QCoreApplication.translate("wg_synth_AddShot", u"Import", None))
+        self.l_camName.setText(QCoreApplication.translate("wg_synth_AddShot", u"Camera Name:  ", None))
     # retranslateUi
 

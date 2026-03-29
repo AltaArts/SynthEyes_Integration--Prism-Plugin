@@ -68,8 +68,8 @@ from Synth_Formats import (SynthExrCompress,
 logger = logging.getLogger(__name__)
 
 
-class Synth_PlayblastClass(object):
-    className = "Synth_Playblast"
+class synth_PlayblastClass(object):
+    className = "Playblast"
     listType = "Export"
     stateCategories = {"Playblast": [{"label": className, "stateType": className}]}
 

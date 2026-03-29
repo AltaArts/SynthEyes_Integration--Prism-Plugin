@@ -66,8 +66,8 @@ from Synth_Formats import (SynthExrCompress,
 logger = logging.getLogger(__name__)
 
 
-class Synth_Render_StMapClass(object):
-    className = "Synth_Render_StMap"
+class synth_StMapClass(object):
+    className = "StMap"
     listType = "Export"
     stateCategories = {"Render": [{"label": className, "stateType": className}]}
 

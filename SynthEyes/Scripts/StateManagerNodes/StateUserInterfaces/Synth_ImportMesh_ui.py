@@ -1,26 +1,33 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'Synth_ImportMesh.ui'
+## Form generated from reading UI file 'synth_ImportMesh.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.10.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from qtpy.QtCore import *  # type: ignore
-from qtpy.QtGui import *  # type: ignore
-from qtpy.QtWidgets import *  # type: ignore
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QHBoxLayout,
+    QLabel, QLineEdit, QPushButton, QSizePolicy,
+    QSpacerItem, QVBoxLayout, QWidget)
 
-class Ui_wg_Synth_ImportMesh(object):
-    def setupUi(self, wg_Synth_ImportMesh):
-        if not wg_Synth_ImportMesh.objectName():
-            wg_Synth_ImportMesh.setObjectName(u"wg_Synth_ImportMesh")
-        wg_Synth_ImportMesh.resize(339, 600)
-        self.verticalLayout = QVBoxLayout(wg_Synth_ImportMesh)
+class Ui_wg_synth_ImportMesh(object):
+    def setupUi(self, wg_synth_ImportMesh):
+        if not wg_synth_ImportMesh.objectName():
+            wg_synth_ImportMesh.setObjectName(u"wg_synth_ImportMesh")
+        wg_synth_ImportMesh.resize(339, 600)
+        self.verticalLayout = QVBoxLayout(wg_synth_ImportMesh)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
-        self.f_name = QWidget(wg_Synth_ImportMesh)
+        self.f_name = QWidget(wg_synth_ImportMesh)
         self.f_name.setObjectName(u"f_name")
         self.horizontalLayout_2 = QHBoxLayout(self.f_name)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
@@ -48,7 +55,7 @@ class Ui_wg_Synth_ImportMesh(object):
 
         self.verticalLayout.addWidget(self.f_name)
 
-        self.gb_import = QGroupBox(wg_Synth_ImportMesh)
+        self.gb_import = QGroupBox(wg_synth_ImportMesh)
         self.gb_import.setObjectName(u"gb_import")
         self.verticalLayout_2 = QVBoxLayout(self.gb_import)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
@@ -194,27 +201,27 @@ class Ui_wg_Synth_ImportMesh(object):
 
         QWidget.setTabOrder(self.e_name, self.chb_autoUpdate)
 
-        self.retranslateUi(wg_Synth_ImportMesh)
+        self.retranslateUi(wg_synth_ImportMesh)
 
-        QMetaObject.connectSlotsByName(wg_Synth_ImportMesh)
+        QMetaObject.connectSlotsByName(wg_synth_ImportMesh)
     # setupUi
 
-    def retranslateUi(self, wg_Synth_ImportMesh):
-        wg_Synth_ImportMesh.setWindowTitle(QCoreApplication.translate("wg_Synth_ImportMesh", u"ImportFile", None))
-        self.l_name.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"State name:", None))
-        self.l_class.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"ImportFile", None))
-        self.gb_import.setTitle(QCoreApplication.translate("wg_Synth_ImportMesh", u"Import", None))
-        self.groupBox.setTitle(QCoreApplication.translate("wg_Synth_ImportMesh", u"Version", None))
-        self.label_3.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"Current Version:", None))
-        self.l_curVersion.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"-", None))
-        self.label_6.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"Latest Version:", None))
-        self.l_latestVersion.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"-", None))
-        self.l_autoUpdate.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"Auto load latest version:", None))
+    def retranslateUi(self, wg_synth_ImportMesh):
+        wg_synth_ImportMesh.setWindowTitle(QCoreApplication.translate("wg_synth_ImportMesh", u"ImportFile", None))
+        self.l_name.setText(QCoreApplication.translate("wg_synth_ImportMesh", u"State name:", None))
+        self.l_class.setText(QCoreApplication.translate("wg_synth_ImportMesh", u"ImportMesh", None))
+        self.gb_import.setTitle(QCoreApplication.translate("wg_synth_ImportMesh", u"Import", None))
+        self.groupBox.setTitle(QCoreApplication.translate("wg_synth_ImportMesh", u"Version", None))
+        self.label_3.setText(QCoreApplication.translate("wg_synth_ImportMesh", u"Current Version:", None))
+        self.l_curVersion.setText(QCoreApplication.translate("wg_synth_ImportMesh", u"-", None))
+        self.label_6.setText(QCoreApplication.translate("wg_synth_ImportMesh", u"Latest Version:", None))
+        self.l_latestVersion.setText(QCoreApplication.translate("wg_synth_ImportMesh", u"-", None))
+        self.l_autoUpdate.setText(QCoreApplication.translate("wg_synth_ImportMesh", u"Auto load latest version:", None))
         self.chb_autoUpdate.setText("")
-        self.b_browse.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"Browse", None))
-        self.b_importLatest.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"Import latest Version", None))
-        self.b_import.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"Re-Import", None))
-        self.gb_options.setTitle(QCoreApplication.translate("wg_Synth_ImportMesh", u"Import:", None))
-        self.l_meshName.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"Mesh Name:  ", None))
+        self.b_browse.setText(QCoreApplication.translate("wg_synth_ImportMesh", u"Browse", None))
+        self.b_importLatest.setText(QCoreApplication.translate("wg_synth_ImportMesh", u"Import latest Version", None))
+        self.b_import.setText(QCoreApplication.translate("wg_synth_ImportMesh", u"Re-Import", None))
+        self.gb_options.setTitle(QCoreApplication.translate("wg_synth_ImportMesh", u"Import:", None))
+        self.l_meshName.setText(QCoreApplication.translate("wg_synth_ImportMesh", u"Mesh Name:  ", None))
     # retranslateUi
 

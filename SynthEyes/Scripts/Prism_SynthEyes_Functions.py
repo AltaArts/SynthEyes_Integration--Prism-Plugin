@@ -578,7 +578,7 @@ class Prism_SynthEyes_Functions(object):
         origin.b_addMesh.setObjectName("b_addMesh")
         origin.b_addMesh.setText("Mesh")
         origin.horizontalLayout_3.insertWidget(2, origin.b_addMesh)
-        origin.b_addMesh.clicked.connect(lambda: origin.createState("Synth_ImportMesh"))
+        origin.b_addMesh.clicked.connect(lambda: origin.createState("ImportMesh"))
 
         # Export Scene Button
         origin.b_exportScene = QPushButton(origin.w_CreateExports)
@@ -588,7 +588,7 @@ class Prism_SynthEyes_Functions(object):
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         origin.b_exportScene.setSizePolicy(sizePolicy)
         origin.horizontalLayout_4.insertWidget(0, origin.b_exportScene)
-        origin.b_exportScene.clicked.connect(lambda: origin.createState("Synth_SceneExport"))
+        origin.b_exportScene.clicked.connect(lambda: origin.createState("SceneExport"))
 
         tip = ("Create New SynthEyes Scene.\n\n"
                "This will start an entirely new scene and import the images(s)\n"
@@ -1310,7 +1310,7 @@ class Prism_SynthEyes_Functions(object):
 
         #   Call to Create the State Creation with Given Mode
         self.addShot_mode = mode
-        origin.createState("Synth_AddShot")   
+        origin.createState("AddShot")   
 
 
     #   Called from AddShot State Execute

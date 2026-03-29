@@ -1,26 +1,35 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'Synth_Render_StMap.ui'
+## Form generated from reading UI file 'synth_StMap.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.10.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from qtpy.QtCore import *  # type: ignore
-from qtpy.QtGui import *  # type: ignore
-from qtpy.QtWidgets import *  # type: ignore
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QGridLayout,
+    QGroupBox, QHBoxLayout, QLabel, QLineEdit,
+    QPushButton, QRadioButton, QScrollArea, QSizePolicy,
+    QSpacerItem, QSpinBox, QToolButton, QVBoxLayout,
+    QWidget)
 
-class Ui_wg_Synth_Render_StMap(object):
-    def setupUi(self, wg_Synth_Render_StMap):
-        if not wg_Synth_Render_StMap.objectName():
-            wg_Synth_Render_StMap.setObjectName(u"wg_Synth_Render_StMap")
-        wg_Synth_Render_StMap.resize(427, 884)
-        self.verticalLayout = QVBoxLayout(wg_Synth_Render_StMap)
+class Ui_wg_synth_StMap(object):
+    def setupUi(self, wg_synth_StMap):
+        if not wg_synth_StMap.objectName():
+            wg_synth_StMap.setObjectName(u"wg_synth_StMap")
+        wg_synth_StMap.resize(427, 982)
+        self.verticalLayout = QVBoxLayout(wg_synth_StMap)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 9, 0, 9)
-        self.f_name = QWidget(wg_Synth_Render_StMap)
+        self.f_name = QWidget(wg_synth_StMap)
         self.f_name.setObjectName(u"f_name")
         self.horizontalLayout_4 = QHBoxLayout(self.f_name)
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
@@ -46,7 +55,7 @@ class Ui_wg_Synth_Render_StMap(object):
 
         self.verticalLayout.addWidget(self.f_name)
 
-        self.gb_imageRender = QGroupBox(wg_Synth_Render_StMap)
+        self.gb_imageRender = QGroupBox(wg_synth_StMap)
         self.gb_imageRender.setObjectName(u"gb_imageRender")
         self.verticalLayout_2 = QVBoxLayout(self.gb_imageRender)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
@@ -303,7 +312,7 @@ class Ui_wg_Synth_Render_StMap(object):
 
         self.verticalLayout.addWidget(self.gb_imageRender)
 
-        self.gb_options = QGroupBox(wg_Synth_Render_StMap)
+        self.gb_options = QGroupBox(wg_synth_StMap)
         self.gb_options.setObjectName(u"gb_options")
         self.verticalLayout_14 = QVBoxLayout(self.gb_options)
         self.verticalLayout_14.setObjectName(u"verticalLayout_14")
@@ -552,7 +561,7 @@ class Ui_wg_Synth_Render_StMap(object):
 
         self.verticalLayout.addWidget(self.gb_options)
 
-        self.gb_mapTypes = QGroupBox(wg_Synth_Render_StMap)
+        self.gb_mapTypes = QGroupBox(wg_synth_StMap)
         self.gb_mapTypes.setObjectName(u"gb_mapTypes")
         self.verticalLayout_5 = QVBoxLayout(self.gb_mapTypes)
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
@@ -590,7 +599,7 @@ class Ui_wg_Synth_Render_StMap(object):
 
         self.verticalLayout.addWidget(self.gb_mapTypes)
 
-        self.gb_previous = QGroupBox(wg_Synth_Render_StMap)
+        self.gb_previous = QGroupBox(wg_synth_StMap)
         self.gb_previous.setObjectName(u"gb_previous")
         self.gb_previous.setCheckable(False)
         self.gb_previous.setChecked(False)
@@ -602,7 +611,7 @@ class Ui_wg_Synth_Render_StMap(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 376, 115))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 376, 69))
         self.verticalLayout_3 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.l_pathLast = QLabel(self.scrollAreaWidgetContents)
@@ -635,50 +644,50 @@ class Ui_wg_Synth_Render_StMap(object):
         QWidget.setTabOrder(self.cb_format, self.scrollArea)
         QWidget.setTabOrder(self.scrollArea, self.b_pathLast)
 
-        self.retranslateUi(wg_Synth_Render_StMap)
+        self.retranslateUi(wg_synth_StMap)
 
-        QMetaObject.connectSlotsByName(wg_Synth_Render_StMap)
+        QMetaObject.connectSlotsByName(wg_synth_StMap)
     # setupUi
 
-    def retranslateUi(self, wg_Synth_Render_StMap):
-        wg_Synth_Render_StMap.setWindowTitle(QCoreApplication.translate("wg_Synth_Render_StMap", u"Image Render", None))
-        self.l_name.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Name:", None))
-        self.l_class.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"ImageRender", None))
-        self.gb_imageRender.setTitle(QCoreApplication.translate("wg_Synth_Render_StMap", u"General", None))
-        self.l_comment.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Comment:", None))
-        self.l_contextName.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Context:", None))
+    def retranslateUi(self, wg_synth_StMap):
+        wg_synth_StMap.setWindowTitle(QCoreApplication.translate("wg_synth_StMap", u"Image Render", None))
+        self.l_name.setText(QCoreApplication.translate("wg_synth_StMap", u"Name:", None))
+        self.l_class.setText(QCoreApplication.translate("wg_synth_StMap", u"STMap", None))
+        self.gb_imageRender.setTitle(QCoreApplication.translate("wg_synth_StMap", u"General", None))
+        self.l_comment.setText(QCoreApplication.translate("wg_synth_StMap", u"Comment:", None))
+        self.l_contextName.setText(QCoreApplication.translate("wg_synth_StMap", u"Context:", None))
         self.l_context.setText("")
-        self.b_context.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Select", None))
-        self.l_identifier.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Identifier:", None))
+        self.b_context.setText(QCoreApplication.translate("wg_synth_StMap", u"Select", None))
+        self.l_identifier.setText(QCoreApplication.translate("wg_synth_StMap", u"Identifier:", None))
         self.l_taskName.setText("")
-        self.b_changeTask.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"change", None))
-        self.l_framerange.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Framerange:", None))
-        self.l_rangeStart.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"1000", None))
-        self.l_end.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"End:", None))
-        self.l_rangeEnd.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"1001", None))
-        self.l_start.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Start:", None))
-        self.l_master.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Master Version:", None))
-        self.l_outPath.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Location:", None))
-        self.label_8.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Version override:", None))
+        self.b_changeTask.setText(QCoreApplication.translate("wg_synth_StMap", u"change", None))
+        self.l_framerange.setText(QCoreApplication.translate("wg_synth_StMap", u"Framerange:", None))
+        self.l_rangeStart.setText(QCoreApplication.translate("wg_synth_StMap", u"1000", None))
+        self.l_end.setText(QCoreApplication.translate("wg_synth_StMap", u"End:", None))
+        self.l_rangeEnd.setText(QCoreApplication.translate("wg_synth_StMap", u"1001", None))
+        self.l_start.setText(QCoreApplication.translate("wg_synth_StMap", u"Start:", None))
+        self.l_master.setText(QCoreApplication.translate("wg_synth_StMap", u"Master Version:", None))
+        self.l_outPath.setText(QCoreApplication.translate("wg_synth_StMap", u"Location:", None))
+        self.label_8.setText(QCoreApplication.translate("wg_synth_StMap", u"Version override:", None))
         self.chb_version.setText("")
-        self.b_version.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"\u25bc", None))
-        self.gb_options.setTitle(QCoreApplication.translate("wg_Synth_Render_StMap", u"Render Options", None))
-        self.l_camera.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Camera:", None))
-        self.l_renderScale.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Output Scale Overide: ", None))
+        self.b_version.setText(QCoreApplication.translate("wg_synth_StMap", u"\u25bc", None))
+        self.gb_options.setTitle(QCoreApplication.translate("wg_synth_StMap", u"Render Options", None))
+        self.l_camera.setText(QCoreApplication.translate("wg_synth_StMap", u"Camera:", None))
+        self.l_renderScale.setText(QCoreApplication.translate("wg_synth_StMap", u"Output Scale Overide: ", None))
         self.chb_scaleOverride.setText("")
-        self.l_renderFilter.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Scaling Filter: ", None))
-        self.l_format.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Format:", None))
-        self.l_exr_Compression.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"EXR Compression:", None))
-        self.l_movCodec.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Codec: ", None))
-        self.l_mp4Codec.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Codec: ", None))
-        self.l_mp4Qual.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Quality: ", None))
-        self.rb_renderType_single.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Single Image  ", None))
-        self.rb_renderType_seq.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Sequence  ", None))
-        self.gb_mapTypes.setTitle(QCoreApplication.translate("wg_Synth_Render_StMap", u"Map Types", None))
-        self.chb_undistort.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Un-Distort", None))
-        self.chb_redistort.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"Re-Distort", None))
-        self.gb_previous.setTitle(QCoreApplication.translate("wg_Synth_Render_StMap", u"Previous render", None))
-        self.l_pathLast.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"None", None))
-        self.b_pathLast.setText(QCoreApplication.translate("wg_Synth_Render_StMap", u"...", None))
+        self.l_renderFilter.setText(QCoreApplication.translate("wg_synth_StMap", u"Scaling Filter: ", None))
+        self.l_format.setText(QCoreApplication.translate("wg_synth_StMap", u"Format:", None))
+        self.l_exr_Compression.setText(QCoreApplication.translate("wg_synth_StMap", u"EXR Compression:", None))
+        self.l_movCodec.setText(QCoreApplication.translate("wg_synth_StMap", u"Codec: ", None))
+        self.l_mp4Codec.setText(QCoreApplication.translate("wg_synth_StMap", u"Codec: ", None))
+        self.l_mp4Qual.setText(QCoreApplication.translate("wg_synth_StMap", u"Quality: ", None))
+        self.rb_renderType_single.setText(QCoreApplication.translate("wg_synth_StMap", u"Single Image  ", None))
+        self.rb_renderType_seq.setText(QCoreApplication.translate("wg_synth_StMap", u"Sequence  ", None))
+        self.gb_mapTypes.setTitle(QCoreApplication.translate("wg_synth_StMap", u"Map Types", None))
+        self.chb_undistort.setText(QCoreApplication.translate("wg_synth_StMap", u"Un-Distort", None))
+        self.chb_redistort.setText(QCoreApplication.translate("wg_synth_StMap", u"Re-Distort", None))
+        self.gb_previous.setTitle(QCoreApplication.translate("wg_synth_StMap", u"Previous render", None))
+        self.l_pathLast.setText(QCoreApplication.translate("wg_synth_StMap", u"None", None))
+        self.b_pathLast.setText(QCoreApplication.translate("wg_synth_StMap", u"...", None))
     # retranslateUi
 

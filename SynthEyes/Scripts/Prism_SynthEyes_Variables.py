@@ -50,7 +50,7 @@ import os
 
 class Prism_SynthEyes_Variables(object):
     def __init__(self, core, plugin):
-        self.version = "v0.3"
+        self.version = "v0.4"
         self.pluginName = "SynthEyes"
         self.pluginType = "App"
         self.appShortName = "syntheyes"
@@ -69,12 +69,12 @@ class Prism_SynthEyes_Variables(object):
         self.prismAppIcon = os.path.join(self.pluginDirectory, "UserInterfaces", "SynthEyes.ico")
         self.synthStates = [
             "Folder",
-            "Synth_AddShot",
-            "Synth_ImportMesh",
-            "Synth_SceneExport",
-            "Synth_Render_StMap",
-            "Synth_ImageRender",
-            "Synth_Playblast"
+            "AddShot",
+            "ImportMesh",
+            "SceneExport",
+            "RenderShot",
+            "StMap",
+            "Playblast"
             ]
         
         self.synthMenuData = [

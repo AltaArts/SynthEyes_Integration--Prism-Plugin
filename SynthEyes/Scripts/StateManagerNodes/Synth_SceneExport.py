@@ -65,8 +65,8 @@ from Synth_Formats import SynthFormatNames
 logger = logging.getLogger(__name__)
 
 
-class Synth_SceneExportClass(object):
-    className = "Synth_SceneExport"
+class synth_SceneExportClass(object):
+    className = "SceneExport"
     listType = "Export"
     stateCategories = {"Export": [{"label": className, "stateType": className}]}
 

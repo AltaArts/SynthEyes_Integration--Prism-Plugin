@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>wg_Synth_ImportMesh</class>
- <widget class="QWidget" name="wg_Synth_ImportMesh">
+ <class>wg_synth_ImportMesh</class>
+ <widget class="QWidget" name="wg_synth_ImportMesh">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -72,7 +72,7 @@
          </font>
         </property>
         <property name="text">
-         <string>ImportFile</string>
+         <string>ImportMesh</string>
         </property>
        </widget>
       </item>

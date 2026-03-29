@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>wg_Synth_Render_StMap</class>
- <widget class="QWidget" name="wg_Synth_Render_StMap">
+ <class>wg_synth_StMap</class>
+ <widget class="QWidget" name="wg_synth_StMap">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>427</width>
-    <height>884</height>
+    <height>982</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -59,7 +59,7 @@
          </font>
         </property>
         <property name="text">
-         <string>ImageRender</string>
+         <string>STMap</string>
         </property>
        </widget>
       </item>
@@ -1078,7 +1078,7 @@
        <number>9</number>
       </property>
       <item>
-       <widget class="QWidget" name="" native="true">
+       <widget class="QWidget" name="widget" native="true">
         <layout class="QHBoxLayout" name="horizontalLayout">
          <property name="leftMargin">
           <number>9</number>
@@ -1180,7 +1180,7 @@
            <x>0</x>
            <y>0</y>
            <width>376</width>
-           <height>115</height>
+           <height>69</height>
           </rect>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_3">

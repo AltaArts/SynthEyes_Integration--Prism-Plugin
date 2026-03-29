@@ -71,8 +71,8 @@ STATE_ICON = os.path.join(scriptDir, "Icons", "Image.png")
 
 
 
-class Synth_AddShotClass(object):
-    className = "Synth_AddShot"
+class synth_AddShotClass(object):
+    className = "AddShot"
     listType = "Import"
     stateCategories = {"Import2d": [{"label": className, "stateType": className}]}
 
@@ -99,7 +99,7 @@ class Synth_AddShotClass(object):
         if not hasattr(self, "mediaChooser"):
             self.mediaChooser = ReadMediaDialog(self, self.core)
             
-        self.stateMode = "Synth_AddShot"
+        self.stateMode = "AddShot"
         self.taskName = ""
         self.setName = ""
         self.stateStatus = None

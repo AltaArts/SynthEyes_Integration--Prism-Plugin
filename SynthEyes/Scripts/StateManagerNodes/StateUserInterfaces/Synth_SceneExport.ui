@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>wg_Synth_SceneExport</class>
- <widget class="QWidget" name="wg_Synth_SceneExport">
+ <class>wg_synth_SceneExport</class>
+ <widget class="QWidget" name="wg_synth_SceneExport">
   <property name="enabled">
    <bool>true</bool>
   </property>

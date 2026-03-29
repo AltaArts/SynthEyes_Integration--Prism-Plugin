@@ -67,8 +67,8 @@ from Synth_Formats import (SynthExrCompress,
 logger = logging.getLogger(__name__)
 
 
-class Synth_ImageRenderClass(object):
-    className = "Synth_ImageRender"
+class synth_RenderShotClass(object):
+    className = "RenderShot"
     listType = "Export"
     stateCategories = {"Render": [{"label": className, "stateType": className}]}
 
@@ -172,7 +172,7 @@ class Synth_ImageRenderClass(object):
 
     @err_catcher(name=__name__)
     def toolTips(self):
-        tip = "SynthEyes Camera for Playblast"
+        tip = "SynthEyes Camera for Render"
         self.cb_cam.setToolTip(tip)
 
         tip = "Enable Scale Override"

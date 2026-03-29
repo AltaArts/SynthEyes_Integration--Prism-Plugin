@@ -1,27 +1,36 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'Synth_SceneExport.ui'
+## Form generated from reading UI file 'synth_SceneExport.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.10.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from qtpy.QtCore import *  # type: ignore
-from qtpy.QtGui import *  # type: ignore
-from qtpy.QtWidgets import *  # type: ignore
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QGridLayout,
+    QGroupBox, QHBoxLayout, QLabel, QLineEdit,
+    QListWidget, QListWidgetItem, QPushButton, QScrollArea,
+    QSizePolicy, QSpacerItem, QSpinBox, QToolButton,
+    QVBoxLayout, QWidget)
 
-class Ui_wg_Synth_SceneExport(object):
-    def setupUi(self, wg_Synth_SceneExport):
-        if not wg_Synth_SceneExport.objectName():
-            wg_Synth_SceneExport.setObjectName(u"wg_Synth_SceneExport")
-        wg_Synth_SceneExport.setEnabled(True)
-        wg_Synth_SceneExport.resize(399, 910)
-        self.verticalLayout = QVBoxLayout(wg_Synth_SceneExport)
+class Ui_wg_synth_SceneExport(object):
+    def setupUi(self, wg_synth_SceneExport):
+        if not wg_synth_SceneExport.objectName():
+            wg_synth_SceneExport.setObjectName(u"wg_synth_SceneExport")
+        wg_synth_SceneExport.setEnabled(True)
+        wg_synth_SceneExport.resize(399, 910)
+        self.verticalLayout = QVBoxLayout(wg_synth_SceneExport)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
-        self.w_name = QWidget(wg_Synth_SceneExport)
+        self.w_name = QWidget(wg_synth_SceneExport)
         self.w_name.setObjectName(u"w_name")
         self.horizontalLayout_5 = QHBoxLayout(self.w_name)
         self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
@@ -49,7 +58,7 @@ class Ui_wg_Synth_SceneExport(object):
 
         self.verticalLayout.addWidget(self.w_name)
 
-        self.gb_general = QGroupBox(wg_Synth_SceneExport)
+        self.gb_general = QGroupBox(wg_synth_SceneExport)
         self.gb_general.setObjectName(u"gb_general")
         self.lo_general = QVBoxLayout(self.gb_general)
         self.lo_general.setObjectName(u"lo_general")
@@ -269,7 +278,7 @@ class Ui_wg_Synth_SceneExport(object):
 
         self.verticalLayout.addWidget(self.gb_general)
 
-        self.gb_export = QGroupBox(wg_Synth_SceneExport)
+        self.gb_export = QGroupBox(wg_synth_SceneExport)
         self.gb_export.setObjectName(u"gb_export")
         self.gb_export.setCheckable(False)
         self.lo_export = QVBoxLayout(self.gb_export)
@@ -394,7 +403,7 @@ class Ui_wg_Synth_SceneExport(object):
 
         self.verticalLayout.addWidget(self.gb_export)
 
-        self.gb_previous = QGroupBox(wg_Synth_SceneExport)
+        self.gb_previous = QGroupBox(wg_synth_SceneExport)
         self.gb_previous.setObjectName(u"gb_previous")
         self.horizontalLayout_13 = QHBoxLayout(self.gb_previous)
         self.horizontalLayout_13.setObjectName(u"horizontalLayout_13")
@@ -441,41 +450,41 @@ class Ui_wg_Synth_SceneExport(object):
         QWidget.setTabOrder(self.cb_outType, self.scrollArea)
         QWidget.setTabOrder(self.scrollArea, self.b_pathLast)
 
-        self.retranslateUi(wg_Synth_SceneExport)
+        self.retranslateUi(wg_synth_SceneExport)
 
-        QMetaObject.connectSlotsByName(wg_Synth_SceneExport)
+        QMetaObject.connectSlotsByName(wg_synth_SceneExport)
     # setupUi
 
-    def retranslateUi(self, wg_Synth_SceneExport):
-        wg_Synth_SceneExport.setWindowTitle(QCoreApplication.translate("wg_Synth_SceneExport", u"Export", None))
-        self.l_name.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Name:", None))
-        self.l_class.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Scene Export", None))
-        self.gb_general.setTitle(QCoreApplication.translate("wg_Synth_SceneExport", u"General", None))
-        self.l_comment.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Comment:", None))
-        self.label_4.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Context:", None))
+    def retranslateUi(self, wg_synth_SceneExport):
+        wg_synth_SceneExport.setWindowTitle(QCoreApplication.translate("wg_synth_SceneExport", u"Export", None))
+        self.l_name.setText(QCoreApplication.translate("wg_synth_SceneExport", u"Name:", None))
+        self.l_class.setText(QCoreApplication.translate("wg_synth_SceneExport", u"Scene Export", None))
+        self.gb_general.setTitle(QCoreApplication.translate("wg_synth_SceneExport", u"General", None))
+        self.l_comment.setText(QCoreApplication.translate("wg_synth_SceneExport", u"Comment:", None))
+        self.label_4.setText(QCoreApplication.translate("wg_synth_SceneExport", u"Context:", None))
         self.l_context.setText("")
-        self.b_context.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Select", None))
-        self.l_tasklabel.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Productname:", None))
+        self.b_context.setText(QCoreApplication.translate("wg_synth_SceneExport", u"Select", None))
+        self.l_tasklabel.setText(QCoreApplication.translate("wg_synth_SceneExport", u"Productname:", None))
         self.l_taskName.setText("")
-        self.b_changeTask.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"change", None))
-        self.label_3.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Framerange:", None))
-        self.l_rangeEnd.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"1100", None))
-        self.l_rangeStart.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"1001", None))
-        self.l_rangeStartInfo.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Start:", None))
-        self.l_rangeEndInfo.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"End:", None))
-        self.l_master.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Update Master Version:", None))
+        self.b_changeTask.setText(QCoreApplication.translate("wg_synth_SceneExport", u"change", None))
+        self.label_3.setText(QCoreApplication.translate("wg_synth_SceneExport", u"Framerange:", None))
+        self.l_rangeEnd.setText(QCoreApplication.translate("wg_synth_SceneExport", u"1100", None))
+        self.l_rangeStart.setText(QCoreApplication.translate("wg_synth_SceneExport", u"1001", None))
+        self.l_rangeStartInfo.setText(QCoreApplication.translate("wg_synth_SceneExport", u"Start:", None))
+        self.l_rangeEndInfo.setText(QCoreApplication.translate("wg_synth_SceneExport", u"End:", None))
+        self.l_master.setText(QCoreApplication.translate("wg_synth_SceneExport", u"Update Master Version:", None))
         self.chb_master.setText("")
-        self.l_outPath.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Location:", None))
-        self.gb_export.setTitle(QCoreApplication.translate("wg_Synth_SceneExport", u"Export", None))
-        self.l_outType.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Output Type:", None))
-        self.chb_exportSettings.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Export Settings", None))
-        self.chb_sceneHierarchy.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Scene Hierarchy", None))
-        self.chb_customExport.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"Customize Export", None))
+        self.l_outPath.setText(QCoreApplication.translate("wg_synth_SceneExport", u"Location:", None))
+        self.gb_export.setTitle(QCoreApplication.translate("wg_synth_SceneExport", u"Export", None))
+        self.l_outType.setText(QCoreApplication.translate("wg_synth_SceneExport", u"Output Type:", None))
+        self.chb_exportSettings.setText(QCoreApplication.translate("wg_synth_SceneExport", u"Export Settings", None))
+        self.chb_sceneHierarchy.setText(QCoreApplication.translate("wg_synth_SceneExport", u"Scene Hierarchy", None))
+        self.chb_customExport.setText(QCoreApplication.translate("wg_synth_SceneExport", u"Customize Export", None))
         self.b_refreshExports.setText("")
-        self.gb_shotList.setTitle(QCoreApplication.translate("wg_Synth_SceneExport", u"Shots", None))
-        self.gb_meshList.setTitle(QCoreApplication.translate("wg_Synth_SceneExport", u"Meshes", None))
-        self.gb_previous.setTitle(QCoreApplication.translate("wg_Synth_SceneExport", u"Last export", None))
-        self.l_pathLast.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"None", None))
-        self.b_pathLast.setText(QCoreApplication.translate("wg_Synth_SceneExport", u"...", None))
+        self.gb_shotList.setTitle(QCoreApplication.translate("wg_synth_SceneExport", u"Shots", None))
+        self.gb_meshList.setTitle(QCoreApplication.translate("wg_synth_SceneExport", u"Meshes", None))
+        self.gb_previous.setTitle(QCoreApplication.translate("wg_synth_SceneExport", u"Last export", None))
+        self.l_pathLast.setText(QCoreApplication.translate("wg_synth_SceneExport", u"None", None))
+        self.b_pathLast.setText(QCoreApplication.translate("wg_synth_SceneExport", u"...", None))
     # retranslateUi
 
