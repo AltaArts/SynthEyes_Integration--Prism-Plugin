@@ -51,6 +51,72 @@
 
 
 
+## SynthEyes EXR 'Compression' Strings
+SynthExrCompress:dict = {
+    "NONE": "exr: <None>,45",
+    "ZIP":"exr: <ZIP-block>,45",
+    "ZIPS": "exr: <ZIP-scanline>,45",
+    "DWAA": "exr: <DWAA32 Lossy>,45",
+    "DWAB": "exr: <DWAB256 Lossy>,45",
+    "RLE": "exr: <Run-length>,45",
+    "PXR24": "exr: <PXR Lossy>,45"
+    }
+
+
+## SynthEyes MOV 'Compression' Strings
+SynthMovCodecs:dict = {
+    "ProRes 422": "prores: <prores422>,0",
+    "ProRes LT": "prores: <prores422lt>,0",
+    "ProRes Proxy": "prores: <prores422proxy>,0",
+    "ProRes 4444": "prores: <prores4444>,0",
+    "ProRes 4444XQ": "prores: <prores4444xq>,0",
+    }
+
+
+## SynthEyes MP4 'Compression' Strings
+#      The first part
+SynthMP4Codecs:dict = {
+    "H264": "WMFC: 'H264' K:0 Q:0",
+    "H265": "WMFC: 'HEVC' K:0 Q:0",
+    }
+
+## SynthEyes MP4 'Compression' Strings
+#       the second part
+SynthMP4Qual:dict = {
+    "High (30 Mb/s)": "B:30000000",
+    "Good (15 Mb/s)": "B:15000000",
+    "Med (8 Mb/s)": "B:8000000",
+    "Low (4 Mb/s)": "B:4000000",
+    "Preview (2 Mb/s)": "B:2000000",
+    }
+
+
+## SynthEyes Alpha Supported Formats
+SynthHasAlpha:list = [
+    "ProRes 4444",
+    "ProRes 4444XQ",
+    "EXR",
+    "PNG"
+] 
+
+
+## SynthEyes Image PreProcessor Subsampling Ints
+SynthSubSample:dict = {
+    "100%": 1.0,
+    "50%": 2.0,
+    "25%": 4.0
+}
+
+
+## SynthEyes Image PreProcessor Subsampling Filters
+SynthInterp:dict = {
+    "Low (Bi-Linear)": 0.0,
+    "Med (Lanczos 2)": 1.0,
+    "Good (Mitchell)": 3.0,
+    "High (Lanczos 3)": 2.0
+}
+
+
 ## SynthEyes Format Naming and Settings Options
 SynthFormatNames: dict = {
     "USD  (.usda)": {
@@ -409,7 +475,136 @@ SynthFormatNames: dict = {
     },
     "Alembic  (.abc)": {
         "synthName": "Alembic 1.5+",
-        "format": ".abc"
+        "format": ".abc",
+        "exportSettings": {
+            "workArea": {
+                "name": "Timeline Setup",
+                "widgetType": "combo",
+                "comboItems": [("Active part", "0"), ("Entire shot", "1"), ("Match frames", "2")],
+                "factoryDefault": "2",
+                "toolTip": "Controls which portion of the shot is placed at the Starting frame#.\nMatch Frames makes the placement match the image sequence's frame numbers;\nequivalent to Entire shot for movies."
+            },
+            "userStart": {
+                "name": "Starting Frame",
+                "widgetType": "spin",
+                "range": [0, 1000000],
+                "step": 1,
+                "factoryDefault": 1,
+                "toolTip": "The first frame of the selected part of the shot will be put at this frame number in the export.\nNot used when Match frames is selected unless the shot is a movie."
+            },
+            "which": {
+                "name": "Export Which Shots",
+                "widgetType": "combo",
+                "comboItems": [("Only Active shot", "0"), ("Same Framerate as Active", "1"), ("Same Framerate and Range as Active", "2"), ("All Shots", "3")],
+                "factoryDefault": "1",
+                "toolTip": "Controls which shots are exported, when there are more than one in the same scene.\nThe active shot is the shot of the current Active Tracker Host."
+            },
+            "wantZup": {
+                "name": "Output Axis Setting",
+                "widgetType": "combo",
+                "comboItems": [("Y Up (normal)", "0"), ("Z Up", "1")],
+                "factoryDefault": "0",
+                "toolTip": "Generates Alembic data with this coordinate placement,\nindependent of what it is in SynthEyes.\nY Up seems to be typical."
+            },
+            "wantUVFlip": {
+                "name": "Image Orientation",
+                "widgetType": "combo",
+                "comboItems": [("Normal (Blender)", "0"), ("Rotate 180' (Nuke)", "1")],
+                "factoryDefault": 0,
+                "toolTip": "Rotate the image if needed to support particular hosts."
+            },
+            "normals": {
+                "name": "Include Normals",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Include normals for meshes, if they are present."
+            },
+            "scaling": {
+                "name": "Additional Scene Scaling",
+                "widgetType": "doubleSpin",
+                "range": [0.01, 100.00],
+                "precision": 2,
+                "step": 0.01,
+                "factoryDefault": 1,
+                "toolTip": "Multiplies all scene coordinates by this value,\nfor example for units conversion."
+            },
+            "fixAD": {
+                "name": "Fix Anamorphic Distance",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "When on and an anamorphic distance is present, each mesh has a vertex cache,\nand tracker positions are compensated, so that the shot lines up\n(as seen only from *this* current active camera)\nin non-savvy downstream applications."
+            },
+            "doQuad": {
+                "name": "Use Quads if Possible",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "When set, meshes will be exported using a mixture of quads and triangles.\nTurn off if your downstream package has a problem with that."
+            },
+            "markers": {
+                "name": "Create Tracker Chisels",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "These are upside-down pyramids for each tracker."
+            },
+            "trksiz": {
+                "name": "Chisel Size Override",
+                "widgetType": "doubleSpin",
+                "range": [0, 10],
+                "precision": 4,
+                "step": 0.001,
+                "factoryDefault": 0,
+                "toolTip": "Makes chisels this particular size, if non-zero."
+            },
+            "doScreen": {
+                "name": "Create Screen",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "You can apply the scene as a texture to this.\nAlembic does not permit this to be done automatically."
+            },
+            "usePreprocessor": {
+                "name": "Based On",
+                "widgetType": "combo",
+                "comboItems": [("Solver distortion", "0"), ("Image Preprocessor (normal)", "1")],
+                "factoryDefault": "1",
+                "toolTip": "Where to look for lens distortion information.\nNormally, this should be the Image preprocessor,\nafter running the Lens Workflow script.\nThe solver's distortion can also be selected,\nthough this is not recommended."
+            },
+            "uvScreenMode": {
+                "name": "UV Screen Mode",
+                "widgetType": "combo",
+                "comboItems": [("Never", "0"), ("If UV present", "1"), ("Always", "2")],
+                "factoryDefault": "1",
+                "toolTip": "With a UVmap, a projection screen using texture coordinates\nwill work better than a vertex-positioning screen,\nalthough animated distortion can't be handled.\nThis controls when the alternate version is used."
+            },
+            "lmode": {
+                "name": "Screen's Distortion Mode",
+                "widgetType": "combo",
+                "comboItems": [("None", "0"), ("Remove (normal)", "1"), ("Apply!", "2")],
+                "factoryDefault": "1",
+                "toolTip": "When set to Remove, pre-distorts the projection screen\nso that the imagery will have the distortion value\non the Lens panel removed from it."
+            },
+            "scnovr": {
+                "name": "Screen Distance Override",
+                "widgetType": "spin",
+                "range": [0, 1000],
+                "step": 1,
+                "factoryDefault": 0,
+                "toolTip": "Set a specific camera-to-screen distance,\nif this is non-zero."
+            },
+            "vgrid": {
+                "name": "Vertical Screen Grids",
+                "widgetType": "spin",
+                "range": [1, 256],
+                "step": 1,
+                "factoryDefault": 12,
+                "toolTip": "Vertical grids in the generated projection screen.\nHorizontal determined from image aspect."
+            },
+            "setPlanes": {
+                "name": "Set Far/Near Clipping Planes",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "When checked, puts near and far clipping distances\ninto the Alembic file, from their values in SynthEyes."
+            }
+        }
     },
     "Blender  (.py)": {
         "synthName": "Blender (Python)",
@@ -1095,63 +1290,5 @@ SynthFormatNames: dict = {
     },
 }
 
-## SynthEyes EXR 'Compression' Strings
-SynthExrCompress:dict = {
-    "NONE": "exr: <None>,45",
-    "ZIP":"exr: <ZIP-block>,45",
-    "ZIPS": "exr: <ZIP-scanline>,45",
-    "DWAA": "exr: <DWAA32 Lossy>,45",
-    "DWAB": "exr: <DWAB256 Lossy>,45",
-    "RLE": "exr: <Run-length>,45",
-    "PXR24": "exr: <PXR Lossy>,45"
-    }
 
-## SynthEyes MOV 'Compression' Strings
-SynthMovCodecs:dict = {
-    "ProRes 422": "prores: <prores422>,0",
-    "ProRes LT": "prores: <prores422lt>,0",
-    "ProRes Proxy": "prores: <prores422proxy>,0",
-    "ProRes 4444": "prores: <prores4444>,0",
-    "ProRes 4444XQ": "prores: <prores4444xq>,0",
-    }
-
-## SynthEyes MP4 'Compression' Strings
-#      The first part
-SynthMP4Codecs:dict = {
-    "H264": "WMFC: 'H264' K:0 Q:0",
-    "H265": "WMFC: 'HEVC' K:0 Q:0",
-    }
-
-## SynthEyes MP4 'Compression' Strings
-#       the second part
-SynthMP4Qual:dict = {
-    "High (30 Mb/s)": "B:30000000",
-    "Good (15 Mb/s)": "B:15000000",
-    "Med (8 Mb/s)": "B:8000000",
-    "Low (4 Mb/s)": "B:4000000",
-    "Preview (2 Mb/s)": "B:2000000",
-    }
-
-## SynthEyes Alpha Supported Formats
-SynthHasAlpha:list = [
-    "ProRes 4444",
-    "ProRes 4444XQ",
-    "EXR",
-    "PNG"
-] 
-
-## SynthEyes Image PreProcessor Subsampling Ints
-SynthSubSample:dict = {
-    "100%": 1.0,
-    "50%": 2.0,
-    "25%": 4.0
-}
-
-## SynthEyes Image PreProcessor Subsampling Filters
-SynthInterp:dict = {
-    "Low (Bi-Linear)": 0.0,
-    "Med (Lanczos 2)": 1.0,
-    "Good (Mitchell)": 3.0,
-    "High (Lanczos 3)": 2.0
-}
 
