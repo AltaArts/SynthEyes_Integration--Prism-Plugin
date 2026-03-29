@@ -798,6 +798,7 @@ class Synth_SceneExportClass(object):
         )
 
         self.updateUi()
+        self.setupExportSettings()
         self.stateManager.saveStatesToScene()
 
 
@@ -823,26 +824,32 @@ class Synth_SceneExportClass(object):
 
 
     #   Removes All Widgets from Layout
+    @err_catcher(name=__name__)
     def clearLayout(self, layout):
         while layout.count():
             item = layout.takeAt(0)
 
             if item.widget():
-                item.widget().deleteLater()
+                w = item.widget()
+                w.setParent(None)
+                w.deleteLater()
+
             elif item.layout():
                 self.clearLayout(item.layout())
+                item.layout().deleteLater()
 
 
     #   Creates Widget Row Based on Settings in Format File
+    @err_catcher(name=__name__)
     def createSettingWidget(self, key, setting, parent):
         widgetType = setting["widgetType"]
         name = setting["name"]
         tooltip = setting.get("toolTip", "")
 
         #   Create Row
-        row = QWidget(parent)
+        row = QWidget()
         rowLayout = QHBoxLayout(row)
-        rowLayout.setContentsMargins(30, 0, 30, 0)
+        rowLayout.setContentsMargins(50, 0, 10, 0)
 
         #   Create Label from Name
         label = QLabel(name, row)
@@ -922,38 +929,6 @@ class Synth_SceneExportClass(object):
         
         else:
             return None
-
-
-    # @err_catcher(name=__name__)
-    # def getExportSettings(self):                                        #   TODO - ADD UI
-    #     eData = {
-    #     "exporter_Type": "USD ASCII Scene",
-    #     "exporter_SettingsName": "USD ASCII Scene Settings",
-    #     "exporter_Settings":[
-    #             ["workArea", "2"],
-    #             ["userStart", 1],
-    #             ["units", "ft"],
-    #             ["buildRigs", 1],
-    #             ["fixAD", 1],
-    #             ["doScreen", 1],
-    #             ["usePreprocessor", "1"],
-    #             ["uvScreenMode", "1"],
-    #             ["nomgrid", 64],
-    #             ["relScreenDis", 5],
-    #             ["rotOrder", "1"],
-    #             ["relTrkSize", 0.001],
-    #             ["relLidarSize", 0.0002],
-    #             ["relFarClip", 10],
-    #             ["miscOpacity", 1],
-    #             ["doFrustrum", 1],
-    #             ["doGnomon", 1],
-    #             ["doChisel", 1],
-    #             ["geoPrimitives", 0],
-    #             ["silentMovies", 1]
-    #         ]
-    #     }
-
-    #     return eData
     
 
     #   Gets Exporter Settings from UI

@@ -211,7 +211,145 @@ SynthFormatNames: dict = {
     },
     "Blender  (.py)": {
         "synthName": "Blender (Python)",
-        "format": ".py"
+        "format": ".py",
+        "exportSettings": {
+            "workArea": {
+                "name": "Timeline Setup",
+                "widgetType": "combo",
+                "comboItems": [("Active part", "0"), ("Entire shot", "1"), ("Match frames", "2")],
+                "factoryDefault": "2",
+                "toolTip": "Controls which portion of the shot is placed at the Starting frame#."
+            },
+            "userStart": {
+                "name": "Starting Frame",
+                "widgetType": "spin",
+                "range": [0, 1000000],
+                "step": 1,
+                "factoryDefault": 1,
+                "toolTip": "The first frame of the selected part of the shot will be put at this frame number."
+            },
+            "version": {
+                "name": "Blender Version",
+                "widgetType": "combo",
+                "comboItems": [("4.0+", "3.0"), ("3.2+", "4.0"), ("2.80+", "5.0")],
+                "factoryDefault": "4.0+",
+                "toolTip": "Select your Blender version."
+            },
+            "hexData": {
+                "name": "Hex Mesh Workaround",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Use hexadecimal binary data workaround."
+            },
+            "create": {
+                "name": "Script Type",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Assumes default Blender scene."
+            },
+            "update": {
+                "name": "Update Existing Scene",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "Update an existing .blend file."
+            },
+            "buildRigs": {
+                "name": "Create Armatures",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Build rigs for tracking hierarchies."
+            },
+            "updateMeshCaches": {
+                "name": "Update Mesh Caches",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Write new vertex caches when updating."
+            },
+            "doQuads": {
+                "name": "Use Quads",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Export meshes using quads when possible."
+            },
+            "fixAD": {
+                "name": "Fix Anamorphic Distance",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Compensate for anamorphic distortion."
+            },
+            "uscl": {
+                "name": "Rescale Scene",
+                "widgetType": "doubleSpin",
+                "range": [0.01, 100.00],
+                "precision": 2,
+                "step": 0.01,
+                "factoryDefault": 0.33,
+                "toolTip": "Scaling factor applied to SynthEyes values."
+            },
+            "tksz": {
+                "name": "Tracker Size",
+                "widgetType": "spin",
+                "range": [1, 10],
+                "step": 1,
+                "factoryDefault": 1,
+                "toolTip": "Tracker empty object size."
+            },
+            "useBackground": {
+                "name": "Use Camera Background",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Use Blender camera background if available."
+            },
+            "uvScreenMode": {
+                "name": "UV Screen Mode",
+                "widgetType": "combo",
+                "comboItems": [("Never", "0"), ("If UV present", "1"), ("Always", "2")],
+                "factoryDefault": "1",
+                "toolTip": "Controls UV projection usage."
+            },
+            "hgrid": {
+                "name": "Horizontal Grids",
+                "widgetType": "spin",
+                "range": [1, 256],
+                "step": 1,
+                "factoryDefault": 64,
+                "toolTip": "Grid resolution for projection screen."
+            },
+            "scnDis": {
+                "name": "Screen Relative Distance",
+                "widgetType": "spin",
+                "range": [0, 20],
+                "step": 1,
+                "factoryDefault": 3,
+                "toolTip": "Distance from camera to projection screen."
+            },
+            "clip": {
+                "name": "Clipping Relative Distance",
+                "widgetType": "spin",
+                "range": [1, 50],
+                "step": 1,
+                "factoryDefault": 4,
+                "toolTip": "Blender clipping distance."
+            },
+            "cube": {
+                "name": "Delete Pre-Existing Meshes",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Delete default Blender meshes."
+            },
+            "from_prefix": {
+                "name": "Remove Path Prefix",
+                "widgetType": "text",
+                "factoryDefault": "",
+                "toolTip": "Prefix to remove from file paths."
+            },
+            "to_prefix": {
+                "name": "Add Path Prefix",
+                "widgetType": "text",
+                "factoryDefault": "",
+                "toolTip": "Prefix to add to file paths."
+            },
+        }
     },
     "Maya  (.ma)": {
         "synthName": "Maya ASCII Updated",
@@ -226,10 +364,6 @@ SynthFormatNames: dict = {
         "format": ".nk"
     },
 }
-
-
-
-
 
 ## SynthEyes EXR 'Compression' Strings
 SynthExrCompress:dict = {
