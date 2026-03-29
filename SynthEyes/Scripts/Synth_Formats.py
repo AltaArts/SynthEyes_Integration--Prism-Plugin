@@ -203,7 +203,209 @@ SynthFormatNames: dict = {
     },
     "FBX  (.fbx)": {
         "synthName": "Filmbox FBX",
-        "format": ".fbx"
+        "format": ".fbx",
+        "exportSettings": {
+            "workArea": {
+                "name": "Timeline Setup",
+                "widgetType": "combo",
+                "comboItems": [("Active part", "0"), ("Entire shot", "1"), ("Match frames", "2")],
+                "factoryDefault": "2",
+                "toolTip": "Controls which portion of the shot is placed at the Starting frame#.\nMatch Frames makes the placement match the image sequence's frame numbers;\nequivalent to Entire shot for movies."
+            },
+            "userStart": {
+                "name": "Starting Frame",
+                "widgetType": "spin",
+                "range": [0, 1000000],
+                "step": 1,
+                "factoryDefault": 1,
+                "toolTip": "The first frame of the selected part of the shot will be put at this frame number in the export.\nNot used when Match frames is selected unless the shot is a movie."
+            },
+            "which": {
+                "name": "Export Which Cameras",
+                "widgetType": "combo",
+                "comboItems": [("Only Active", "0"), ("Set Framerate as Active", "1"), ("All", "2")],
+                "factoryDefault": "1",
+                "toolTip": "Selects which cameras to export, including the moving objects attached to those cameras.\nAll unparented meshes are always exported."
+            },
+            "format": {
+                "name": "Output Format",
+                "widgetType": "combo",
+                "comboItems": [("Default (binary)", "Default (binary)"), ("FBX binary (*.fbx)", "FBX binary (*.fbx)"), ("FBX ascii (*.fbx)", "FBX ascii (*.fbx)"), ("FBX 6.0 binary (*.fbx)", "FBX 6.0 binary (*.fbx)"), ("FBX 6.0 Ascii (*.fbx)", "FBX 6.0 Ascii (*.fbx)")],
+                "factoryDefault": "Default (binary)",
+                "toolTip": "The binary version is usual: smaller and faster.\nFBX 6.0 is to export to older applications."
+            },
+            "fbxyear": {
+                "name": "FBX Version",
+                "widgetType": "combo",
+                "comboItems": [("Current", ""), ("2020", "FBX202000"), ("2019", "FBX201900"), ("2018", "FBX201800"), ("2016", "FBX201600"), ("2014", "FBX201400"), ("2013", "FBX201300"), ("2012", "FBX201200"), ("2011", "FBX201100")],
+                "factoryDefault": "",
+                "toolTip": "You can use this control to output FBX files using older versions of the FBX specification,\nif you are using applications that accept only older files."
+            },
+            "units": {
+                "name": "Interpret SynthEyes Units as",
+                "widgetType": "combo",
+                "comboItems": [("Use scene settings", "scene"), ("None", ""), ("Millimeters", "mm"), ("Centimeters", "cm"), ("Meters", "m"), ("Kilometers", "km"), ("Inches", "in"), ("Feet", "ft"), ("Yards", "yd"), ("Miles", "mi")],
+                "factoryDefault": "scene",
+                "toolTip": "This is a suggestion to downstream applications as to how they should interpret the values.\nThey might ignore this."
+            },
+            "scaling": {
+                "name": "Additional Scaling",
+                "widgetType": "doubleSpin",
+                "range": [0.01, 100.00],
+                "precision": 2,
+                "step": 0.01,
+                "factoryDefault": 1,
+                "toolTip": "All SynthEyes coordinate values are multiplied by this value,\ntypically to change the apparent units for applications that ignore the units setting."
+            },
+            "fbxRotOrder": {
+                "name": "Rotation Order",
+                "widgetType": "combo",
+                "comboItems": [("XYZ", "0"), ("ZXY", "1")],
+                "factoryDefault": "1",
+                "toolTip": "*** At present, the FBX SDK does not write the other choices to the file as expected! ***\nRotation order setting for exported cameras, lights, etc.\nXYZ is the FBX default but some packages might require something different (ZXY for Nuke?)"
+            },
+            "fixAD": {
+                "name": "Fix Anamorphic Distance",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "When on and an anamorphic distance is present,\neach mesh has a vertex cache, and tracker positions are compensated,\nso that the shot lines up (as seen only from *this* current active camera)\nin non-savvy downstream applications."
+            },
+            "exportTrackers": {
+                "name": "Export Trackers",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Controls whether or not trackers are exported at all."
+            },
+            "marker": {
+                "name": "Marker Type",
+                "widgetType": "combo",
+                "comboItems": [("Box", "Box"), ("Bone", "Bone"), ("Capsule", "Capsule"), ("Chisel", "Chisel"), ("Circle", "Circle"), ("Cube", "Cube"), ("Hard Cross", "Hard Cross"), ("Light Cross", "Light Cross"), ("None", "None"), ("Null", "Null"), ("Sphere", "Sphere"), ("Square", "Square"), ("Stick", "Stick")],
+                "factoryDefault": "Chisel",
+                "toolTip": "Chisels are real meshes that will work in downstream applications for sure.\nOthers are 'suggestions' that may or may not be supported by downstream applications."
+            },
+            "trksiz": {
+                "name": "Relative Tracker Size",
+                "widgetType": "doubleSpin",
+                "range": [0.001, 10],
+                "precision": 3,
+                "step": 0.001,
+                "factoryDefault": 0.002,
+                "toolTip": "The tracker marker size will be this fraction of the camera's world size.\nA good world size minimizes the need to adjust this."
+            },
+            "relfar": {
+                "name": "Relative Far Override",
+                "widgetType": "spin",
+                "range": [0, 100],
+                "step": 1,
+                "factoryDefault": 0,
+                "toolTip": "If nonzero, multiplied by the world size to determine how far\nthe projection screen is placed from the camera."
+            },
+            "fov": {
+                "name": "Specify View",
+                "widgetType": "combo",
+                "comboItems": [("Horizontal FOV", "Horizontal FOV"), ("Vertical FOV", "Vertical FOV"), ("Focal Length", "Focal Length")],
+                "factoryDefault": "Horizontal FOV",
+                "toolTip": "What kind of value is placed in the file.\nHorizontal is recommended.\nFocal Length is discouraged, because only rarely do you know\nan exact sensor (back plate) width."
+            },
+            "camhack": {
+                "name":"Tweak Camera Aim",
+                "widgetType": "combo",
+                "comboItems": [("None", "0"), ("Left", "1"), ("Right", "2"), ("Backwards", "3")],
+                "factoryDefault": "0",
+                "toolTip": "Work around applications that mis-read the FBX camera data,\nby re-aiming the camera direction in the output file.\nUse only as needed.\nExample: Left for Houdini."
+            },
+            "doScreen": {
+                "name": "Create Screen",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "If set, creates a projection screen attached to the camera\nto hold the shot imagery.\nThe screen will be deformed to match any computed distortion\nfrom the Lens panel."
+            },
+            "fixScreen": {
+                "name": "Max/Maya Screen Bugfix",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "Corrects for a bug in 3dsmax and maya affecting screen placement.\nFixed files will not work in Autodesk's golden FBX Review.\nAdjust as needed for other programs."
+            },
+            "usePreprocessor": {
+                "name": "Based On",
+                "widgetType": "combo",
+                "comboItems": [("Solver distortion", "0"), ("Image Preprocessor (normal)", "1")],
+                "factoryDefault": "1",
+                "toolTip": "Where to look for lens distortion information.\nNormally, this should be the Image preprocessor,\nafter running the Lens Workflow script.\nThe solver's distortion can also be selected\nwhen overscan rendering is being used by downstream compositing and 3-D applications."
+            },
+            "uvScreenMode": {
+                "name": "UV Screen Mode",
+                "widgetType": "combo",
+                "comboItems": [("Never", "0"), ("If UV present", "1"), ("Always", "2")],
+                "factoryDefault": "1",
+                "toolTip": "With a UVmap, a projection screen using texture coordinates will work better\nthan a vertex-positioning screen, although animated distortion can't be handled.\nThis controls when the alternate version is used."
+            },
+            "lmode": {
+                "name": "Screen's Lens Mode",
+                "widgetType": "combo",
+                "comboItems": [("None", "0"), ("Remove (normal)", "1"), ("Apply!", "2")],
+                "factoryDefault": "1",
+                "toolTip": "If you are tricky, you may be able to use the Apply! setting\nto redistort CG footage in your 3D package.\nBut probably not... so keep it at Remove."
+            },
+            "vgrid": {
+                "name": "Vertical Grids",
+                "widgetType": "spin",
+                "range": [1, 256],
+                "step": 1,
+                "factoryDefault": 12,
+                "toolTip": "Number of vertical grids in the projection screen.\nWith anything more than minimal distortion,\nincrease for more accurate distortion."
+            },
+            "useOriginals": {
+                "name": "Use Original Numbering",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "When checked, the exported mesh will use the original imported vertex,\nnormal, and texture indices, if that data is available.\nOverrides *no repeating vertices*.\nMakes files larger and more complex."
+            },
+            "makeVertUniq": {
+                "name": "No Repeating Vertices",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "Enabling this may eliminate seams when read into susceptible apps—Maya?\nMakes files larger and more complex."
+            },
+            "doQuad": {
+                "name": "Use Quads if Possible",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "When set, meshes will be exported using a mixture of quads and triangles.\nTurn off if your downstream package has a problem with that."
+            },
+            "doAlphaTrans": {
+                "name": "Alpha as Transparency",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "When set, send mesh texture alpha channels also as a Transparency Factor,\nwhich may or may not be supported by applications reading the FBX."
+            },
+            "pcmode": {
+                "name": "Deformed Mesh Format",
+                "widgetType": "combo",
+                "comboItems": [("None", "0"), ("3dsMax (PC2)", "1"), ("Maya (MCX)", "3"), ("Bones", "3")],
+                "factoryDefault": "2",
+                "toolTip": "Use bones or vertex cache format for animated GeoH deformations.\nSelect to match your desired application;\nother applications may require one or the other."
+            },
+            "flat": {
+                "name": "Texture Lighting",
+                "widgetType": "combo",
+                "comboItems": [("Light All Textures", "0"), ("Set by Mesh", "1"), ("Don't Light Textures", "4"), ("Light Screens and Meshes", "2"), ("Light Screens, Some Meshes", "3"), ("Light Screens, Not Meshes", "6")],
+                "factoryDefault": "1",
+                "toolTip": "Light ALL meshes or not if needed,\ngenerally set instead per-mesh from the texture panel.\nChoices that light the screen are for testing."
+            },
+            "embed": {
+                "name": "Embed Media",
+                "widgetType": "checkbox",
+                "factoryDefault": 0,
+                "toolTip": "When set, shot imagery and still textures are inside the filmbox file,\nmaking it more self-contained and easier to move around,\nthough also much larger."
+            },
+            "setPlanes": {
+                "name": "Set Far/Near Clips",
+                "widgetType": "checkbox",
+                "factoryDefault": 1,
+                "toolTip": "When set, the far and near clipping planes from SynthEyes are stored in the file\nfor consistency.\nWhen off, the reading software will do whatever it usually does."
+            }
+        }
     },
     "Alembic  (.abc)": {
         "synthName": "Alembic 1.5+",
