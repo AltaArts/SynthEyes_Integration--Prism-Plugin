@@ -472,7 +472,42 @@ class Prism_SynthEyes_Functions(object):
         
         else:
             return None
+
+
+    #   Waits for Popup and Returns When it is Valid
+    @err_catcher(name=__name__)
+    def waitForPopup(self, timeout:float=5.0, poll:float=0.05) -> object | None:
+        start = time.time()
+
+        while time.time() - start < timeout:
+            popup = self.synthEyes.Popup()
+
+            if popup and popup.IsValid():
+                return popup
+
+            time.sleep(poll)
+
+        return None
     
+    
+    #   Waits for Child Object and Returns When it is Valid
+    @err_catcher(name=__name__)
+    def waitForChild(self, parent:object, name:str, timeout:float=5.0, poll:float=0.05) -> object | None:
+        start = time.time()
+
+        while time.time() - start < timeout:
+            try:
+                child = parent.ByName(name)
+            except Exception:
+                child = None
+
+            if child and child.IsValid():
+                return child
+
+            time.sleep(poll)
+
+        return None
+
 
     #   Waits in QtLoop Until Popup Window is Invalid
     @err_catcher(name=__name__)
@@ -824,8 +859,8 @@ class Prism_SynthEyes_Functions(object):
             with self.UNDO_BLOCK("Set Framerange"):
                 shot.Set("start", startFrame - 1)
                 shot.Set("stop", endFrame - 1)
-                self.synthEyes.SetAnimStart(startFrame)
-                self.synthEyes.SetAnimEnd(endFrame)
+                self.synthEyes.SetAnimStart(startFrame - 1)
+                self.synthEyes.SetAnimEnd(endFrame - 1)
             
             logger.debug("Updated Framerange in SynthEyes")
 
@@ -2096,51 +2131,59 @@ class Prism_SynthEyes_Functions(object):
         #   Get Format Specific Render Settings
         optStr = self.getRenderOptsStr(rSettings)
 
-        include_items = rSettings["include_Items"]
-        include_grid = rSettings["include_Grid"]
-        include_RGB = rSettings["include_RGB"]
-        include_depth = rSettings["include_Depth"]
-        include_alpha = rSettings["include_Alpha"]
-        include_burnIn = rSettings["include_Burnin"]
-
-        settingsStr = ("prvu: "
-                       "0,"                                 #   Unknown
-                       f"{boolToBit(include_items)},"       #   Include Viewport Items
-                       f"{boolToBit(include_grid)},"        #   Include Grid
-                        "1,"                                #   Square Pixels
-                       f"{boolToBit(include_RGB)},"         #   Include RGB
-                       f"{boolToBit(include_depth)},"       #   Include Depth
-                       f"{boolToBit(include_alpha)},"       #   Include Alpha
-                       f"{boolToBit(include_burnIn)}")      #   Unknown
+        #   Build Viewport Items Command
+        settingsStr = (
+            "prvu: "
+            "0,"                                            #   Unknown
+            f"{boolToBit(rSettings["include_Items"])},"     #   Include Viewport Items
+            f"{boolToBit(rSettings["include_Grid"])},"      #   Include Grid
+            "1,"                                            #   Square Pixels
+            f"{boolToBit(rSettings["include_RGB"])},"       #   Include RGB
+            f"{boolToBit(rSettings["include_Depth"])},"     #   Include Depth
+            f"{boolToBit(rSettings["include_Alpha"])},"     #   Include Alpha
+            f"{boolToBit(rSettings["include_Burnin"])}"     #   No Seeming to Work (unknown format)
+        )
 
         shot = self.getShotFromCamName(rSettings["currentCam"])
 
+        #   Apply Settings to Scene
         with self.UNDO_BLOCK("Playblast Settings"):
             shot.Set("previewFile", outputPath)
             shot.Set("previewSettings", settingsStr)
             shot.Set("previewCompression", optStr)
 
         try:
-            #   Get Perspective View Object
+            #   Get Perspective View and "Click" Preview Movie Action
             perspVu = self.synthEyes.Main().ByClass("Perspect")
-            #   "Click" the Preview Movie Button
             perspVu.PerformActionByNameAndContinue("Persp/Preview Movie")
 
-            time.sleep(1)
+            #   Wait for and Capture Popup Window
+            popup_preview = self.waitForPopup(timeout=5)
 
-            #   Capture the Resulting Popup Window
-            popup_preview = self.synthEyes.Popup()
+            if not popup_preview:
+                logger.warning("ERROR: Preview popup did not appear")
+                return False
 
-            #   Find and "Click" the Start Button
-            start_btn = popup_preview.ByName("Start")
-            if start_btn.IsValid():
+            #   Wait for and Capture "Start" Button on Popup Window
+            start_btn = self.waitForChild(popup_preview, "Start", timeout=5)
+
+            if not start_btn:
+                logger.warning("ERROR: Start button not found in popup")
+                return False
+
+            #   "Click" the Start Button
+            try:
                 start_btn.ClickAndWait()
 
-            #   Wait for Popup to Close
+            except Exception as e:
+                logger.warning(f"ERROR: Failed to click Start button: {e}")
+                return False
+
+            #   Wait for the Render to Finish and Popup Close
             self.waitForPopupClose(popup_preview)
 
             return True
-        
+
         except Exception as e:
             logger.warning(f"ERROR: Unable to Render Playblast: {e}")
             return False
@@ -2163,7 +2206,7 @@ class Prism_SynthEyes_Functions(object):
         #   Restore View if it Was Not Already Perspective
         if rSettings["currView"] != "Perspective":
             self.synthEyes.SetView(rSettings["currView"])
-        
+
         self.synthEyes.Validate(shot)
 
 
