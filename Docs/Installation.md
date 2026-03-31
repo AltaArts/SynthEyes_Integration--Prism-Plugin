@@ -62,6 +62,6 @@ jump to:
 
 [**Importing 3D**](Importing_3d.md)
 
-[**Scene Export**](Importing_3d.md)
+[**Scene Export**](Export_Scene.md)
 
 [**Rendering**](Rendering.md)

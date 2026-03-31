@@ -47,7 +47,7 @@ This plugin is for Windows only, as Prism2 only supports Windows at this time.
 
 [**Importing 3D**](Docs/Importing_3d.md)
 
-[**Scene Export**](Docs/Importing_3d.md)
+[**Scene Export**](Docs/Export_Scene.md)
 
 [**Rendering**](Docs/Rendering.md)
 
