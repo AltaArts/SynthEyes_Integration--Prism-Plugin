@@ -19,7 +19,7 @@ https://prism-pipeline.com/
 - Distortion Maps (STMaps) generation.
 - Tested with SynthEyes versions 2304+.
 - Only SynthEyes versions supporting scripting will work with this integration. 
-- Python 3.11 must installed and in the system path for Prism scripting to work with Fusion ([**see Installation**](Docs/Installation.md)).
+- Python 3.11+ must installed and configured in SynthEyes ([**see Installation**](Docs/Installation.md)).
 - To aid is use, tooltips are provided throughout.
 
 <br/>
