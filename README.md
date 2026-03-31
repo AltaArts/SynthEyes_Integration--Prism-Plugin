@@ -1,4 +1,4 @@
-# **SynthEyes Integration for Prism Pipeline 2**
+# ![Prism](Docs/DocsImages/SynthEyes.png) **SynthEyes Integration for Prism Pipeline 2**
 A Boris SynthEyes integration to be used with version 2 of Prism Pipeline 
 
 Prism automates and simplifies the workflow of animation and VFX projects.
@@ -7,9 +7,7 @@ You can find more information on the website:
 
 https://prism-pipeline.com/
 
-<br/><br/>
-
-![Prism](Docs/DocsImages/SynthEyes.png)
+<br/>
 
 ## **Notes**
 
@@ -19,10 +17,8 @@ https://prism-pipeline.com/
 - Scene Exporting to many formats.
 - Shot and Playblast rendering.
 - Distortion Maps (STMaps) generation.
-
 - Tested with SynthEyes versions 2304+.
-
-
+- Only SynthEyes versions supporting scripting will work with this integration. 
 - Python 3.11 must installed and in the system path for Prism scripting to work with Fusion ([**see Installation**](Docs/Installation.md)).
 - To aid is use, tooltips are provided throughout.
 
@@ -47,7 +43,7 @@ This plugin is for Windows only, as Prism2 only supports Windows at this time.
 
 [**Interface**](Docs/Interface.md)
 
-[**Adding Shots**](Docs/Importing_2d.md)
+[**Adding Shots**](Docs/AddShots.md)
 
 [**Importing 3D**](Docs/Importing_3d.md)
 
