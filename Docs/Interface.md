@@ -20,7 +20,7 @@ Prism functions are accessed through the Prism menu in the top bar of SynthEyes'
 
 - **Project Browser:**  Launches the Prism Project Browser.
 
-- **State Manager:**  Launches the Prism State Manager.  This allows the user to load shots (see [**Adding Shots**](AddShots.md)), import 3d objects (see [**Import 3D**](Importing_3d.md)), export the scene to various formats (see [**Scene Export**](Importing_3d.md)), and various renders (see [**Rendering**](Rendering.md)) to/from the Prism project structure.
+- **State Manager:**  Launches the Prism State Manager.  This allows the user to load shots (see [**Adding Shots**](AddShots.md)), import 3d objects (see [**Import 3D**](Importing_3d.md)), export the scene to various formats (see [**Scene Export**](Export_Scene.md)), and various renders (see [**Rendering**](Rendering.md)) to/from the Prism project structure.
 
 - **Prism Settings:**  Launches the Prism Settings window.
 
@@ -54,7 +54,7 @@ The SynthEyes plugin has several functions that are user configurable from the P
 
 - **Prism Auto-start:** Adds a small .bat file to the 'Executable override' box above, and have Prism automatically start when opening a .sni file in the Prism Project Browser (see **Dev Notes** below for more information).
 
-- **SynthEyes Communications Socket Port:**  The localhost port used for SynthEyes-Prism menu communications (see **Dev Notes** below for more information).
+- **SynthEyes Communications Socket Port:**  The localhost port used for SynthEyes-Prism menu communications.  There is usually not a need to change this unless there is another process that is using the port and causing conflicts. (see **Dev Notes** below for more information).
 
 <br/>
 
@@ -62,11 +62,13 @@ The SynthEyes plugin has several functions that are user configurable from the P
 
 ### SynthEyes Scripting: 
 
-SynthEyes does not have a Python environment that runs inside the SynthEyes instance.  Instead it uses a Python API called SyPY (SyPy3 for Python 3.x).  SynthEyes internally uses Sizzle scripting to control the various functions, and SyPy uses socket communications to send the Python API 'commands' to the SynthEyes Sizzle listener.  Thus custom Python scripts import and use the SyPy API to control SynthEyes. See the SynthEyes Sizzle and SyPy manuals for more information.
+SynthEyes does not have a Python environment that runs inside the SynthEyes instance.  Instead it uses a Python API called SyPY (SyPy3 for Python 3.x).  SynthEyes internally uses its own custom scripting language called 'Sizzle' to control the various functions, and SyPy uses socket communications to send the Python API 'commands' to the SynthEyes Sizzle listener.  Thus custom Python scripts import and use the SyPy API to control SynthEyes. See the SynthEyes Sizzle and SyPy manuals for more information.
 
 ### Script structure: 
 
-In order for the Prism menu inside SynthEyes to call Prism functions, the Prism_Start.py script launches an instance of Prism core. The SynthEyes Prism core instance launches a socket listener in a separate process that monitors the specified port for these commands, and the menu items are just simple Python scripts that will send one socket 'command'.  All communications are kept in the local machine (127.0.0.1).
+When the Prism instance launches from SynthEyes (Prism_Start.py), it creates a new QApplication instance that creates a new instance of Prism core.  This QApp also creates a Qt window object that holds the core instance until SynthEyes is closed.  This window is hidden as the Prism functions are called from the Prism menu.
+
+In order for the Prism menu inside SynthEyes to call Prism functions, the Prism core instance launches a socket listener in a separate process that monitors the specified port for these commands, and the menu items are just simple Python scripts that will send one socket 'command'.  All communications are kept in the local machine (127.0.0.1).
 
 ### Prism Auto-start:
 
