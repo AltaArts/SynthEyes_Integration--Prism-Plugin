@@ -1,4 +1,5 @@
 # **Adding Shots**
+
 Adding Shots (Cameras) to SynthEyes is done through the AddShots import state.
 
 ![SM_AddShot-Overview](DocsImages/SM-AddShot.png)

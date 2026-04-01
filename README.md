@@ -9,6 +9,10 @@ https://prism-pipeline.com/
 
 <br/>
 
+
+![Synth Prism Overview](/Docs/DocsImages/Synth-Prism_Overview.png)
+
+
 ## **Notes**
 
 - Standard Prism DCC Integration.

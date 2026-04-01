@@ -1,4 +1,5 @@
 # **Importing Mesh Objects**
+
 The SynthEyes integration adds the ability to import various type of 3D objects into the Scene.  Importing 3D is done using Prism's State Manager with the ImportMesh state.  This uses the SynthEyes Import -> Mesh command and allows .USD, .OBJ, .FBX, .ABC, .C4D, .DAE, .DXF amongst others.
 
 ![SM-ImportMesh](DocsImages/SM-ImportMesh.png)

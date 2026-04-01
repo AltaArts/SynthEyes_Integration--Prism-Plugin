@@ -1,7 +1,5 @@
 # **Installation**
 
-<br/>
-
 Copy the directory named "SynthEyes" to a directory of your choice, or a Prism2 plugin directory.
 
 It is suggested to have the SynthEyes plugin with the other DCC plugins in: *{drive}\ProgramData\Prism2\plugins*
