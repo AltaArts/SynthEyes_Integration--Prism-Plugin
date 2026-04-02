@@ -8,13 +8,11 @@
 
 Prism functions are accessed through the Prism menu in the top bar of SynthEyes's UI.  The menu will look familiar to Prism users and contains the normal Prism functions.
 
-
-
 ### **Menu Options:**
-        Note: the plugin attempts to refresh the SynthEyes window UI after adding the Prism menu. If the user is interacting with the window during start, the menu may not appear until you hover over the menu bar.
+>[!IMPORTANT]  
+> NOTE: the plugin attempts to refresh the SynthEyes window UI after adding the Prism menu. If the user is interacting with the window during start, the menu may not appear until you hover over the menu bar.
 
 - **Save Next Version:** Captures a thumbnail from the SynthEyes window and saves it to a new incremented version in Prism's project structure.
-
 
 - **Save Version with Comment:**  Opens a dialogue to allow the user to enter a comment and/or description of the new version.  It also allows the user to select a screenshot to be used for the thumbnail.  It then saves to a new version as above.
 
@@ -34,7 +32,8 @@ The Prism menu on the main SynthEyes menu bar is the easiest way to work with Pr
 
 ![Script Menu](DocsImages/Prism_Script_Menu.png)
 
-        Note:  the script file under the Scripts->Prism->PrismUtils is not meant to be used by the user.  This exists to allow the Prism integration to set certain settings in SynthEyes during a publish.
+
+> NOTE: the script file under the Scripts->Prism->PrismUtils is not meant to be used by the user.  This exists to allow the Prism integration to set certain settings in SynthEyes during a publish.
 
 <br/>
 
@@ -73,6 +72,22 @@ In order for the Prism menu inside SynthEyes to call Prism functions, the Prism 
 ### Prism Auto-start:
 
 SynthEyes does not automatically run scripts at startup, and so Prism will not load by default.  But SynthEyes allows the passing of a script filepath as an argument the syntheyes.exe to have SynthEyes run it.  The SynthEyes integration has a simple .bat file that will launch SynthEyes with this Prism launch script.  Thus clicking the 'Click to Set...'' button will add this .bat to the 'Executable override' box above, and have Prism automatically start Prism when opening a .sni file in the Prism Project Browser.
+
+### Prism States Saving:
+
+Each Prism DCC integration needs a way to save the StateManager State data into the scenefile.  The SynthEyes integration uses the SynthEyes Notes system.  Normally the Notes are used for comments and reminders in the UI similar to mark-up comments.  Prism uses this to store all the States and are hidden in the UI.
+
+It does this by first creating an index Note (with number 1000) which contains the numbers of each created State Note.  Then each State in the StateManager will have a separate Note created (with sequential numbers) that has the State data.  For performance and SynthEyes Note-size limitations, the data is compressed and encoded using zlib and base64 and saved to the Note.
+
+Index Note:
+
+        Note 1000:
+        {"notes": [1001, 1002, 1003, 1004, 1005, 1006, 1007]}
+
+Example State Note:
+
+        Note 1002:
+        eJyrViouSSxJzUvMTVWyUiooTcrJLM5Q0lFKzs/NTc0rAYoBOSmpxclFmQUlmfl5IIFaAPJHEec=
 
 <br/>
 

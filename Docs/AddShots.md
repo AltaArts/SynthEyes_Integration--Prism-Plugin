@@ -36,7 +36,7 @@ There are several ways to select the media:
 
  - **"Import Latest Version"**:  This will load and import the highest version of the media (the same as double-clicking the Identifier as above).
 
-        Both of these use the SynthEyes 'Change Shot Images' in the Shot menu.
+        Dev Note: Both of these use the SynthEyes 'Change Shot Images' in the Shot menu.
 
 </br>
 
