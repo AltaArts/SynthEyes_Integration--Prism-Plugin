@@ -46,7 +46,6 @@
 
 
 import os
-import time
 import platform
 import logging
 

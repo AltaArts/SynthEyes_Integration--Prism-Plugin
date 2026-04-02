@@ -24,7 +24,7 @@ Afterwards, you can select the Plugin autoload as desired:
 
 <br/>
 
-To add the integration, go to the "DCC Apps" -> "SynthEyes" tab.  Then click the "add" button and navigate to the folder containing SynthEyes's executable (SynthEyes64.exe).
+To add the integration, go to the "DCC Apps" -> "SynthEyes" tab.  Then click the "Add" button and navigate to the folder containing SynthEyes's executable (SynthEyes64.exe).
 
 ![Add DCC apps](DocsImages/Add_DCC_Apps.png)
 

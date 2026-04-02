@@ -10,7 +10,7 @@ Prism functions are accessed through the Prism menu in the top bar of SynthEyes'
 
 ### **Menu Options:**
 >[!IMPORTANT]  
-> The plugin attempts to refresh the SynthEyes window UI after adding the Prism menu. If the user is interacting with the window during start, the Prism menu may not appear until you hover over the menu bar.
+> The plugin attempts to refresh the SynthEyes window UI after adding the Prism menu during SynthEyes startup. If the user is interacting with the window during start, the Prism menu may not appear until you hover over the menu bar.
 
 - **Save Next Version:** Captures a thumbnail from the SynthEyes window and saves it to a new incremented version in Prism's project structure.
 
@@ -71,7 +71,7 @@ In order for the Prism menu inside SynthEyes to call Prism functions, the Prism 
 
 ### Prism Auto-start:
 
-SynthEyes does not automatically run scripts at startup, and so Prism will not load by default.  But SynthEyes allows the passing of a script filepath as an argument the syntheyes.exe to have SynthEyes run it.  The SynthEyes integration has a simple .bat file that will launch SynthEyes with this Prism launch script.  Thus clicking the 'Click to Set...'' button will add this .bat to the 'Executable override' box above, and have Prism automatically start Prism when opening a .sni file in the Prism Project Browser.
+SynthEyes does not automatically run scripts at startup, and so Prism will not load by default.  But SynthEyes allows the passing of a script filepath as an argument to syntheyes.exe to have SynthEyes run it.  The SynthEyes integration has a simple .bat file that will launch SynthEyes with this Prism launch script.  Thus clicking the 'Click to Set...'' button will add this .bat to the 'Executable override' box above, and have Prism automatically start Prism when opening a .sni file in the Prism Project Browser.
 
 ### Prism States Saving:
 

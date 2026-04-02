@@ -18,7 +18,7 @@ The SynthEyes Prism integration has three rendering states: RenderShot, STMap, a
 
 ![RenderShot Overview](DocsImages/RenderShot_Overview.png)
 
-The RenderShot state uses the SynthEyes 'Save Sequence' function to output a video file or image sequence from a Shot's Camera.  This can be used to render an Undistorted version of the media.
+The RenderShot state uses the equivalent of the SynthEyes 'Save Sequence' function to output a video file or image sequence from a Shot's Camera.  This can be used to render an Undistorted version of the media.
 
 > [!NOTE]  
 > This will render the images using the current 'Lens Workflow' settings.  A sanity check will warn the user if there has been distortion calculated, but no Lens Workflow chosen.
