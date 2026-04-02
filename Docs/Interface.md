@@ -10,7 +10,7 @@ Prism functions are accessed through the Prism menu in the top bar of SynthEyes'
 
 ### **Menu Options:**
 >[!IMPORTANT]  
-> NOTE: the plugin attempts to refresh the SynthEyes window UI after adding the Prism menu. If the user is interacting with the window during start, the menu may not appear until you hover over the menu bar.
+> The plugin attempts to refresh the SynthEyes window UI after adding the Prism menu. If the user is interacting with the window during start, the menu may not appear until you hover over the menu bar.
 
 - **Save Next Version:** Captures a thumbnail from the SynthEyes window and saves it to a new incremented version in Prism's project structure.
 
@@ -32,7 +32,7 @@ The Prism menu on the main SynthEyes menu bar is the easiest way to work with Pr
 
 ![Script Menu](DocsImages/Prism_Script_Menu.png)
 
-
+> [!CAUTION]  
 > NOTE: the script file under the Scripts->Prism->PrismUtils is not meant to be used by the user.  This exists to allow the Prism integration to set certain settings in SynthEyes during a publish.
 
 <br/>

@@ -41,7 +41,7 @@ There are two ways to configure Python in SynthEyes:
 2. Set the environment variable 'SYNTHEYES_PYTHON_PATH' with the full filepath of the Python executable.
 
 > [!TIP]  
-> Note: Using 'python.exe' will launch a terminal window when Prism launches in SynthEyes.  Use 'pythonw.exe' to suppress the popup window.
+> Using 'python.exe' will launch a terminal window when Prism launches in SynthEyes.  Use 'pythonw.exe' to suppress the popup window.
 
 
 SyPy is the SynthEyes API library and is included with SynthEyes versions that allow scripting.  There is no need to do anything with SyPy as the integration imports from the default directory.

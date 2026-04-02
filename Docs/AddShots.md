@@ -28,7 +28,8 @@ There are several ways to select the media:
 
  - **Double-click Version:**  Will load and import the selected version and open the 'Edit Shot' dialogue.
 
-        NOTE: As of now, you cannot delete an added shot from SynthEyes.  The AddShot state will be deleted, but there will be no changes to the SynthEyes scene.
+> [!IMPORTANT]  
+> As of now, you cannot delete an added shot from SynthEyes.  The AddShot state will be deleted, but there will be no changes to the SynthEyes scene.
 
 ### **State Functions:**
 
@@ -36,7 +37,8 @@ There are several ways to select the media:
 
  - **"Import Latest Version"**:  This will load and import the highest version of the media (the same as double-clicking the Identifier as above).
 
-        Dev Note: Both of these use the SynthEyes 'Change Shot Images' in the Shot menu.
+> [!NOTE]  
+> Dev Note: Both of these use the SynthEyes 'Change Shot Images' in the Shot menu.
 
 </br>
 

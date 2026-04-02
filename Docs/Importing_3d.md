@@ -28,7 +28,8 @@ There are several ways to select the import:
 
  - **"Re-import"**:  This will reload the 3d mesh from disk.
 
-        NOTE:  when changing the version or reloading a mesh, the transforms are kept.  But due to limnitations in SynthEyes, some 3d formats do not seem to keep any scaling done in SynthEyes.
+> [!WARNING]  
+> When changing the version or reloading a mesh, the transforms are kept.  But due to limitations in SynthEyes, some 3d formats do not seem to keep any scaling done in SynthEyes.
 
 </br>
 
