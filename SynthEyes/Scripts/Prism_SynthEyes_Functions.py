@@ -1538,12 +1538,12 @@ class Prism_SynthEyes_Functions(object):
                 warnings.append([msg, "", 2])
 
             #   Check if Shot Camera was Solved with Distortion
-            hasDistor = self.getShotHasDistort(camName)
+            hasDistort = self.getShotHasDistort(camName)
 
             #   Check if Shot Camera has had Lens Workflow Completed
             hasLensWorkflow = self.getShotHasLensWorkflow(camName)
 
-            if hasDistor and not hasLensWorkflow:
+            if hasDistort and not hasLensWorkflow:
                 msg = (f"CAMERA   '{camName}':\n"
                     "                appears to have solved distortion,\n"
                     "                and the Lens Workflow script has not\n"
@@ -1784,12 +1784,12 @@ class Prism_SynthEyes_Functions(object):
             warnings.append([msg, "", 2])
 
         #   Check if Shot Camera was Solved with Distortion
-        hasDistor = self.getShotHasDistort(camName)
+        hasDistort = self.getShotHasDistort(camName)
 
         #   Check if Shot Camera has had Lens Workflow Completed
         hasLensWorkflow = self.getShotHasLensWorkflow(camName)
 
-        if hasDistor and not hasLensWorkflow:
+        if hasDistort and not hasLensWorkflow:
             msg = (f"CAMERA   '{camName}':\n"
                    "             appears to have solved distortion,\n"
                    "             and the Lens Workflow script has not\n"
@@ -1904,12 +1904,12 @@ class Prism_SynthEyes_Functions(object):
             warnings.append([msg, "", 2])
 
         #   Check if Shot Camera was Solved with Distortion
-        hasDistor = self.getShotHasDistort(camName)
+        hasDistort = self.getShotHasDistort(camName)
 
         #   Check if Shot Camera has had Lens Workflow Completed
         hasLensWorkflow = self.getShotHasLensWorkflow(camName)
 
-        if hasDistor and not hasLensWorkflow:
+        if hasDistort and not hasLensWorkflow:
             msg = (f"CAMERA   '{camName}':\n"
                    "             appears to have solved distortion,\n"
                    "             and the Lens Workflow script has not\n"
@@ -2071,12 +2071,12 @@ class Prism_SynthEyes_Functions(object):
             warnings.append([msg, "", 2])
 
         #   Check if Shot Camera was Solved with Distortion
-        hasDistor = self.getShotHasDistort(camName)
+        hasDistort = self.getShotHasDistort(camName)
 
         #   Check if Shot Camera has had Lens Workflow Completed
         hasLensWorkflow = self.getShotHasLensWorkflow(camName)
 
-        if hasDistor and not hasLensWorkflow:
+        if hasDistort and not hasLensWorkflow:
             msg = (f"CAMERA   '{camName}':\n"
                    "             appears to have solved distortion,\n"
                    "             and the Lens Workflow script has not\n"

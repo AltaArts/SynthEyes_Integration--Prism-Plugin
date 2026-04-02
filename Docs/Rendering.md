@@ -4,13 +4,13 @@ The SynthEyes Prism integration has three rendering states: RenderShot, STMap, a
 
 <br/>
 
-##  Common Render Options
+###  Common Render Options
 
 - **Camera:**  Selects the Camera/Shot to Render.  For multiple cameras in a scene, use a separate state for each.
 
-- **Scaling:** If the override is disabled, the rendered image size will be the same as the SynthEyes scene.
+- **Scaling:** If the override is disabled, the rendered image size will be the same as the SynthEyes scene.  A sanity check popup will display to warn a user of scaling done in SynthEyes.
 
-- **Format:**  The desired image output format. 
+- **Format:**  The desired image output format. At present, the only formats that allow an alpha channel are .EXR, .PNG, and ProRes4444 or 4444XQ.
 
 <br/>
 
@@ -18,17 +18,16 @@ The SynthEyes Prism integration has three rendering states: RenderShot, STMap, a
 
 ![RenderShot Overview](DocsImages/RenderShot_Overview.png)
 
-The RenderShot state uses the SynthEyes 'Save Sequence' function to output a video file or image sequence from a Shot's Camera.
+The RenderShot state uses the SynthEyes 'Save Sequence' function to output a video file or image sequence from a Shot's Camera.  This can be used to render an Undistorted version of the media.
 
+> [!NOTE]  
+> This will render the images using the current 'Lens Workflow' settings.  A sanity check will warn the user if there has been distortion calculated, but no Lens Workflow chosen.
 
 ### **Options**
-- **Include RGB:**  Renders the visible color images (RGB).  Normally enabled for almost all purposes.  May be disabled for Alpha-only render.
+- **Include RGB:**  Renders the visible color images (RGB).  Normally enabled for almost all renders, though may be disabled for an Alpha-only render.
 - **Include Alpha:**  Includes an Alpha channel in the render.  Only available in supported output formats.
 - **Include Mesh:**  Includes the scene's 3D meshes in the render.
 - **Include Burn-in:**  Includes burn-in data in the render. (NOTE: not functioning as expected - see **Dev Notes below).
-
-
-
 
 <br/>
 
@@ -36,13 +35,17 @@ The RenderShot state uses the SynthEyes 'Save Sequence' function to output a vid
 
 ![STMap Overview](DocsImages/STMap_Overview.png)
 
+The STMap state renders SynthEyes distortion maps (STMaps). This is similar to the 'Write Distortion Maps' menu item, but uses the Sizzle API calls (see Dev Note below).
+
+> [!CAUTION]
+> Rendering a STMap image sequence is slow and may take quite some time.  This comes from using the single-image render in a loop for every frame in the frame range (see Dev Note below).
 
 ### **Options**
 - **Single / Sequence:**  Selects either single-image Distortion maps, or an image sequence. 
-- **Map Types:**  Includes an Alpha channel in the render.  Only available in supported output formats.
+- **Map Types:**  Select which type of STMaps to render.  Each type will be rendered into a separate Media Identifier in Prism.  Each Identifier name will have '_UnDistort-Rec709Lin' or '_ReDistort-Rec709Lin' appended as a suffix.
 
-
-Dev Note:  This uses the SynthEyes
+> [!NOTE]  
+> Dev Note:  This uses the SynthEyes Sizzle functions 'WriteRedistortImage' and 'WriteUndistortImage'.  This allows a user to select which STMaps are desired.  For image sequences the SynthEyes docs describe the existence of 'WriteRedistortSequence' and 'WriteUndistortSequence', but I am unable to get either to work without errors.  So unfortunately for sequences there is just a loop to render every frame separately, which is slow.  Thus unless a sequence is needed for changing distortion (such as a zoom or a breathing focus-pull), it is recommended to render a single image.
 
 <br/>
 
@@ -50,16 +53,18 @@ Dev Note:  This uses the SynthEyes
 
 ![Playblast Overview](DocsImages/Playblast_Overview.png)
 
-This state uses the SynthEyes 'Preview Movie' from the Perspective View.
+This state uses the SynthEyes 'Preview Movie' from the Perspective View.  It can be used to preview the tracked scene.
 
+> [!TIP]  
+> The Playblast will render whatever view is currently in the Perspective View.  That means if the view is currently not locked to the camera (for example orbited to a top-ish view), it will render from that viewpoint.
 
 ### **Options**
-- **Include Viewport Items:**
-- **Include Grid:**
+- **Include Viewport Items:** This will include all the visible items currently seen in the Perspective view WYSIWYG (trackers, meshes, moving objects, etc).
+- **Include Grid:** Includes the current grid display.
 - **Include Burn-in:**  Includes burn-in data in the render. (NOTE: not functioning as expected - see **Dev Notes below).
-- **Include RGB:**  Renders the visible color images (RGB).  Normally enabled for almost all purposes.  May be disabled for Alpha-only render.
+- **Include RGB:**  Renders the visible color images (RGB).  Normally enabled for almost all renders, though may be disabled for an Alpha-only render.
 - **Include Alpha:**  Includes an Alpha channel in the render.  Only available in supported output formats.
-- **Include Depth:**  Includes the scene's 3D meshes in the render.
+- **Include Depth:**  Includes a single Z-pass depth channel in the render. Only available in EXR output.
 
 
 <br/>
