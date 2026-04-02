@@ -80,7 +80,7 @@ SynthEyes render settings uses internal names for various things such as the ima
 
 #### Burn-in:
 
-As of now, I am unable to get the Burn-in configuration working.  There is not much documentation on what this setting string should be, and after testing could never get it to work.  Thus 
+As of now, I am unable to get the Burn-in configuration working.  There is not much documentation on what this setting string should be, and after testing could never get it to work.  Thus by default there is no burn-in for the Rendershot state, and frame burn-in for the Playblast state.  Luckily this is probably the desired outcome anyway.
 
 #### Quality:
 
