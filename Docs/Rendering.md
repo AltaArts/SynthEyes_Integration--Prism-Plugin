@@ -6,7 +6,7 @@ The SynthEyes Prism integration has three rendering states: RenderShot, STMap, a
 
 ###  Common Render Options
 
-- **Camera:**  Selects the Camera/Shot to Render.  For multiple cameras in a scene, use a separate state for each.
+- **Camera:**  Selects the Camera/Shot to render.  For multiple cameras in a scene, use a separate state for each.
 
 - **Scaling:** If the override is disabled, the rendered image size will be the same as the SynthEyes scene.  A sanity check popup will display to warn a user of scaling done in SynthEyes.  The 'Scaling Filter' selection controls the interpolation method for down-sampling. (See **Dev Notes** below for more info).
 
@@ -72,7 +72,7 @@ This state uses the SynthEyes 'Preview Movie' from the Perspective View.  It can
 
 #### Scaling:
 
-The render states have the option to down-scale the image for the render which can be useful for large-format media.  This is accomplished by configuring the Image PreProcessor 'DownRez' in its 'Rez' tab using Sizzle API calls.  This is the same for the 'Scaling Filter'.  During a Publish, the state will capture the current settings, set the override, and then reset the original settings.  The downside is that each time the images are scaled in SynthEyes, the SynthEyes pre-cache system will start to rebuild.  Unfortunately this has the affect of longer render times as the system is rebuilding thr cache the same time it is rendering.  During testing an attempt was made to increase the performance by temporarily disabling the pre-cache during a publish, but this did not help as SynthEyes then has to load each frame while it is rendering.  Thus this is just the way it has to be.
+The render states have the option to down-scale the image for the render which can be useful for large-format media.  This is accomplished by configuring the Image PreProcessor 'DownRez' in its 'Rez' tab using Sizzle API calls.  This is the same for the 'Scaling Filter'.  During a Publish, the state will capture the current settings, set the override, and then reset the original settings.  The downside is that each time the images are scaled in SynthEyes, the SynthEyes pre-cache system will start to rebuild.  Unfortunately this has the affect of longer render times as the system is rebuilding the cache at the same time it is rendering.  During testing an attempt was made to increase the performance by temporarily disabling the pre-cache during a publish, but this did not help as SynthEyes then has to load each frame while it is rendering.  Thus this is just the way it has to be.
 
 #### Render Settings Configuration:
 
@@ -80,11 +80,11 @@ SynthEyes render settings uses internal names for various things such as the ima
 
 #### Burn-in:
 
-As of now, I am unable to get the Burn-in configuration working.  There is not much documentaiotn on what this setting string should be, and after testing could never get it to work.  Thus 
+As of now, I am unable to get the Burn-in configuration working.  There is not much documentation on what this setting string should be, and after testing could never get it to work.  Thus 
 
 #### Quality:
 
-
+It seems as though SynthEyes is not respecting the .MP4 'Quality' setting.  Even though there are no errors during testing, it was found that the rendered .MP4 was always the same regardless of the Quality setting.  
 
 <br/>
 

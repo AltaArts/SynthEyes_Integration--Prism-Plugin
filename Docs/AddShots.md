@@ -12,7 +12,7 @@ Adding Shots (Cameras) to SynthEyes is done through the AddShots import state.
 
 There are two choices when importing media:
 
-- **New Scene:** This is the same as the 'New' menu item in SynthEyes and will create a completely new Scene.  Be aware this will delete all existing Cameras in the Scene, and should be used to import the main "hero" shots.
+- **New Scene:** This is the same as the 'New' menu item in SynthEyes and will create a completely new Scene.  Be aware this will delete all existing Cameras in the Scene, and should be used to import the main "hero" shot.
 
 - **Add Shot:**  This is the same as the SynthEyes 'Add Shot' menu item.  This will import and add an additional Shot/Camera to the existing scene.
 

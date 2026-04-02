@@ -21,7 +21,7 @@ Additionally, each setting has the same Tooltip text as in the SynthEyes UI to a
 ![SceneExport Tooltips](DocsImages/SceneExport_Tooltip.png)
 
 > [!NOTE]  
-> At present the default values for each setting is retrieved from the Synth_Formats.py file and uses the default SynthEyes value (see **Dev Notes** below).
+> At present the default value for each setting is retrieved from the Synth_Formats.py file and uses the default SynthEyes value (see **Dev Notes** below).
 
 <br/>
 

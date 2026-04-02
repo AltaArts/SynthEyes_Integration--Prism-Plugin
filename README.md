@@ -43,7 +43,7 @@ This plugin is for Windows only, as Prism2 only supports Windows at this time.
 
 <br/>
 
-## **Documentaion**
+## **Documentation**
 
 [**Interface**](Docs/Interface.md)
 
