@@ -10,15 +10,18 @@ Currently supported formats are .USD, .FBX, .ABC, Blender (.py), Maya (.ma), Bla
 
 ## **Export Settings**
 
-SynthEyes has many configuration settings for the scene exports.  In the SynthEyes UI this is controlled by the Export Settings dialogue that is displayed during an export.  The Prism SceneExport state has these settings configurable in each state.
+SynthEyes has many configuration settings for the scene exports.  In the SynthEyes UI this is controlled by the Export Settings dialogue that is displayed during an export.  The Prism SceneExport state has these settings configurable in each state:
 
 ![Synth USD Settings](DocsImages/Synth-USD_Settings.png)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![SceneExport Settings](DocsImages/SceneExport_Settings.png)
 
-Additionally, each setting has the same Tooltip text as in the SynthEyes UI to aid in those familiar.
-
 <br/>
 
+Additionally, each setting has the same Tooltip text as in the SynthEyes UI to aid in those familiar.
+
 ![SceneExport Tooltips](DocsImages/SceneExport_Tooltip.png)
+
+> [!NOTE]  
+> At present the default values for each setting is retrieved from the Synth_Formats.py file and uses the default SynthEyes value (see **Dev Notes** below).
 
 <br/>
 
@@ -42,8 +45,21 @@ The SceneExport state has this Hierarchy in a separate dropdown, and allows for 
 
 ## **Dev Notes**
 
+#### **Background:**
 The Exporter settings in SynthEyes took a bit of work to get functioning in Python.  As far as I know, there are no API calls to configure these exporter settings.  In SynthEyes these setting are configured in the UI when an export is triggered.  And each format's export settings are saved in one of several settings .json files (for example 'user_presets.json') under a 'Most Recently Used' key.
 
+#### **Default Values:**
+Each exporter setting is loaded from a large Python dictionary called 'SynthFormatNames' in the Synth_Formats.py file.  This dict contains mapping for the various settings, including the default values (same as the standard SynthEyes defaults).  At present this plugin does not have a way to change the defaults (though it is planned); but a user can manually change the values in the dict:
+
+            "units": {
+                "name": "Interpret SynthEyes Units as",
+                "widgetType": "combo",
+                "comboItems": [("Use scene settings", "scene"), ("None", ""), ("Millimeters", "mm"), ("Centimeters", "cm"), ("Meters", "m"), ("Kilometers", "km"), ("Inches", "in"), ("Feet", "ft"), ("Yards", "yd"), ("Miles", "mi")],
+                "factoryDefault": "ft",
+                "toolTip": "This sets metersPerUnit in the USD scene."
+            },
+
+#### **Structure:**
 The SceneExport state uses the SyPy '.export()' API call, which only has parameters for format and filepath.  This will use the export settings from the last export.  In order to allow user configuration of these settings, this integration uses a custom Sizzle script that will edit the SynthEyes Workflow Presets for the exporter type.
 
 The basic flow is:
@@ -140,6 +156,9 @@ Prism_Exporter_Setup.szl:
         end
 
 <br/>
+
+
+
 
 ___
 jump to:
