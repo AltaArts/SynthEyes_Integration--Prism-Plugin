@@ -1019,9 +1019,14 @@ class Synth_StMapClass(object):
 
         idfs = {}
         if self.chb_undistort.isChecked():
-            idfs["undistort"] = f"{ident_base}_UnDistort-Rec709Lin"
+            #   Get Default and Create Name
+            default_unDistortName = self.synthFuncts.synthSettings["unDistortSuffix"]
+            idfs["undistort"] = f"{ident_base}_{default_unDistortName}"
+
         if self.chb_redistort.isChecked():
-            idfs["redistort"] = f"{ident_base}_ReDistort-Rec709Lin"
+            #   Get Default and Create Name
+            default_reDistortName = self.synthFuncts.synthSettings["reDistortSuffix"]
+            idfs["redistort"] = f"{ident_base}_{default_reDistortName}"
 
         if len(idfs) < 1:
             self.core.popup("There are No STMAP Types Checked.")

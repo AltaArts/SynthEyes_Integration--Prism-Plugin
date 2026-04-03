@@ -123,6 +123,7 @@ class Prism_SynthEyes_Functions(object):
         self.core.registerCallback("onStateManagerShow", self.onStateManagerShow, plugin=self.plugin, priority=20)
         self.core.registerCallback("onProjectBrowserStartup", self.onProjectBrowserStartup, plugin=self.plugin)
         self.core.registerCallback("onUserSettingsOpen", self.onUserSettingsOpen, plugin=self.plugin)
+        self.core.registerCallback("onUserSettingsSave", self.onUserSettingsSave, plugin=self.plugin,)
         self.core.registerCallback("prePublish", self.prePublish, plugin=self.plugin)
         self.core.registerCallback("postPublish", self.postPublish, plugin=self.plugin)
 
@@ -159,23 +160,37 @@ class Prism_SynthEyes_Functions(object):
         origin.startAutosaveTimer()
 
 
-    #   Load from Prism Settings    
+    #   Load from Prism User Settings    
     @err_catcher(name=__name__)
     def loadSettings(self):
-        synthSettings = self.core.getConfig("SynthEyes")
+        self.synthSettings = self.core.getConfig("SynthEyes")
 
-        if synthSettings:
-            self.commsPort = int(synthSettings["commsPort"])
-            logger.debug("Loaded Settings")
+        if not self.synthSettings:
+            logger.debug("SynthEyes settings not found.")
+            self.synthSettings = self.createDefaultSettings()
 
-        else:
-            logger.warning("SynthEyes Settings Not Found, using Defaults.")
-            self.commsPort = 50555
+        self.commsPort = int(self.synthSettings["commsPort"])
 
         #   Write Port to Temp File for Menu Script to Read
         portFile = os.path.join(tempfile.gettempdir(), "prism_synth_port.txt")
         with open(portFile, "w") as f:
             f.write(str(self.commsPort))
+
+        logger.debug("Loaded SynthEyes Settings")
+
+
+    #   Get Defaults from Variables and Save to User Settings (Prism.json)    
+    @err_catcher(name=__name__)
+    def createDefaultSettings(self):
+        sData = {}
+        #   Get Defaults from Variables
+        sData["SynthEyes"] = self.synthDefaults
+
+        #   Save to User Settings
+        self.core.setConfig(data=sData)
+
+        logger.debug("Created new SynthEyes settings.")
+        return self.synthDefaults
 
 
     ##########################################################
@@ -558,6 +573,11 @@ class Prism_SynthEyes_Functions(object):
         origin.setWindowIcon(QIcon(self.prismAppIcon))
         ss = self.core.getActiveStyleSheet()
         origin.setStyleSheet(ss["css"])
+
+
+    @err_catcher(name=__name__)
+    def onUserSettingsSave(self, origin):
+        self.loadSettings()
 
 
     @err_catcher(name=__name__)
@@ -1357,7 +1377,7 @@ class Prism_SynthEyes_Functions(object):
                 curr_SniName = self.synthEyes.SNIFileName()
                 shot = self.synthEyes.NewSceneAndShot(shotFilepath, asp = 0.0)
                 self.synthEyes.SetSNIFileName(curr_SniName)
-                camSuffix = "SCENE"
+                camPrefix = self.synthSettings["sceneCamPrefix"]
 
             except Exception as e:
                 logger.warning(f"ERROR: Unable to Create Scene Shot: {e}")
@@ -1367,7 +1387,7 @@ class Prism_SynthEyes_Functions(object):
         elif mode == "add":
             try:
                 shot = self.synthEyes.AddShot(shotFilepath, asp = 0.0)
-                camSuffix = "SHOT"
+                camPrefix = self.synthSettings["shotCamPrefix"]
 
             except Exception as e:
                 logger.warning(f"ERROR: Unable to Add Shot: {e}")
@@ -1376,7 +1396,7 @@ class Prism_SynthEyes_Functions(object):
         if details:
             #   Renames Camera
             try:
-                camName = f"CAMERA_{camSuffix}-{details['identifier']}_{details['version']}"
+                camName = f"{camPrefix}{details['identifier']}_{details['version']}"
             
                 for obj in shot.Objects():
                     if obj.Name().lower().startswith("camera"):

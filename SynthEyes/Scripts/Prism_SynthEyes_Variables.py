@@ -50,7 +50,7 @@ import os
 
 class Prism_SynthEyes_Variables(object):
     def __init__(self, core, plugin):
-        self.version = "v1.0"
+        self.version = "v1.1"
         self.pluginName = "SynthEyes"
         self.pluginType = "App"
         self.appShortName = "syntheyes"
@@ -67,6 +67,15 @@ class Prism_SynthEyes_Variables(object):
         self.pluginDirectory = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
         self.appIcon = os.path.join(self.pluginDirectory, "UserInterfaces", "SynthEyes.ico")
         self.prismAppIcon = os.path.join(self.pluginDirectory, "UserInterfaces", "SynthEyes.ico")
+
+        self.synthDefaults = {
+            "commsPort": 50555,
+            "sceneCamPrefix": "CAM_SCENE-",
+            "shotCamPrefix": "CAM_SHOT-",
+            "unDistortSuffix": "_UnDistort-Rec709Lin",
+            "reDistortSuffix": "_ReDistort-Rec709Lin",
+        }
+
         self.synthStates = [
             "Folder",
             "AddShot",
