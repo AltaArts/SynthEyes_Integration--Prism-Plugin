@@ -234,7 +234,7 @@ class Prism_SynthEyes_externalAccess_Functions(object):
         #   Get Synth Settings from User Settings
         if "SynthEyes" in settings:
             sData = settings["SynthEyes"]
-            
+
         #   Get Defaults from Variables
         else:
             sData = self.synthDefaults
@@ -268,7 +268,7 @@ class Prism_SynthEyes_externalAccess_Functions(object):
     #   Sets the Executable Override for the Autostart
     @err_catcher(name=__name__)
     def onAutostartClicked(self, chb_ovr, le_ovr):
-        #   Get SynthEyes Intergration
+        #   Get SynthEyes Integration
         integrations = self.core.integration.getIntegrations()
         synthData = integrations.get("SynthEyes")
 

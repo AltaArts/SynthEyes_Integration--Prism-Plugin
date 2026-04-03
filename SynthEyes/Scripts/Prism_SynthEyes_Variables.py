@@ -58,7 +58,7 @@ class Prism_SynthEyes_Variables(object):
         self.hasQtParent = False
         self.sceneFormats = [".sni"]
         self.appSpecificFormats = self.sceneFormats
-        self.importFormats = ["usd", "usdc", ".usda", ".obj", ".fbx", "glb"]
+        self.importFormats = [".usd", ".usdc", ".usda", ".obj", ".fbx", "glb"]
         self.outputFormats = [".usda", ".abc", ".obj", ".fbx", ".comp", ".blend", "ShotCam"]
         self.appColor = [200, 180, 0]
         self.canDeleteRenderPasses = False

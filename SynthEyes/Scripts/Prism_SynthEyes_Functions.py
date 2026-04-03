@@ -287,7 +287,7 @@ class Prism_SynthEyes_Functions(object):
             actID = prismScriptMenu.IDByPos(item)
             actName = prismScriptMenu.NameByPos(item)
 
-            #   Add SynthyEyes Action ID's to Data Dict
+            #   Add SynthEyes Action ID's to Data Dict
             for entry in self.synthMenuData:
                 if actName == entry["scriptName"]:
                     entry["actionID"] = actID
@@ -1044,7 +1044,7 @@ class Prism_SynthEyes_Functions(object):
             return shot.Get("cam")
         
         except Exception as e:
-            logger.warning(f"ERROR: Uanble to get Camera from Hot: {e}")
+            logger.warning(f"ERROR: Unable to get Camera from Hot: {e}")
             return None
             
 
