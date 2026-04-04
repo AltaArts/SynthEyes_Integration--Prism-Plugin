@@ -83,6 +83,7 @@ class Synth_SceneExportClass(object):
         self.shotCamsInitialized = False
 
         self.exportData = None
+        self._isLoading = False
 
         self.e_name.setText(state.text(0) + " ({product})")
         self.l_name.setVisible(False)
@@ -170,6 +171,8 @@ class Synth_SceneExportClass(object):
 
         self.core.callback("onStateStartup", self)
 
+        self.core.registerCallback("onStateManagerClose", self.onStateManagerClose, plugin=self.synthFuncts)
+
         self.setupExportSettings()
 
         if stateData is not None:
@@ -177,8 +180,6 @@ class Synth_SceneExportClass(object):
         else:
             self.initializeContextBasedSettings()
             self.loadExportLists()
-
-        self.typeChanged(self.getOutputType())
 
 
     @err_catcher(name=__name__)
@@ -193,65 +194,74 @@ class Synth_SceneExportClass(object):
 
     @err_catcher(name=__name__)
     def loadData(self, data):
-        if "contextType" in data:
-            self.setContextType(data["contextType"])
-        if "customContext" in data:
-            self.customContext = data["customContext"]
-        if "taskname" in data:
-            self.setProductname(data["taskname"])
-        if "productname" in data:
-            self.setProductname(data["productname"])
+        self._isLoading = True
 
-        self.updateUi()
+        try:
+            if "contextType" in data:
+                self.setContextType(data["contextType"])
+            if "customContext" in data:
+                self.customContext = data["customContext"]
+            if "taskname" in data:
+                self.setProductname(data["taskname"])
+            if "productname" in data:
+                self.setProductname(data["productname"])
 
-        if "stateName" in data:
-            self.e_name.setText(data["stateName"])
-        elif "statename" in data:
-            self.e_name.setText(data["statename"] + " ({product})")
-        if "rangeType" in data:
-            idx = self.cb_rangeType.findText(data["rangeType"])
-            if idx != -1:
-                self.cb_rangeType.setCurrentIndex(idx)
-                self.updateRange()
-        if "startframe" in data:
-            self.sp_rangeStart.setValue(int(data["startframe"]))
-        if "endframe" in data:
-            self.sp_rangeEnd.setValue(int(data["endframe"]))
-        if "updateMasterVersion" in data:
-            self.chb_master.setChecked(data["updateMasterVersion"])
-        if "curoutputpath" in data:
-            idx = self.cb_outPath.findText(data["curoutputpath"])
-            if idx != -1:
-                self.cb_outPath.setCurrentIndex(idx)
-        if "curoutputtype" in data:
-            idx = self.cb_outType.findText(data["curoutputtype"])
-            if idx != -1:
-                self.cb_outType.setCurrentIndex(idx)
-        if "customExport" in data:
-            self.chb_customExport.setChecked(data["customExport"])
-        if "exportItems" in data:
-            self.exportData = json.loads(data["exportItems"])
-            self.loadExportLists()
-        if "additionaloptions" in data:
-            self.chb_additionalOptions.setChecked(eval(data["additionaloptions"]))
-        if "lastexportpath" in data:
-            lePath = self.core.fixPath(data["lastexportpath"])
-            self.setLastPath(lePath)
-        if "stateenabled" in data:
-            if type(data["stateenabled"]) == int:
-                self.state.setCheckState(
-                    0, Qt.CheckState(data["stateenabled"]),
-                )
-        if "additionalSettings" in data:
-            for setting in data["additionalSettings"]:
-                for asetting in self.additionalSettings:
-                    if asetting["name"] == setting:
-                        asetting["value"] = data["additionalSettings"][setting]
+            self.updateUi()
 
-        getattr(self.core.appPlugin, "sm_export_loadData", lambda x, y: None)(
-            self, data
-        )
-        self.core.callback("onStateSettingsLoaded", self, data)
+            if "stateName" in data:
+                self.e_name.setText(data["stateName"])
+            elif "statename" in data:
+                self.e_name.setText(data["statename"] + " ({product})")
+            if "rangeType" in data:
+                idx = self.cb_rangeType.findText(data["rangeType"])
+                if idx != -1:
+                    self.cb_rangeType.setCurrentIndex(idx)
+                    self.updateRange()
+            if "startframe" in data:
+                self.sp_rangeStart.setValue(int(data["startframe"]))
+            if "endframe" in data:
+                self.sp_rangeEnd.setValue(int(data["endframe"]))
+            if "updateMasterVersion" in data:
+                self.chb_master.setChecked(data["updateMasterVersion"])
+            if "curoutputpath" in data:
+                idx = self.cb_outPath.findText(data["curoutputpath"])
+                if idx != -1:
+                    self.cb_outPath.setCurrentIndex(idx)
+            if "curoutputtype" in data:
+                idx = self.cb_outType.findText(data["curoutputtype"])
+                if idx != -1:
+                    self.cb_outType.setCurrentIndex(idx)
+            if "exportSettings" in data:
+                exportSettings = json.loads(data["exportSettings"])
+                self.setupExportSettings(exportSettings)
+            if "customExport" in data:
+                self.chb_customExport.setChecked(data["customExport"])
+            if "exportItems" in data:
+                self.exportData = json.loads(data["exportItems"])
+                self.loadExportLists()
+            if "additionaloptions" in data:
+                self.chb_additionalOptions.setChecked(eval(data["additionaloptions"]))
+            if "lastexportpath" in data:
+                lePath = self.core.fixPath(data["lastexportpath"])
+                self.setLastPath(lePath)
+            if "stateenabled" in data:
+                if type(data["stateenabled"]) == int:
+                    self.state.setCheckState(
+                        0, Qt.CheckState(data["stateenabled"]),
+                    )
+            if "additionalSettings" in data:
+                for setting in data["additionalSettings"]:
+                    for asetting in self.additionalSettings:
+                        if asetting["name"] == setting:
+                            asetting["value"] = data["additionalSettings"][setting]
+
+            getattr(self.core.appPlugin, "sm_export_loadData", lambda x, y: None)(
+                self, data
+            )
+
+        finally:
+            self.core.callback("onStateSettingsLoaded", self, data)
+            self._isLoading = False
 
 
     @err_catcher(name=__name__)
@@ -274,6 +284,11 @@ class Synth_SceneExportClass(object):
         self.lw_shots.itemChanged.connect(self.onExportItemChanged)
         self.lw_meshes.itemChanged.connect(self.onExportItemChanged)
         self.b_pathLast.clicked.connect(lambda: self.stateManager.showLastPathMenu(self))
+
+
+    @err_catcher(name=__name__)
+    def onStateManagerClose(self, origin):
+        self.stateManager.saveStatesToScene()
 
 
     @err_catcher(name=__name__)
@@ -791,6 +806,9 @@ class Synth_SceneExportClass(object):
 
     @err_catcher(name=__name__)
     def typeChanged(self, idx):
+        if self._isLoading:
+            return
+        
         isSCam = idx == "ShotCam"
         self.w_taskname.setVisible(not isSCam)
         getattr(self.core.appPlugin, "sm_export_typeChanged", lambda x, y: None)(
@@ -804,7 +822,7 @@ class Synth_SceneExportClass(object):
 
     #   Creates the Exporter Settings Based on Type
     @err_catcher(name=__name__)
-    def setupExportSettings(self):
+    def setupExportSettings(self, exportSettings=None):
         exportType = self.cb_outType.currentText()
         settingsWindow = self.w_exportSettings
         layout = settingsWindow.layout()
@@ -821,6 +839,10 @@ class Synth_SceneExportClass(object):
             row = self.createSettingWidget(key, setting, settingsWindow)
             if row:
                 layout.addWidget(row)
+
+        #   Set Saved State Settings if Passed
+        if exportSettings:
+            self.applyExportSettings(exportSettings)
 
 
     #   Removes All Widgets from Layout
@@ -942,6 +964,69 @@ class Synth_SceneExportClass(object):
             rowLayout.addWidget(widget)
             return row
     
+    #   Loads Saved Settings into the UI
+    @err_catcher(name=__name__)
+    def applyExportSettings(self, exportSettings):
+        if not exportSettings:
+            return
+
+        #   Convert to Lookup Dict
+        settingsList = exportSettings.get("exporter_Settings", [])
+        settingsDict = {k: v for k, v in settingsList}
+
+        #   Iterate Settings and Set Values
+        for key, widget in self.exportWidgets.items():
+
+            if key not in settingsDict:
+                continue
+
+            value = settingsDict[key]
+
+            try:
+                #   Checkbox
+                if isinstance(widget, QCheckBox):
+                    widget.setChecked(str(value) in ("1", "True", "true") or value is True or value == 1)
+
+                #   Combo
+                elif isinstance(widget, QComboBox):
+                    for i in range(widget.count()):
+                        if widget.itemData(i) == value:
+                            widget.setCurrentIndex(i)
+                            break
+
+                #   Spinbox
+                elif isinstance(widget, QSpinBox):
+                    widget.setValue(int(value))
+
+                #   DoubleSpinBox
+                elif isinstance(widget, QDoubleSpinBox):
+                    widget.setValue(float(value))
+
+                #   LineEdit
+                elif isinstance(widget, QLineEdit):
+                    widget.setText(str(value))
+
+                #   Radio Button Group
+                elif isinstance(widget, QButtonGroup):
+                    matched = False
+
+                    for button in widget.buttons():
+                        if getattr(button, "_value", None) == value:
+                            button.setChecked(True)
+                            matched = True
+                            break
+
+                    #   Fallback to Checkbox
+                    if not matched and widget.buttons():
+                        widget.buttons()[0].setChecked(True)
+
+                #   Skip Unknown
+                else:
+                    continue
+
+            except Exception as e:
+                logger.warning(f"ERROR: Unable to apply setting '{key}': {e}")
+
 
     #   Gets Exporter Settings from UI
     @err_catcher(name=__name__)
@@ -1050,7 +1135,7 @@ class Synth_SceneExportClass(object):
 
         #   Build Lookup Dict from ExportData
         lookup = {}
-        if self.exportData and exportKey in self.exportData:
+        if self.exportData and (exportKey in self.exportData):
             keyName = "cameraName" if exportKey == "cameraExports" else "meshName"
             lookup = {item[keyName]: item["exported"] for item in self.exportData[exportKey]}
 
@@ -1542,13 +1627,12 @@ class Synth_SceneExportClass(object):
                 "curoutputtype": self.getOutputType(),
                 # "currentcam": self.cb_cam.currentText(),
                 # "currentscamshot": self.cb_sCamShot.currentText(),
+                "exportSettings": json.dumps(self.getExportSettings()),
                 "customExport": self.chb_customExport.isChecked(),
-
                 "exportItems": json.dumps(self.getExportItems()),
-
                 "lastexportpath": self.l_pathLast.text().replace("\\", "/"),
                 "stateenabled": self.core.getCheckStateValue(self.state.checkState(0)),
-                "additionalSettings": {s["name"]: s["value"] for s in self.additionalSettings}
+                "additionalSettings": {s["name"]: s["value"] for s in self.additionalSettings},
             }
         )
 
