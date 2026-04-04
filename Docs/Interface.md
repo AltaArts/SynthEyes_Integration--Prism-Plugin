@@ -79,17 +79,19 @@ SynthEyes does not automatically run scripts at startup, and so Prism will not l
 
 Each Prism DCC integration needs a way to save the StateManager State data into the scenefile.  The SynthEyes integration uses the SynthEyes Notes system.  Normally the Notes are used for comments and reminders in the UI similar to mark-up comments.  Prism uses this to store all the States and are hidden in the UI.
 
-It does this by first creating an index Note (with number 1000) which contains the numbers of each created State Note.  Then each State in the StateManager will have a separate Note created (with sequential numbers) that has the State data.  For performance and SynthEyes Note-size limitations, the data is compressed and encoded using zlib and base64 and saved to the Note.
+It does this by first creating an index Note (with number 1000) which contains the numbers and metadata of each created State Note.  Then each State in the StateManager will have a separate base Note created (in sequence of tens) that has the State data.  Due to SynthEyes Note-size limitations, each State's data will be split amongst 'Sub-Notes' based on the max-size of Note text. For performance, the data is compressed and encoded using zlib and base64 and saved to the Note.
 
 Index Note:
-
-        Note 1000:
-        {"notes": [1001, 1002, 1003, 1004, 1005, 1006, 1007]}
+```
+Note 1000:
+{"states": [{"base": 1010, "chunks": 1, "checksum": "28bb01c995fb73b8fedabe434fc1daad438f73b8"}, {"base": 1020, "chunks": 2, "checksum": "4cce916d17e4ba965bdf3b1fce2baacbd5d49ad4"}, {"base": 1030, "chunks": 1, "checksum": "8728b8194b514d6f3c5ece90ad1c2d874b02d1b6"}, {"base": 1040, "chunks": 2, "checksum": "2be5e5b0ec2f9f37f19d3752bddcac6198664b2a"}, {"base": 1050, "chunks": 2, "checksum": "c5c40e82b0154ad418ea12e24b4df28d7810207a"}, {"base": 1060, "chunks": 1, "checksum": "3c929f1edc17742bde964e56c395ddadfee8db19"}, {"base": 1070, "chunks": 2, "checksum": "6692a5f25220fd9c9434194f7e97bb8333e99383"}]}
+```
 
 Example State Note:
-
-        Note 1002:
-        eJyrViouSSxJzUvMTVWyUiooTcrJLM5Q0lFKzs/NTc0rAYoBOSmpxclFmQUlmfl5IIFaAPJHEec=
+```
+Note 1010:
+eJyrViouSSxJzUvMTVWyUiooTcrJLM5Q0lFKzs/NTc0rAYoBOSmpxclFmQUlmfl5IIFaAPJHEec=
+```
 
 <br/>
 
