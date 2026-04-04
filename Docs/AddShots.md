@@ -50,9 +50,11 @@ There are several ways to select the media:
 
 When a Scene or Shot is imported, a camera is created in SynthEyes.  For better organization, the AddShot state will rename the camera.  The new camera name will have a prefix based on the type of import and then append the Media Identifier name and version.
 
-- New Scene: 'CAMERA_SCENE'
-- Add Shot: 'CAMERA_SHOT'
+> [!NOTE]
+> The default prefix's can be configured in the Prism SynthEyes DCC settings (see [**Interface**](Interface.md)).
 
+ <br/>
+ 
 ![CamName Original](DocsImages/AddShot-CamName_Orig.png)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![CamName Renamed](DocsImages/AddShot-CamName_Rename.png)
 
 When changing the version of the shot's images, if the version string exists in the camera name it will be updated.

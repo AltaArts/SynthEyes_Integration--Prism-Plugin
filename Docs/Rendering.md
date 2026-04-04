@@ -42,7 +42,8 @@ The STMap state renders SynthEyes distortion maps (STMaps). This is similar to t
 
 ### **Options**
 - **Single / Sequence:**  Selects either single-image Distortion maps, or an image sequence. 
-- **Map Types:**  Select which type of STMaps to render.  Each type will be rendered into a separate Media Identifier in Prism.  Each Identifier name will have '_UnDistort-Rec709Lin' or '_ReDistort-Rec709Lin' appended as a suffix.
+- **Map Types:**  Select which type of STMaps to render.  Each type will be rendered into a separate Media Identifier in Prism.
+- **Naming:** Each Identifier name will have a suffix appended to the Identifier name based on the STMap type.  The default prefix's can be configured in the Prism SynthEyes DCC settings (see [**Interface**](Interface.md)).
 
 > [!NOTE]  
 > Dev Note:  This uses the SynthEyes Sizzle functions 'WriteRedistortImage' and 'WriteUndistortImage'.  This allows a user to select which STMaps are desired.  For image sequences the SynthEyes docs describe the existence of 'WriteRedistortSequence' and 'WriteUndistortSequence', but I am unable to get either to work without errors.  So unfortunately for sequences there is just a loop to render every frame separately, which is slow.  Thus unless a sequence is needed for changing distortion (such as a zoom or a breathing focus-pull), it is recommended to render a single image.

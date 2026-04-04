@@ -55,6 +55,8 @@ The SynthEyes plugin has several functions that are user configurable from the P
 
 - **SynthEyes Communications Socket Port:**  The localhost port used for SynthEyes-Prism menu communications.  There is usually not a need to change this unless there is another process that is using the port and causing conflicts. (see **Dev Notes** below for more information).
 
+- **Defaults:**  Sets the default prefix/suffix for auto-created names (see [**Adding Shots**](AddShots.md) and [**STMaps**](Rendering.md)).
+
 <br/>
 
 ## **Dev Notes**
