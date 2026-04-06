@@ -55,7 +55,6 @@ from ctypes import wintypes
 import json
 import zlib
 import base64
-import hashlib
 import tempfile
 import re
 from contextlib import contextmanager
@@ -2296,10 +2295,11 @@ class Prism_SynthEyes_Functions(object):
 
 
     #   Creates Simple Checksum for the State Data
-    @err_catcher(name=__name__)
     def stateChecksum(self, data):
-        raw = json.dumps(data, sort_keys=True, separators=(",", ":")).encode()
-        return hashlib.sha1(raw).hexdigest()
+        if not isinstance(data, str):
+            data = json.dumps(data, separators=(",", ":"))
+
+        return format(zlib.crc32(data.encode()) & 0xffffffff, "08x")
 
 
     #   Returns Note Object by Note Number
@@ -2325,7 +2325,7 @@ class Prism_SynthEyes_Functions(object):
         note.number = 1000
         note.shotID = 0
         note.show = 0.0
-        note.text = json.dumps({"notes": []})
+        note.text = self.compressState({"s": []})
 
         return note
 
@@ -2353,8 +2353,17 @@ class Prism_SynthEyes_Functions(object):
             if not index_note:
                 index_note = self.createIndexNote()
 
-            old_index = json.loads(index_note.text)
-            old_states = old_index.get("states", [])
+            try:
+                old_index = self.decompressState(index_note.text)
+                old_states = old_index.get("s", [])
+            except Exception:
+                old_states = []
+
+            #   Fast lookup: [base, chunks, checksum]
+            old_lookup = {
+                s[0]: s for s in old_states
+                if isinstance(s, list) and len(s) == 3
+            }
 
             new_index_states = []
             used_notes = set()
@@ -2366,6 +2375,19 @@ class Prism_SynthEyes_Functions(object):
 
                 #   Compress the State Data
                 compressed = self.compressState(state)
+                checksum = self.stateChecksum(compressed)
+
+                old_meta = old_lookup.get(base_number)
+
+                #   SKIP if Unchanged
+                if old_meta and old_meta[2] == checksum:
+                    new_index_states.append(old_meta)
+
+                    #   Mark Existing Notes as Used So They Don’t Get Deleted
+                    old_chunks = old_meta[1]
+                    used_notes.update(range(base_number, base_number + old_chunks))
+
+                    continue
 
                 #   Split the Data Based on the Size Constant
                 chunks = [
@@ -2385,20 +2407,22 @@ class Prism_SynthEyes_Functions(object):
                     note.text = chunk
 
                 #   Store the State Note's Metadata
-                new_index_states.append({
-                    "base": base_number,
-                    "chunks": len(chunks),
-                    "checksum": self.stateChecksum(compressed)
-                })
+                new_index_states.append([
+                    base_number,
+                    len(chunks),
+                    checksum
+                ])
 
-            #   DELETE UNUSED NOTES
+            #   Delete Unused Notes
             old_note_numbers = set()
 
             for s in old_states:
-                base = s.get("base", 0)
-                chunks = s.get("chunks", 0)
-                for j in range(chunks):
-                    old_note_numbers.add(base + j)
+                try:
+                    base, chunks, _ = s
+                except Exception:
+                    continue
+
+                old_note_numbers.update(range(base, base + chunks))
 
             to_delete = old_note_numbers - used_notes
 
@@ -2408,7 +2432,7 @@ class Prism_SynthEyes_Functions(object):
                     self.synthEyes.Delete(note)
 
             #   Write Index Note Data
-            index_note.text = json.dumps({"states": new_index_states})
+            index_note.text = self.compressState({"s": new_index_states})
 
 
     #   Called to Retrieve State Data
@@ -2419,19 +2443,26 @@ class Prism_SynthEyes_Functions(object):
         if not index_note:
             return self.getDefaultState()
 
-        index = json.loads(index_note.text)
-        states_meta = index.get("states", [])
+        try:
+            index = self.decompressState(index_note.text)
+            states_meta = index.get("s", [])
 
-        if not states_meta:
+            if not states_meta:
+                return self.getDefaultState()
+            
+        except Exception:
+            logger.warning("ERROR: Failed to decode index note")
             return self.getDefaultState()
 
         states = []
 
         #   Process Each Prism State
         for state_meta in states_meta:
-            base = state_meta["base"]
-            chunks = state_meta["chunks"]
-            expected_checksum = state_meta.get("checksum")
+            try:
+                base, chunks, expected_checksum = state_meta
+            except Exception:
+                logger.warning("Invalid state metadata, skipping")
+                continue
 
             missing_chunk = False
             chunks_data = []
@@ -2479,19 +2510,21 @@ class Prism_SynthEyes_Functions(object):
             if not index_note:
                 index_note = self.createIndexNote()
 
-            index = json.loads(index_note.text)
-            states_meta = index.get("states", [])
+            try:
+                index = self.decompressState(index_note.text)
+                states_meta = index.get("s", [])
+            except Exception:
+                states_meta = []
 
             for state in states_meta:
-                base = state["base"]
-                chunks = state["chunks"]
+                base, chunks, _ = state
 
                 for i in range(chunks):
                     note = self.getNoteByNumber(base + i)
                     if note:
                         self.synthEyes.Delete(note)
 
-            index_note.text = json.dumps({"states": []})
+            index_note.text = self.compressState({"s": []})
 
 
 
