@@ -868,9 +868,15 @@ class Prism_SynthEyes_Functions(object):
             if not shot:
                 shot = self.synthEyes.Shots()[0]
 
-            start = shot.Get("start") + 1
-            end = shot.Get("stop") + 1
-            return[start, end]
+            #   SynthEyes internally always starts at 0, and uses a UI offset value for the FrameRange
+            start_raw = shot.Get("start")
+            end_raw = shot.Get("stop")
+            ui_offset = shot.Get("frameUIOffset")
+
+            start_UI = start_raw + ui_offset
+            end_UI = end_raw +ui_offset
+
+            return[start_UI, end_UI]
         
         except Exception as e:
             logger.warning(f"ERROR: Unable to Get Framerange from SynthEyes: {e}")
@@ -883,11 +889,16 @@ class Prism_SynthEyes_Functions(object):
             if not shot:
                 shot = self.synthEyes.Shots()[0]
 
+            #   SynthEyes internally always starts at 0, and uses a UI offset value for the FrameRange
+            ui_offset = shot.Get("frameUIOffset")
+            start_raw = startFrame - ui_offset
+            end_raw = endFrame - ui_offset
+
             with self.UNDO_BLOCK("Set Framerange"):
-                shot.Set("start", startFrame - 1)
-                shot.Set("stop", endFrame - 1)
-                self.synthEyes.SetAnimStart(startFrame - 1)
-                self.synthEyes.SetAnimEnd(endFrame - 1)
+                shot.Set("start", start_raw)
+                shot.Set("stop", end_raw)
+                self.synthEyes.SetAnimStart(startFrame)
+                self.synthEyes.SetAnimEnd(endFrame)
             
             logger.debug("Updated Framerange in SynthEyes")
 
