@@ -434,6 +434,30 @@ class Prism_SynthEyes_Functions(object):
         user32.SetForegroundWindow(hwnd)
 
 
+    #   Makes Mesh Name Using Supplied Context
+    @err_catcher(name=__name__)
+    def buildMeshName(self, fileName:str, data:dict=None) -> str:
+        if isinstance(data, dict):
+            name = None
+
+            for key in ("asset", "product", "task"):
+                value = data.get(key)
+                if value:
+                    name = value
+                    break
+
+            version = data.get("version")
+
+            if name and version:
+                return f"{name}_{version}"
+            elif name:
+                return name
+            elif version:
+                return f"{fileName}_{version}"
+
+        return fileName
+    
+
     #   Finds and Changes the Version Suffix (_v001, _v002, _master)
     @err_catcher(name=__name__)
     def updateNameVersion(self, currentName:str, newVerStr:str) -> str | None:
@@ -473,7 +497,75 @@ class Prism_SynthEyes_Functions(object):
 
         start, end = match.span(1)
         return basePath[:start] + new_numberStr + basePath[end:]
-        
+
+
+    #   Search for Beauty Texture Files in Import File Dir
+    @err_catcher(name=__name__)
+    def findTextureFile(self, filename: str) -> str:
+        baseDir = os.path.dirname(filename)
+        searchDirs = [baseDir]
+
+        #   Subdir Names to Search
+        targetDirs = {
+            "textures", "texture", "tex", "maps", "map", "images", "image",
+            "surfacing", "shaders", "lookdev", "materials", "mat"
+        }
+
+        #   Build Dir Search List
+        try:
+            for entry in os.listdir(baseDir):
+                fullPath = os.path.join(baseDir, entry)
+
+                if not os.path.isdir(fullPath):
+                    continue
+
+                if entry.lower() in targetDirs:
+                    searchDirs.append(fullPath)
+
+        except Exception:
+            pass
+
+        #   Remove Any Duplicates
+        searchDirs = list(dict.fromkeys(searchDirs))
+
+        #   Supported Extensions
+        exts = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".exr", ".bmp", ".tga"}
+
+        #   Filename Keywords
+        colorNames = [
+            "diffuse", "albedo", "basecolor", "base_color", "diff", "dif",
+            "color", "col", "alb", "beauty"
+        ]
+
+        #   Search All Files in Dirs
+        for d in searchDirs:
+            if not os.path.isdir(d):
+                continue
+
+            try:
+                for root, dirs, files in os.walk(d):
+                    depth = os.path.relpath(root, d).count(os.sep)
+
+                    #   Stop at Two Subdir Levels
+                    if depth >= 2:
+                        dirs[:] = []
+
+                    #   Abort if Not Image
+                    for f in files:
+                        ext = os.path.splitext(f)[1].lower()
+                        if ext not in exts:
+                            continue
+
+                        #   Check if Name Matches a Color Name
+                        nameLower = f.lower()
+                        if any(k in nameLower for k in colorNames):
+                            return os.path.join(root, f)
+
+            except Exception:
+                continue
+
+        return None
+
 
     #   Returns Str of Format Specific Render Settings
     #   (from Synth_Formats.py imports)
@@ -1489,42 +1581,40 @@ class Prism_SynthEyes_Functions(object):
         filePath = os.path.normpath(impFileName)
 
         #   Get Existing Mesh
-        mesh_orig = self.getObjByUUID("mesh", data["meshUUID"])
+        meshObj = self.getObjByUUID("mesh", data["meshUUID"])
 
         ##   Update Existing Mesh
-        if update and mesh_orig:
+        if update and meshObj:
             #   Capture Original Mesh Data
-            meshName_curr = self.getObjName(self, mesh_orig)
-            meshTrans_orig = mesh_orig.trans
+            meshName_curr = self.getObjName(self, meshObj)
+            meshTrans_orig = meshObj.trans
 
             with self.UNDO_BLOCK("Update Mesh"):
                 #   Load Mesh from New Filepath
-                mesh_orig.Call("ReadMesh", impFileName)
+                meshObj.Call("ReadMesh", filePath)
                 #   Apply Original Transforms
-                mesh_orig.Set("trans", meshTrans_orig)
+                meshObj.Set("trans", meshTrans_orig)
 
             #   Change Mesh Name
             meshName_new = self.updateNameVersion(meshName_curr, data['version'])
-            if not meshName_new:
-                meshName_new = meshName_curr
-
             if meshName_new:
                 with self.UNDO_BLOCK("Rename Mesh"):
-                    self.setObjName(mesh_orig, meshName_new)
+                    self.setObjName(meshObj, meshName_new)
 
-            result = mesh_orig.UniqID()
+            #   Find 'Beauty' Texture File and Set in SynthEyes if Exists
+            texFile = self.findTextureFile(filePath)
+            if texFile:
+                with self.UNDO_BLOCK("Load Texture"):
+                    meshObj.Set("txFilename", texFile)
+                    result = meshObj.Call("txReadTextureFromFile")
+
+            result = meshObj.UniqID()
             doImport = True
 
         ##   Create New Mesh
         else:
             #   Create Mesh Name
-            if data:
-                try:
-                    meshName = f"{data['product']}_{data['version']}"
-                except:
-                    pass
-            else:
-                meshName = fileName[0]
+            meshName = self.buildMeshName(fileName[0], data)
 
             with self.UNDO_BLOCK("Import Mesh"):
                 #   Create New Mesh from Filepath
@@ -1537,6 +1627,13 @@ class Prism_SynthEyes_Functions(object):
             with self.UNDO_BLOCK("Rename Mesh"):
                 #   Set Mesh Name
                 self.setObjName(meshObj, meshName)
+
+            #   Find 'Beauty' Texture File and Set in SynthEyes if Exists
+            texFile = self.findTextureFile(filePath)
+            if texFile:
+                with self.UNDO_BLOCK("Load Texture"):
+                    meshObj.Set("txFilename", texFile)
+                    result = meshObj.Call("txReadTextureFromFile")
 
             result = meshObj.UniqID()
             doImport = True

@@ -101,6 +101,7 @@ class Synth_ImportMeshClass(object):
             "defaultImportStateName",
             configPath=self.core.prismIni,
         ) or stateNameTemplate
+
         self.e_name.setText(self.stateNameTemplate)
         self.l_name.setVisible(False)
         self.e_name.setVisible(False)
@@ -125,9 +126,6 @@ class Synth_ImportMeshClass(object):
            
             if importPaths:
                 importPath = importPaths[-1]
-                if len(importPaths) > 1:
-                    for impPath in importPaths[:-1]:
-                        stateManager.importFile(impPath)
 
         if importPath:
             self.setImportPath(importPath)
@@ -161,16 +159,13 @@ class Synth_ImportMeshClass(object):
 
     @err_catcher(name=__name__)
     def requestImportPaths(self):
-        #####################################################
-        ### DISABLED AS IT DISPLAYS BEHIND STATEMANAGER   ###
+        #   Call 'Fancy' Browser if Avail (I believe it is from Libraries plugin)
+        result = self.core.callback("requestImportPath", self.stateManager)
+        for res in result:
+            if isinstance(res, dict) and res.get("importPaths") is not None:
+                return res["importPaths"]
 
-        # result = self.core.callback("requestImportPath", self.stateManager)
-        # for res in result:
-        #     if isinstance(res, dict) and res.get("importPaths") is not None:
-        #         return res["importPaths"]
-
-        #####################################################
-
+        #   Call 'Normal' Product Browser
         import ProductBrowser
         ts = ProductBrowser.ProductBrowser(core=self.core, importState=self)
         self.core.parentWindow(ts)
@@ -228,10 +223,25 @@ class Synth_ImportMeshClass(object):
             try:
                 impFileName = self.getImportPath()
                 impFileName = os.path.normpath(impFileName)
+
                 productData = self.core.products.getProductDataFromFilepath(impFileName)
-                name = productData['product']
+                if not productData:
+                    productData = self.core.paths.getCachePathData(impFileName)
+
+                name = None
+
+                if isinstance(productData, dict):
+                    for key in ("asset", "product", "task"):
+                        value = productData.get(key)
+                        if value:
+                            name = value
+                            break
+
+                if not name:
+                    name = os.path.splitext(os.path.basename(impFileName))[0]
 
             except Exception as e:
+                logger.warning(f"ERROR: Unable to Build Name from Context.  Using Filename: {e}")
                 name = text
 
         #   Set the name for the State list
@@ -377,10 +387,11 @@ class Synth_ImportMeshClass(object):
             return result
         
         fileName = self.core.getCurrentFileName()
+
         impFileName = path or self.getImportPath()
         impFileName = os.path.normpath(impFileName)
 
-        productData = self.core.products.getProductDataFromFilepath(impFileName)
+        productData = self.core.paths.getCachePathData(impFileName)
         productData["meshUUID"] = self.meshUUID
 
         kwargs = {
@@ -412,8 +423,7 @@ class Synth_ImportMeshClass(object):
         if not result:
             return
 
-        cacheData = self.core.paths.getCachePathData(impFileName)
-        self.taskName = cacheData.get("task")
+        self.taskName = self.synthFuncts.buildMeshName(impFileName, productData)
         doImport = True
 
         importResult = self.core.appPlugin.sm_import_importToApp(
