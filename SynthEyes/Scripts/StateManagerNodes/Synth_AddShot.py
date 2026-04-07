@@ -137,6 +137,8 @@ class Synth_AddShotClass(object):
         self.l_latestVersion.setFont(font)
 
 
+
+
     ####   Do one of the following:     ####
 
         ##   1. Load State from Comp Data
@@ -216,9 +218,10 @@ class Synth_AddShotClass(object):
 
             result = self.addShot(requestResult[0], requestResult[1])
 
-            if result:
-                self.shotUUID = result
-
+            if not result:
+                return False
+            
+            self.shotUUID = result
             self.nameChanged()
             self.updateUi()
 
@@ -817,9 +820,82 @@ class Synth_AddShotClass(object):
     @err_catcher(name=__name__)
     def addShot(self, imagePath, versionData):
         mode = self.synthFuncts.addShot_mode
+
+        if mode == "survey":
+            imagePath = self.createSurveyIFL(imagePath, versionData)
+            if not imagePath:
+                logger.warning("ERROR: Unable to Import Survey Shot")
+                return False
+
         result = self.synthFuncts.sm_addShot(self, mode, imagePath, versionData)
 
         return result
+    
+
+    @err_catcher(name=__name__)
+    def createSurveyIFL(self, imagePath, vData):
+        video_set = {ext.lower() for ext in self.core.media.videoFormats}
+        imageFormats = {
+            ext.lower()
+            for ext in self.core.media.supportedFormats
+            if ext.lower() not in video_set
+        }
+
+        imageDir, _ = os.path.split(imagePath)
+
+        imagesFiles = []
+        for file in os.listdir(imageDir):
+            filePath = os.path.join(imageDir, file)
+
+            #   Skip Non-Files
+            if not os.path.isfile(filePath):
+                continue
+
+            #   Skip Non-Image Files
+            ext = os.path.splitext(file)[1].lower()
+            if ext not in imageFormats:
+                continue
+
+            imagesFiles.append(filePath)
+
+        #   Message Text for Non-Sequences
+        abortText = ("It appears the selected files are not an Image\n"
+                    "Sequence.  Please make sure the files are consecutively\n"
+                    "numbered (example: .0001, .0002, .0003)")
+
+        #   Abort if Not Multiple Files
+        if len(imagesFiles) < 2:
+            self.core.popup(abortText)
+            return False
+
+        #   Detect Image Sequence
+        seqFiles = self.core.media.detectSequence(imagesFiles, baseFile=imagePath)
+
+        #   Abort If Not Image Sequence
+        if not seqFiles or len(seqFiles) < 2:
+            self.core.popup(abortText)
+            return False
+
+        #   Make IFL Filename
+        try:
+            baseName = vData.get("identifier", None)
+            if baseName:
+                ifl_name = f"SURVEY-{baseName}.ifl"
+            else:
+                ifl_name = "SURVEY.ifl"
+
+        except Exception as e:
+            logger.warning(f"ERROR: Unable to Create Survey IFL Name: {e}")
+            ifl_name = "SURVEY.ifl"
+
+        ifl_path = os.path.join(imageDir, ifl_name)
+
+        #   Write Sequence Filepaths to IFL
+        with open(ifl_path, "w") as f:
+            for file in seqFiles:
+                f.write(file + "\n")
+
+        return ifl_path
     
 
     @err_catcher(name=__name__)

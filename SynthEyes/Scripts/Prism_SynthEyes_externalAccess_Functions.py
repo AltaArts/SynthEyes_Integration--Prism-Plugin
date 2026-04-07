@@ -132,21 +132,29 @@ class Prism_SynthEyes_externalAccess_Functions(object):
         lo_synthDefaults.addWidget(l_shotCam, 1, 0)
         lo_synthDefaults.addWidget(origin.le_shotCam, 1, 1)
 
+        #   Survey Camera Prefix
+        l_surveyCam = QLabel("Shot Camera Prefix:")
+        l_surveyCam.setFixedWidth(280)
+        origin.le_surveyCam = QLineEdit()
+        origin.le_surveyCam.setObjectName("synth_LineEdit_Wide")
+        lo_synthDefaults.addWidget(l_surveyCam, 2, 0)
+        lo_synthDefaults.addWidget(origin.le_surveyCam, 2, 1)
+
         #   UnDistort Suffix
         l_unDistort = QLabel("UnDistort Suffix:")
         l_unDistort.setFixedWidth(280)
         origin.le_unDistort = QLineEdit()
         origin.le_unDistort.setObjectName("synth_LineEdit_Wide")
-        lo_synthDefaults.addWidget(l_unDistort, 2, 0)
-        lo_synthDefaults.addWidget(origin.le_unDistort, 2, 1)
+        lo_synthDefaults.addWidget(l_unDistort, 3, 0)
+        lo_synthDefaults.addWidget(origin.le_unDistort, 3, 1)
 
         #   ReDistort Suffix
         l_reDistort = QLabel("ReDistort Suffix:")
         l_reDistort.setFixedWidth(280)
         origin.le_reDistort = QLineEdit()
         origin.le_reDistort.setObjectName("synth_LineEdit_Wide")
-        lo_synthDefaults.addWidget(l_reDistort, 3, 0)
-        lo_synthDefaults.addWidget(origin.le_reDistort, 3, 1)
+        lo_synthDefaults.addWidget(l_reDistort, 4, 0)
+        lo_synthDefaults.addWidget(origin.le_reDistort, 4, 1)
 
         #   Override Line Edit Style for Full Width
         style = """
@@ -158,6 +166,7 @@ class Prism_SynthEyes_externalAccess_Functions(object):
         """
         origin.le_sceneCam.setStyleSheet(style)
         origin.le_shotCam.setStyleSheet(style)
+        origin.le_surveyCam.setStyleSheet(style)
         origin.le_unDistort.setStyleSheet(style)
         origin.le_reDistort.setStyleSheet(style)
 
@@ -197,6 +206,12 @@ class Prism_SynthEyes_externalAccess_Functions(object):
         l_shotCam.setToolTip(tip)
         origin.le_shotCam.setToolTip(tip)
 
+        tip = ("This is the prefix that will be automatically added to\n"
+               "new additional Survey Camera names.\n\n"
+               "The name can be manually edited in the AddShot state.")
+        l_surveyCam.setToolTip(tip)
+        origin.le_surveyCam.setToolTip(tip)
+
         tip = ("This is the suffix that will be automatically added to\n"
                "the STMap Un-Distort file.")
         l_unDistort.setToolTip(tip)
@@ -221,6 +236,9 @@ class Prism_SynthEyes_externalAccess_Functions(object):
 
         if hasattr(origin, "le_shotCam"):
             settings["SynthEyes"]["shotCamPrefix"] = origin.le_shotCam.text()
+
+        if hasattr(origin, "le_surveyCam"):
+            settings["SynthEyes"]["surveyCamPrefix"] = origin.le_surveyCam.text()
 
         if hasattr(origin, "le_unDistort"):
             settings["SynthEyes"]["unDistortSuffix"] = origin.le_unDistort.text()
@@ -247,6 +265,9 @@ class Prism_SynthEyes_externalAccess_Functions(object):
 
         if "shotCamPrefix" in sData:
             origin.le_shotCam.setText(sData["shotCamPrefix"])
+
+        if "surveyCamPrefix" in sData:
+            origin.le_surveyCam.setText(sData["surveyCamPrefix"])
 
         if "unDistortSuffix" in sData:
             origin.le_unDistort.setText(sData["unDistortSuffix"])

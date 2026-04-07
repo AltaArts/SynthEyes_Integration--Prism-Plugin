@@ -72,6 +72,7 @@ class Prism_SynthEyes_Variables(object):
             "commsPort": 50555,
             "sceneCamPrefix": "CAM_SCENE-",
             "shotCamPrefix": "CAM_SHOT-",
+            "surveyCamPrefix": "CAM_SURVEY-",
             "unDistortSuffix": "_UnDistort-Rec709Lin",
             "reDistortSuffix": "_ReDistort-Rec709Lin",
         }

@@ -138,10 +138,9 @@ class Prism_SynthEyes_Functions(object):
         if platform.system() == "Linux":
             origin.timer.stop()
 
-            if "prism_project" in os.environ and os.path.exists(
-                os.environ["prism_project"]
-            ):
+            if "prism_project" in os.environ and os.path.exists(os.environ["prism_project"]):
                 curPrj = os.environ["prism_project"]
+
             else:
                 curPrj = self.core.getConfig("globals", "current project")
 
@@ -389,6 +388,7 @@ class Prism_SynthEyes_Functions(object):
                         
             except Exception:
                 pass
+
             return True
 
         #   Iterate Through All Top-Level Windows
@@ -532,10 +532,8 @@ class Prism_SynthEyes_Functions(object):
         exts = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".exr", ".bmp", ".tga"}
 
         #   Filename Keywords
-        colorNames = [
-            "diffuse", "albedo", "basecolor", "base_color", "diff", "dif",
-            "color", "col", "alb", "beauty"
-        ]
+        colorNames = ["diffuse", "albedo", "basecolor", "base_color", "diff", "dif",
+                      "color", "col", "alb", "beauty"]
 
         #   Search All Files in Dirs
         for d in searchDirs:
@@ -725,11 +723,18 @@ class Prism_SynthEyes_Functions(object):
         origin.horizontalLayout_3.insertWidget(1, origin.b_addShot)
         origin.b_addShot.clicked.connect(lambda: self.addShot(origin, "add"))
 
+        #   Add Survey Button
+        origin.b_addSurvey = QPushButton(origin.w_CreateImports)
+        origin.b_addSurvey.setObjectName("b_addSurvey")
+        origin.b_addSurvey.setText("Survey Shot")
+        origin.horizontalLayout_3.insertWidget(2, origin.b_addSurvey)
+        origin.b_addSurvey.clicked.connect(lambda: self.addShot(origin, "survey"))
+
         #   Add Mesh Button
         origin.b_addMesh = QPushButton(origin.w_CreateImports)
         origin.b_addMesh.setObjectName("b_addMesh")
         origin.b_addMesh.setText("Mesh")
-        origin.horizontalLayout_3.insertWidget(2, origin.b_addMesh)
+        origin.horizontalLayout_3.insertWidget(3, origin.b_addMesh)
         origin.b_addMesh.clicked.connect(lambda: origin.createState("ImportMesh"))
 
         # Export Scene Button
@@ -751,6 +756,10 @@ class Prism_SynthEyes_Functions(object):
         tip = ("This will add an additional Shot and Camera to the existing Scene.\n\n"
                "This is the same as the 'Add Shot' button in SynthEyes.")
         origin.b_addShot.setToolTip(tip)
+
+        tip = ("This will add a Survey Shot and Camera to the existing Scene.\n\n"
+               "This is the same as the 'Add Survey Shot' button in SynthEyes.")
+        origin.b_addSurvey.setToolTip(tip)
 
         tip = "Import a 3D Mesh object into the Scene."
         origin.b_addMesh.setToolTip(tip)
@@ -1465,6 +1474,11 @@ class Prism_SynthEyes_Functions(object):
         elif mode == "add":
             question = ("Would you like to Add an Additional Shot (Camera) to the\n"
                         "existing Scene?")
+            
+        elif mode == "survey":
+            question = ("Would you like to Add a Survey Shot (Camera) to the\n"
+                        "existing Scene?")
+            
         else:
             return False
             
@@ -1483,13 +1497,15 @@ class Prism_SynthEyes_Functions(object):
     #   Called from AddShot State Execute
     @err_catcher(name=__name__)
     def sm_addShot(self, origin, mode, shotFilepath, details=None):
+        camPrefix = None
+
         #   Creates New Scene
         if mode == "create":
             try:
                 curr_SniName = self.synthEyes.SNIFileName()
                 shot = self.synthEyes.NewSceneAndShot(shotFilepath, asp = 0.0)
                 self.synthEyes.SetSNIFileName(curr_SniName)
-                camPrefix = self.synthSettings["sceneCamPrefix"]
+                camPrefix = self.synthSettings.get("sceneCamPrefix", None)
 
             except Exception as e:
                 logger.warning(f"ERROR: Unable to Create Scene Shot: {e}")
@@ -1499,13 +1515,23 @@ class Prism_SynthEyes_Functions(object):
         elif mode == "add":
             try:
                 shot = self.synthEyes.AddShot(shotFilepath, asp = 0.0)
-                camPrefix = self.synthSettings["shotCamPrefix"]
+                camPrefix = self.synthSettings.get("shotCamPrefix", None)
 
             except Exception as e:
                 logger.warning(f"ERROR: Unable to Add Shot: {e}")
                 return False
 
-        if details:
+        #   Adds Survey Shot to Current Scene
+        elif mode == "survey":
+            try:
+                shot = self.synthEyes.AddSurveyShot(shotFilepath)
+                camPrefix = self.synthSettings.get("surveyCamPrefix", None)
+
+            except Exception as e:
+                logger.warning(f"ERROR: Unable to Add Survey Shot: {e}")
+                return False
+
+        if details and camPrefix:
             #   Renames Camera
             try:
                 camName = f"{camPrefix}{details['identifier']}_{details['version']}"
