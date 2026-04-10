@@ -8,16 +8,9 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QHBoxLayout,
-    QLabel, QLineEdit, QPushButton, QSizePolicy,
-    QSpacerItem, QVBoxLayout, QWidget)
+from qtpy.QtCore import *
+from qtpy.QtGui import *
+from qtpy.QtWidgets import *
 
 class Ui_wg_Synth_ImportMesh(object):
     def setupUi(self, wg_Synth_ImportMesh):
@@ -68,10 +61,10 @@ class Ui_wg_Synth_ImportMesh(object):
         self.horizontalLayout_5 = QHBoxLayout(self.w_currentVersion)
         self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
         self.horizontalLayout_5.setContentsMargins(9, 0, 9, 0)
-        self.label_3 = QLabel(self.w_currentVersion)
-        self.label_3.setObjectName(u"label_3")
+        self.l_text_Current = QLabel(self.w_currentVersion)
+        self.l_text_Current.setObjectName(u"l_text_Current")
 
-        self.horizontalLayout_5.addWidget(self.label_3)
+        self.horizontalLayout_5.addWidget(self.l_text_Current)
 
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
@@ -90,10 +83,10 @@ class Ui_wg_Synth_ImportMesh(object):
         self.horizontalLayout_6 = QHBoxLayout(self.w_latestVersion)
         self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
         self.horizontalLayout_6.setContentsMargins(9, 0, 9, 0)
-        self.label_6 = QLabel(self.w_latestVersion)
-        self.label_6.setObjectName(u"label_6")
+        self.l_text_Latest = QLabel(self.w_latestVersion)
+        self.l_text_Latest.setObjectName(u"l_text_Latest")
 
-        self.horizontalLayout_6.addWidget(self.label_6)
+        self.horizontalLayout_6.addWidget(self.l_text_Latest)
 
         self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
@@ -212,9 +205,9 @@ class Ui_wg_Synth_ImportMesh(object):
         self.l_class.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"ImportMesh", None))
         self.gb_import.setTitle(QCoreApplication.translate("wg_Synth_ImportMesh", u"Import", None))
         self.groupBox.setTitle(QCoreApplication.translate("wg_Synth_ImportMesh", u"Version", None))
-        self.label_3.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"Current Version:", None))
+        self.l_text_Current.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"Current Version:", None))
         self.l_curVersion.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"-", None))
-        self.label_6.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"Latest Version:", None))
+        self.l_text_Latest.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"Latest Version:", None))
         self.l_latestVersion.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"-", None))
         self.l_autoUpdate.setText(QCoreApplication.translate("wg_Synth_ImportMesh", u"Auto load latest version:", None))
         self.chb_autoUpdate.setText("")

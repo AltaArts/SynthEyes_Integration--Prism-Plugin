@@ -58,6 +58,7 @@ import base64
 import tempfile
 import re
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 
 
 PLUGINROOT = os.path.dirname(os.path.dirname(__file__))
@@ -93,11 +94,16 @@ from Synth_Formats import (SynthFormatNames,
 
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from PrismCore import PrismCore
+    from ProjectBrowser import ProjectBrowser
+    from PrismSettings import UserSettings
+    from StateManager import StateManager
+
 
 #   Constants for the Prism State Notes System
 STATE_NOTE_STEP = 10
 STATE_NOTE_SIZE_LIMIT = 512
-
 
 
 #   Helpers to Convert Python Bool to SynthEyes 0/1
@@ -108,7 +114,7 @@ def bitToBool(boolInt: int) -> bool:
 
 
 class Prism_SynthEyes_Functions(object):
-    def __init__(self, core, plugin):
+    def __init__(self, core:"PrismCore", plugin):
         self.core = core
         self.plugin = plugin
 
@@ -134,7 +140,7 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def startup(self, origin):
+    def startup(self, origin:"PrismCore"):
         if platform.system() == "Linux":
             origin.timer.stop()
 
@@ -325,7 +331,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Receives Signal from Listener Thread
     @err_catcher(name=__name__)
-    def handleIncomingCommand(self, msg):
+    def handleIncomingCommand(self, msg:str):
         command = msg.get("command")
 
         match command:
@@ -501,7 +507,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Search for Beauty Texture Files in Import File Dir
     @err_catcher(name=__name__)
-    def findTextureFile(self, filename: str) -> str:
+    def findTextureFile(self, filename:str) -> str:
         baseDir = os.path.dirname(filename)
         searchDirs = [baseDir]
 
@@ -657,29 +663,36 @@ class Prism_SynthEyes_Functions(object):
     #######################################
 
     @err_catcher(name=__name__)
-    def onProjectBrowserStartup(self, origin):
+    def onProjectBrowserStartup(self, origin:"ProjectBrowser"):
         origin.setWindowIcon(QIcon(self.prismAppIcon))
         ss = self.core.getActiveStyleSheet()
         origin.setStyleSheet(ss["css"])
 
 
     @err_catcher(name=__name__)
-    def onUserSettingsOpen(self, origin):
+    def onUserSettingsOpen(self, origin:"UserSettings"):
         origin.setWindowIcon(QIcon(self.prismAppIcon))
         ss = self.core.getActiveStyleSheet()
         origin.setStyleSheet(ss["css"])
 
 
     @err_catcher(name=__name__)
-    def onUserSettingsSave(self, origin):
+    def onUserSettingsSave(self, origin:"UserSettings"):
         self.loadSettings()
 
 
     @err_catcher(name=__name__)
-    def onStateManagerOpen(self, origin):
+    def onStateManagerOpen(self, origin:"StateManager"):
         origin.setWindowIcon(QIcon(self.prismAppIcon))
         ss = self.core.getActiveStyleSheet()
         origin.setStyleSheet(ss["css"])
+
+		#   Resizes the StateManager Window
+        if hasattr(origin, 'resize'):
+            try:
+                origin.resize(900, 900)
+            except:
+                pass
 
         origin.b_showImportStates.setStyleSheet("padding-left: 1px;padding-right: 1px;")
         origin.b_showExportStates.setStyleSheet("padding-left: 1px;padding-right: 1px;")
@@ -714,14 +727,14 @@ class Prism_SynthEyes_Functions(object):
         origin.b_createShot.setObjectName("b_createShot")
         origin.b_createShot.setText("New Scene")
         origin.horizontalLayout_3.insertWidget(0, origin.b_createShot)
-        origin.b_createShot.clicked.connect(lambda: self.addShot(origin, "create"))
+        origin.b_createShot.clicked.connect(lambda: self.addShot(origin, "scene"))
 
         #   Add Shot Button
         origin.b_addShot = QPushButton(origin.w_CreateImports)
         origin.b_addShot.setObjectName("b_addShot")
         origin.b_addShot.setText("Add Shot")
         origin.horizontalLayout_3.insertWidget(1, origin.b_addShot)
-        origin.b_addShot.clicked.connect(lambda: self.addShot(origin, "add"))
+        origin.b_addShot.clicked.connect(lambda: self.addShot(origin, "shot"))
 
         #   Add Survey Button
         origin.b_addSurvey = QPushButton(origin.w_CreateImports)
@@ -787,13 +800,13 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def onStateManagerShow(self, origin):
+    def onStateManagerShow(self, origin:"StateManager"):
         #   Display Import List (Prism closes the list by default)
         origin.gb_import.setChecked(True)
 
 
     @err_catcher(name=__name__)
-    def prePublish(self, origin):
+    def prePublish(self, origin:"StateManager"):
         #   DISABLED - DOES NOT INCREASE PERFORMANCE
         # self.publishData = {"orig_prefetchEnabled": self.getPrefetch()}
         # self.setPrefetch(False)
@@ -802,7 +815,7 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def postPublish(self, origin, pubType, result={}):
+    def postPublish(self, origin:"StateManager", pubType, result={}):
         #   DISABLED - DOES NOT INCREASE PERFORMANCE
         # self.setPrefetch(self.publishData["orig_prefetchEnabled"])
 
@@ -863,13 +876,13 @@ class Prism_SynthEyes_Functions(object):
     #   Remember: most anytime you set something in Sizzle or SpPy
     #             you need an Undo Block
     @contextmanager
-    def UNDO_BLOCK(self, undoName:str) -> None:
+    def UNDO_BLOCK(self, undoName:str):
         '''Context Manager for SynthEyes Undo blocks.\n
            This takes the place of a .Begin()->.Accept()\n
            block.\n\n
            example:\n
-               with self.UNDO_BLOCK("Create Mesh):
-                   self.synthEyes.CreateNew("mesh)'''
+               with self.UNDO_BLOCK("Create Mesh"):
+                   self.synthEyes.CreateNew("mesh")'''
         
         startedHere = False
 
@@ -897,7 +910,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Returns SynthEyes Version
     @err_catcher(name=__name__)
-    def getAppVersion(self, origin) -> str:
+    def getAppVersion(self, origin:"PrismCore") -> str:
         return self.synthEyes.Version()
 
 
@@ -914,7 +927,7 @@ class Prism_SynthEyes_Functions(object):
 
             logger.debug("Got the Prefetch Enabled State")
 
-            return bool(isChecked_int == 1)
+            return bitToBool(isChecked_int)
         
         except Exception as e:
             logger.warning(f"ERROR: Unable to get the Prefetch State.: {e}")
@@ -963,7 +976,7 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def getFrameRange(self, origin, shot:object=None) -> tuple[int, int]:
+    def getFrameRange(self, origin:"PrismCore", shot:object=None) -> tuple[int, int]:
         try:
             if not shot:
                 shot = self.synthEyes.Shots()[0]
@@ -984,7 +997,7 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def setFrameRange(self, origin, startFrame:int, endFrame:int, shot:object=None) -> None:
+    def setFrameRange(self, origin:"PrismCore", startFrame:int, endFrame:int, shot:object=None) -> None:
         try:
             if not shot:
                 shot = self.synthEyes.Shots()[0]
@@ -1392,7 +1405,7 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def copySceneFile(self, core, origFile, targetFile, mode=None):             #   TODO - IS THIS EVER USED??
+    def copySceneFile(self, core:"PrismCore", origFile, targetFile, mode=None):             #   TODO - IS THIS EVER USED??
 
         self.core.popup(f"copy\n\n"
                         f"core: {core}"
@@ -1403,7 +1416,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Finds Open SynthEyes Window and Captures Screenshot
     @err_catcher(name=__name__)
-    def captureViewportThumbnail(self):
+    def captureViewportThumbnail(self) -> QPixmap | None:
         try:
             user32 = ctypes.windll.user32
             IsWindow = user32.IsWindow
@@ -1466,12 +1479,12 @@ class Prism_SynthEyes_Functions(object):
    
     #   Called from StateManager Button
     @err_catcher(name=__name__)
-    def addShot(self, origin, mode):
-        if mode == "create":
+    def addShot(self, origin:"StateManager", mode:str) -> bool | None:
+        if mode == "scene":
             question = ("Would you like to Create a New SynthEyes Scene?\n\n"
                         "This will Create a New Clean Scene and Import the Shot.")
 
-        elif mode == "add":
+        elif mode == "shot":
             question = ("Would you like to Add an Additional Shot (Camera) to the\n"
                         "existing Scene?")
             
@@ -1491,16 +1504,16 @@ class Prism_SynthEyes_Functions(object):
 
         #   Call to Create the State Creation with Given Mode
         self.addShot_mode = mode
-        origin.createState("AddShot")   
+        origin.createState("AddShot")
 
 
     #   Called from AddShot State Execute
     @err_catcher(name=__name__)
-    def sm_addShot(self, origin, mode, shotFilepath, details=None):
+    def sm_addShot(self, origin, mode:str, shotFilepath:str, details:dict=None) -> str | bool:
         camPrefix = None
 
         #   Creates New Scene
-        if mode == "create":
+        if mode == "scene":
             try:
                 curr_SniName = self.synthEyes.SNIFileName()
                 shot = self.synthEyes.NewSceneAndShot(shotFilepath, asp = 0.0)
@@ -1512,7 +1525,7 @@ class Prism_SynthEyes_Functions(object):
                 return False
             
         #   Adds Additional Shot to Current Scene
-        elif mode == "add":
+        elif mode == "shot":
             try:
                 shot = self.synthEyes.AddShot(shotFilepath, asp = 0.0)
                 camPrefix = self.synthSettings.get("shotCamPrefix", None)
@@ -1565,7 +1578,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Called From AddShot State when Changing Version
     @err_catcher(name=__name__)
-    def sm_changeShotImages(self, origin, shot, newPath, verStr, frameCount):
+    def sm_changeShotImages(self, origin, shot:object, newPath:str, verStr:str, frameCount:int) -> str:
         #   Change Images in SynthEyes
         with self.UNDO_BLOCK("Change Shot Images"):
             result = self.changeShotImages(shot, newPath, frameCount)
@@ -1596,7 +1609,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Called from ImportMesh State Execute
     @err_catcher(name=__name__)
-    def sm_import_importToApp(self, origin, doImport, update, impFileName, data=None):
+    def sm_import_importToApp(self, origin, doImport:bool, update:bool, impFileName:str, data:dict=None) -> dict:
         fileName = os.path.splitext(os.path.basename(impFileName))
         ext = fileName[1].lower()
 
@@ -1686,7 +1699,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Sanity Check Before State Execution
     @err_catcher(name=__name__)
-    def sm_sceneExport_preExecute(self, origin, startFrame, endFrame):
+    def sm_sceneExport_preExecute(self, origin, startFrame:int, endFrame:int) -> list:
         warnings = []
 
         cameras = self.getCamNodes()
@@ -1717,7 +1730,7 @@ class Prism_SynthEyes_Functions(object):
     
 
     @err_catcher(name=__name__)
-    def sm_pre_sceneExport(self, origin, rSettings):
+    def sm_pre_sceneExport(self, origin:"StateManager", rSettings:dict) -> dict:
         #   Get All Shots in Scene
         shots = self.synthEyes.Shots()
        
@@ -1869,7 +1882,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Called From SceneExport State Execute
     @err_catcher(name=__name__)
-    def sm_sceneExport(self, origin, outputType, outputName, details=None):
+    def sm_sceneExport(self, origin, outputType:str, outputName:str, details:dict=None) -> str | bool:
         try:
             synthFormatType = SynthFormatNames[outputType]["synthName"]
             exportPath = os.path.normpath(outputName)
@@ -1886,7 +1899,7 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def sm_post_sceneExport(self, origin, rSettings):
+    def sm_post_sceneExport(self, origin:"StateManager", rSettings:dict) -> None:
         ##   Restore Framerange for Each Shot
         for camData in rSettings.get("orig_frameData", []):
             shot = self.getShotFromCamName(camData["camName"])
@@ -1935,7 +1948,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Sanity Check Before State Execution
     @err_catcher(name=__name__)
-    def sm_render_preExecute(self, origin, rData):
+    def sm_render_preExecute(self, origin, rData:dict) -> list:
         warnings = []
 
         camName = rData["currentCam"]
@@ -1964,7 +1977,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Called Before Render to Capture Current Settings
     @err_catcher(name=__name__)
-    def sm_render_preRender(self, origin, rSettings):
+    def sm_render_preRender(self, origin:"StateManager", rSettings) -> dict:
         shot = self.getShotFromCamName(rSettings["currentCam"])
 
         #   Capture Original Settings
@@ -1990,7 +2003,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Renders with SynthEyes 'Save Sequence'
     @err_catcher(name=__name__)
-    def sm_render_Sequence(self, origin, stateManager, outputPath, rSettings):
+    def sm_render_Sequence(self, origin, stateManager, outputPath:str, rSettings:dict) -> str | bool:
         #   Get Format Specific Render Settings
         optStr = self.getRenderOptsStr(rSettings)
 
@@ -2025,7 +2038,7 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def sm_render_postRender(self, origin, rSettings):
+    def sm_render_postRender(self, origin:"StateManager", rSettings:dict):
         shot = self.getShotFromCamName(rSettings["currentCam"])
 
         #   Restore Frame Range
@@ -2048,7 +2061,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Sanity Check Before State Execution
     @err_catcher(name=__name__)
-    def sm_render_stMap_preSubmit(self, origin, rData):
+    def sm_render_stMap_preSubmit(self, origin, rData:dict) -> list:
         warnings = []
 
         camName = rData["currentCam"]
@@ -2084,7 +2097,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Called Before Render to Capture Current and Set Custom Settings
     @err_catcher(name=__name__)
-    def sm_render_preRender_stMap(self, origin, cameraName, rData):
+    def sm_render_preRender_stMap(self, origin, cameraName:str, rData:dict) -> dict:
         ##  Capture Current Settings
         shot = self.getShotFromCamName(cameraName)
         rData["orig_renderScale"] = self.getOutputRez(shot)
@@ -2106,7 +2119,14 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def sm_render_stMap(self, stateManager, stType, rangeType, outputName, rSettings, context):
+    def sm_render_stMap(self,
+                        stateManager:"StateManager",
+                        stType:str,
+                        rangeType:str,
+                        outputName:str,
+                        rSettings:dict,
+                        context:dict=None) -> str | bool:
+        
         #########################################################################################
         # .WriteRedistortImage(filenm, clip)
         # .WriteRedistortSequence(fnm, cmp, flt, walp, clip)
@@ -2145,7 +2165,13 @@ class Prism_SynthEyes_Functions(object):
     
 
     @err_catcher(name=__name__)
-    def saveDistortSeq(self, stateManager, shot, filePath, rSettings, mode="redistort"):
+    def saveDistortSeq(self,
+                       stateManager:"StateManager",
+                       shot:object,
+                       filePath:str,
+                       rSettings:dict,
+                       mode:str="redistort") -> str:
+        
         result = "Success"
 
         #   RE Pattern for Sequence Padding
@@ -2199,7 +2225,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Called after Render to Restore Original Settings
     @err_catcher(name=__name__)
-    def sm_render_postRender_stMap(self, origin, cameraName, rData):
+    def sm_render_postRender_stMap(self, origin:"StateManager", cameraName:str, rData:dict):
         #   Restore Scaling
         shot = self.getShotFromCamName(cameraName)
         with self.UNDO_BLOCK("Restore Image Scale"):
@@ -2222,7 +2248,7 @@ class Prism_SynthEyes_Functions(object):
     #######################################
 
     @err_catcher(name=__name__)
-    def sm_playblast_preExecute(self, origin, rData):
+    def sm_playblast_preExecute(self, origin, rData:dict) -> list:
         warnings = []
 
         camName = rData["currentCam"]
@@ -2251,7 +2277,7 @@ class Prism_SynthEyes_Functions(object):
 
         #   Called Before Render to Capture Current Settings
     @err_catcher(name=__name__)
-    def sm_playblast_preRender(self, origin, rSettings):
+    def sm_playblast_preRender(self, origin, rSettings:dict) -> dict:
         shot = self.getShotFromCamName(rSettings["currentCam"])
         camera = self.getCamFromName(rSettings["currentCam"])
 
@@ -2290,7 +2316,7 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def sm_render_playblast(self, origin, stateManager, outputPath, rSettings):
+    def sm_render_playblast(self, origin, stateManager:"StateManager", outputPath:str, rSettings:dict) -> str | bool:
         #   Get Format Specific Render Settings
         optStr = self.getRenderOptsStr(rSettings)
 
@@ -2353,7 +2379,7 @@ class Prism_SynthEyes_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def sm_playblast_postRender(self, origin, rSettings):
+    def sm_playblast_postRender(self, origin:"StateManager", rSettings:dict):
         shot = self.getShotFromCamName(rSettings["currentCam"])
 
         #   Restore Frame Range
@@ -2406,19 +2432,19 @@ class Prism_SynthEyes_Functions(object):
 
     #   Compresses State String Json
     @err_catcher(name=__name__)
-    def compressState(self, data):
+    def compressState(self, data:dict) -> str:
         raw = json.dumps(data, separators=(",", ":")).encode()
         return base64.b64encode(zlib.compress(raw)).decode()
 
 
     #   Decompresses to Json String
     @err_catcher(name=__name__)
-    def decompressState(self, txt):
+    def decompressState(self, txt:str) -> str:
         return json.loads(zlib.decompress(base64.b64decode(txt)).decode())
 
 
     #   Creates Simple Checksum for the State Data
-    def stateChecksum(self, data):
+    def stateChecksum(self, data:dict) -> str:
         if not isinstance(data, str):
             data = json.dumps(data, separators=(",", ":"))
 
@@ -2427,7 +2453,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Returns Note Object by Note Number
     @err_catcher(name=__name__)
-    def getNoteByNumber(self, num):
+    def getNoteByNumber(self, num:int) -> object | None:
         for note in self.synthEyes.Notes():
             if note.number == num:
                 return note
@@ -2436,13 +2462,13 @@ class Prism_SynthEyes_Functions(object):
 
     #   Returns Index Note Object
     @err_catcher(name=__name__)
-    def getIndexNote(self):
+    def getIndexNote(self) -> object:
         return self.getNoteByNumber(1000)
 
 
     #   Creates Index Note Object
     @err_catcher(name=__name__)
-    def createIndexNote(self):
+    def createIndexNote(self) -> object:
         note = self.synthEyes.CreateNew("NOTE")
 
         note.number = 1000
@@ -2455,7 +2481,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Creates Note Object to Store State Data    
     @err_catcher(name=__name__)
-    def createStateNote(self, number):
+    def createStateNote(self, number:int) -> object:
         note = self.synthEyes.CreateNew("NOTE")
 
         note.number = number
@@ -2467,7 +2493,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Called to Save State Data
     @err_catcher(name=__name__)
-    def sm_saveStates(self, origin=None, buf=None):
+    def sm_saveStates(self, origin:"StateManager"=None, buf:dict=None):
         with self.UNDO_BLOCK("Save States"):
             data = json.loads(buf)
 
@@ -2560,7 +2586,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Called to Retrieve State Data
     @err_catcher(name=__name__)
-    def sm_readStates(self, origin=None):
+    def sm_readStates(self, origin:"StateManager"=None) -> dict:
         #   Get Index Note or Defaults if it Doesn't Exist
         index_note = self.getIndexNote()
         if not index_note:
@@ -2627,7 +2653,7 @@ class Prism_SynthEyes_Functions(object):
 
     #   Deletes All State Notes
     @err_catcher(name=__name__)
-    def sm_deleteStates(self, origin=None):
+    def sm_deleteStates(self, origin:"StateManager"=None):
         with self.UNDO_BLOCK("Delete States"):
             index_note = self.getIndexNote()
             if not index_note:
@@ -2651,9 +2677,10 @@ class Prism_SynthEyes_Functions(object):
 
 
 
-#   Simple Progessbar Popup with Cancel Button for Long Renders
+#   Simple Progressbar Popup with Cancel Button for Long Renders
 class ProgressUI:
-    """Helper class to manage a QProgressDialog with cancel support."""
+    '''Simple Progressbar Popup with Cancel Button for Long Renders'''
+
     def __init__(self, label, start, end, title="Progress", yOffset=200):
         self.dialog = QProgressDialog(label, "Cancel", start, end)
 
@@ -2682,21 +2709,27 @@ class ProgressUI:
 
         self.canceled = False
 
-    def update(self, value):
-        """Update progress value and process events."""
+
+    def update(self, value: int) -> None:
+        '''Update Progressbar.'''
+
         self.dialog.setValue(value)
         QApplication.processEvents()
 
-    def checkCanceled(self):
-        """Check if user clicked cancel. Returns True if canceled."""
+
+    def checkCanceled(self) -> bool:
+        '''Returns True if canceled.'''
+
         if self.dialog.wasCanceled():
             self.dialog.setLabelText("Cancel requested, finishing current frame...")
             self.dialog.repaint()
             QApplication.processEvents()
             self.canceled = True
             return True
+        
         return False
 
+
     def close(self):
-        """Close the progress dialog."""
+        '''Close the Progress Popup.'''
         self.dialog.close()

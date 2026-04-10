@@ -498,10 +498,20 @@ class Synth_ImportMeshClass(object):
         curVersionName = self.core.products.getVersionFromFilepath(path) or ""
         curVersionData = {"version": curVersionName, "path": path}
         latestVersion = self.core.products.getLatestVersionFromPath(path)
+
         if latestVersion:
             latestVersionData = {"version": latestVersion["version"], "path": latestVersion["path"]}
         else:
             latestVersionData = {}
+
+        #   Sets Tooltips
+        curVerPath = curVersionData["path"]
+        self.l_curVersion.setToolTip(curVerPath)
+        self.l_curVersion.setToolTip(curVerPath)
+
+        latestVerPath = latestVersionData["path"]
+        self.l_text_Latest.setToolTip(latestVerPath)
+        self.l_latestVersion.setToolTip(latestVerPath)
 
         return curVersionData, latestVersionData
 

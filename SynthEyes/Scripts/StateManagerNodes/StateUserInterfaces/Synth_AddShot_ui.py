@@ -8,16 +8,9 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QHBoxLayout,
-    QLabel, QLineEdit, QPushButton, QSizePolicy,
-    QSpacerItem, QVBoxLayout, QWidget)
+from qtpy.QtCore import *
+from qtpy.QtGui import *
+from qtpy.QtWidgets import *
 
 class Ui_wg_Synth_AddShot(object):
     def setupUi(self, wg_Synth_AddShot):
@@ -185,6 +178,72 @@ class Ui_wg_Synth_AddShot(object):
 
         self.verticalLayout_2.addWidget(self.gb_options)
 
+        self.gb_surveyOptions = QGroupBox(self.gb_import)
+        self.gb_surveyOptions.setObjectName(u"gb_surveyOptions")
+        self.lo_surveyOptions = QVBoxLayout(self.gb_surveyOptions)
+        self.lo_surveyOptions.setObjectName(u"lo_surveyOptions")
+        self.lo_surveyOptions.setContentsMargins(9, 9, 9, 9)
+        self.lo_iflPathLabel = QHBoxLayout()
+        self.lo_iflPathLabel.setObjectName(u"lo_iflPathLabel")
+        self.lo_iflPathLabel.setContentsMargins(9, 10, 9, -1)
+        self.l_iflPath = QLabel(self.gb_surveyOptions)
+        self.l_iflPath.setObjectName(u"l_iflPath")
+
+        self.lo_iflPathLabel.addWidget(self.l_iflPath)
+
+        self.horizontalSpacer_5 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.lo_iflPathLabel.addItem(self.horizontalSpacer_5)
+
+        self.b_editIFL = QPushButton(self.gb_surveyOptions)
+        self.b_editIFL.setObjectName(u"b_editIFL")
+
+        self.lo_iflPathLabel.addWidget(self.b_editIFL)
+
+
+        self.lo_surveyOptions.addLayout(self.lo_iflPathLabel)
+
+        self.lo_iflPath = QHBoxLayout()
+        self.lo_iflPath.setObjectName(u"lo_iflPath")
+        self.lo_iflPath.setContentsMargins(9, -1, 9, -1)
+        self.le_iflPath = QLineEdit(self.gb_surveyOptions)
+        self.le_iflPath.setObjectName(u"le_iflPath")
+        self.le_iflPath.setAcceptDrops(False)
+        self.le_iflPath.setReadOnly(True)
+
+        self.lo_iflPath.addWidget(self.le_iflPath)
+
+
+        self.lo_surveyOptions.addLayout(self.lo_iflPath)
+
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.horizontalLayout_4.setContentsMargins(9, 10, 9, -1)
+        self.l_surveyImages = QLabel(self.gb_surveyOptions)
+        self.l_surveyImages.setObjectName(u"l_surveyImages")
+
+        self.horizontalLayout_4.addWidget(self.l_surveyImages)
+
+
+        self.lo_surveyOptions.addLayout(self.horizontalLayout_4)
+
+        self.lo_iflList = QHBoxLayout()
+        self.lo_iflList.setObjectName(u"lo_iflList")
+        self.lo_iflList.setContentsMargins(9, 10, 9, -1)
+        self.lw_surveyImages = QListWidget(self.gb_surveyOptions)
+        self.lw_surveyImages.setObjectName(u"lw_surveyImages")
+        self.lw_surveyImages.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.lw_surveyImages.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+        self.lw_surveyImages.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
+
+        self.lo_iflList.addWidget(self.lw_surveyImages)
+
+
+        self.lo_surveyOptions.addLayout(self.lo_iflList)
+
+
+        self.verticalLayout_2.addWidget(self.gb_surveyOptions)
+
         self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
         self.verticalLayout_2.addItem(self.verticalSpacer)
@@ -212,7 +271,11 @@ class Ui_wg_Synth_AddShot(object):
         self.b_importLatest.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Import latest Version", None))
         self.l_autoUpdate.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Auto load latest version:           ", None))
         self.chb_autoUpdate.setText("")
-        self.gb_options.setTitle(QCoreApplication.translate("wg_Synth_AddShot", u"Import", None))
+        self.gb_options.setTitle(QCoreApplication.translate("wg_Synth_AddShot", u"Options", None))
         self.l_camName.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Camera Name:  ", None))
+        self.gb_surveyOptions.setTitle(QCoreApplication.translate("wg_Synth_AddShot", u"Survey Images", None))
+        self.l_iflPath.setText(QCoreApplication.translate("wg_Synth_AddShot", u"IFL File:", None))
+        self.b_editIFL.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Edit", None))
+        self.l_surveyImages.setText(QCoreApplication.translate("wg_Synth_AddShot", u"Image List:", None))
     # retranslateUi
 

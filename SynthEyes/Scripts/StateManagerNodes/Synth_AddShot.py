@@ -47,6 +47,7 @@
 
 import os
 import logging
+from typing import TYPE_CHECKING
 
 
 from qtpy.QtCore import *
@@ -55,7 +56,13 @@ from qtpy.QtWidgets import *
 
 from PrismUtils.Decorators import err_catcher
 
+
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from PrismCore import PrismCore
+    from StateManager import StateManager
+    from Prism_SynthEyes_Functions import *
 
 #   Global Colors
 COLOR_GREEN = QColor(0, 130, 0)
@@ -80,30 +87,35 @@ class Synth_AddShotClass(object):
     @err_catcher(name=__name__)
     def setup(
         self,
-        state,
-        core,
-        stateManager,
-        importPath=None,
-        stateData=None,
-        settings=None,
+        state:QTreeWidgetItem,
+        core: "PrismCore",
+        stateManager: "StateManager",
+        importPath:str = None,
+        stateData:dict = None,
+        settings:dict = None,
     ):
 
         #   Checks if the ATTR Already Exists and Assigns if Not
         self.core = getattr(self, "core", core)
         self.state = getattr(self, "state", state)
         self.stateManager = getattr(self, "stateManager", stateManager)
-        self.synthFuncts = getattr(self, "synthFuncts", self.core.appPlugin)
+        self.synthFuncts:Prism_SynthEyes_Functions = getattr(self, "synthFuncts", self.core.appPlugin)
         self.synthEyes = self.synthFuncts.synthEyes
-
 
         if not hasattr(self, "mediaChooser"):
             self.mediaChooser = ReadMediaDialog(self, self.core)
-            
+
+        if not hasattr(self, "surveyViewer"):
+            self.surveyViewer = SurveyImageViewer(self, self.synthFuncts)
+
         self.stateMode = "AddShot"
         self.taskName = ""
         self.setName = ""
         self.stateStatus = None
         self.shotUUID = None
+
+        self.iflPath = None
+        self.surveyImageList = []
 
         #   State name stuff
         stateNameTemplate = "{entity}_{version}"
@@ -137,70 +149,27 @@ class Synth_AddShotClass(object):
         self.l_latestVersion.setFont(font)
 
 
-
-
     ####   Do one of the following:     ####
 
-        ##   1. Load State from Comp Data
+        ##   1. Load State from Saved Data
         if stateData is not None:
             self.loadData(stateData)
-            logger.debug("Loaded State from saved data")
+            logger.debug("Loaded State from Saved Data")
 
             self.nameChanged()
             self.updateUi()
 
-
-        ##   2. If passed from FusFuncts. Receive importData via "settings" kwarg
-        # elif settings:
-        #     comp = self.fuseFuncts.getCurrentComp()
-
-        #     #   Create State UUID
-        #     self.stateUID = Helper.createUUID()
-
-        #     #   Check if there is Prism Data passed (from Orphaned Loaders)
-        #     if "pData" in settings:
-        #         #   Get ImportData from Settings
-        #         self.importData = settings["pData"]
-
-        #         #   Update State UUID
-        #         updateData = {"stateUID": self.stateUID}
-
-        #         for tool in settings["tools"]:
-        #             #   Update Loader
-        #             Fus.updateToolData(tool["loader"], updateData)
-
-        #             #   Get Connected Tools
-        #             connectedUIDs = Fus.getConnectedNodes(comp, tool["loader"])
-        #             for uid in connectedUIDs:
-        #                 tool = Fus.getToolByUID(comp, uid)
-        #                 Fus.updateToolData(tool, updateData)
-
-        #         #   Make State Data
-        #         result = self.makeImportData(self.importData)
-
-        #     #   Just get the Prism Context Data
-        #     else:
-        #         self.importData = settings
-        #         self.importLatest(refreshUi=False, selectedStates=False, setChecked=True)
-        
-        #     self.nameChanged()
-        #     self.refresh()
-
-        #     logger.debug("Created State from passed Settings")
-
-
-        ##   3. Opens Media Popup to select import
+        ##   2. Opens Media Popup to Select Import
         elif (
             importPath is None
             and stateData is None
-            # and not createEmptyState
             and not settings
             and not self.stateManager.standalone
             ):
 
-            #   Open MediaChooser to get import
+            #   Open MediaChooser to Get Import
             requestResult = self.callMediaWindow()
-          
+
             if requestResult == "Cancelled":
                 logger.debug("Media Import cancelled")
                 return False
@@ -212,11 +181,17 @@ class Synth_AddShotClass(object):
                 logger.warning("ERROR: Unable to Import Image from MediaBrowser.")
                 self.core.popup("Unable to Import Image from MediaBrowser.")
                 return False
-        
+
+            #   Set the Results
             self.setImportPath(requestResult[0])
             self.importData = requestResult[1]
+            self.setStateMode(self.synthFuncts.addShot_mode)
 
-            result = self.addShot(requestResult[0], requestResult[1])
+            #   Call the Add Shot
+            if self.stateMode == "survey":
+                result = self.addSurvey(requestResult[0], requestResult[1])
+            else:
+                result = self.addShot(requestResult[0], requestResult[1])
 
             if not result:
                 return False
@@ -225,19 +200,16 @@ class Synth_AddShotClass(object):
             self.nameChanged()
             self.updateUi()
 
-
-        ##   4. If error
+        ##  If error
         else:
             logger.warning("ERROR: Unable to Import Image.")
             self.core.popup("Unable to Import Image.")
             return False
-        
 
         getattr(self.core.appPlugin, "sm_import_startup", lambda x: None)(self)
 
         self.connectEvents()
         self.setToolTips()
-        self.setStateMode(self.stateMode)
 
         self.stateManager.saveImports()
         self.stateManager.saveStatesToScene()
@@ -254,33 +226,37 @@ class Synth_AddShotClass(object):
         self.e_camName.editingFinished.connect(
             lambda: self.updateCamName(self.e_camName.text())
             )
+        self.b_editIFL.clicked.connect(self.editSurvey)
+        self._resizeFilter = _StateResizeFilter(self.updateSurveyEliding)
+        self.stateManager.sa_stateSettings.installEventFilter(self._resizeFilter)
 
 
 
     #########################
-    #                       #
     #       Wrapped         #
     #   Prism Functions     #
-    #                       #
     #########################
 
 
     #   Returns the version label name from version filepath
     @err_catcher(name=__name__)
     def getMasterVersionLabel(self, filepath:str) -> str:
+        '''Returns the version label name from version filepath'''
         return self.core.mediaProducts.getMasterVersionLabel(filepath)
     
 
     #   Returns highest version context from a given context
     @err_catcher(name=__name__)
     def getLatestVersion(self, context:dict, includeMaster:bool) -> dict:
-        mediaProducts = self.synthFuncts.core.mediaProducts
+        '''Returns highest version context from a given context'''
+        mediaProducts = self.core.mediaProducts
         return mediaProducts.getLatestVersionFromIdentifier(context, includeMaster=includeMaster)
     
 
     #   Returns a context from the currently selected version
     @err_catcher(name=__name__)
     def getCurrentVersion(self) -> dict:
+        '''Returns a context from the currently selected version in the MediaBrowser'''
         try:
             self.mediaBrowser = self.mediaChooser.w_browser
             self.mediaPlayer = self.mediaBrowser.w_preview.mediaPlayer
@@ -293,6 +269,7 @@ class Synth_AddShotClass(object):
     #   Returns a list of AOV dicts for a given context
     @err_catcher(name=__name__)
     def getAOVsFromVersion(self, version:dict) -> list:
+        '''Returns a list of AOV dicts for a given context'''
         try:
             return self.core.mediaProducts.getAOVsFromVersion(version)
         except Exception as e:
@@ -302,25 +279,22 @@ class Synth_AddShotClass(object):
     #   Returns a list of all the image files for a given context
     @err_catcher(name=__name__)
     def getFilesFromContext(self, aovItem:dict) -> list:
+        '''Returns a list of all the image files for a given context'''
         try:
-            return self.fuseFuncts.core.mediaProducts.getFilesFromContext(aovItem)
+            return self.core.mediaProducts.getFilesFromContext(aovItem)
         except Exception as e:
             logger.warning(f"ERROR:  Unable to get Files from Prism Context Functions:\n\n{e}")
 
 
 
-
     #########################
-    #                       #
     #         STATE         #
-    #                       #
     #########################
-
 
     @err_catcher(name=__name__)
-    def setStateMode(self, stateMode):
+    def setStateMode(self, stateMode:str):
         self.stateMode = stateMode
-        self.l_class.setText(stateMode)
+        self.l_class.setText(stateMode.capitalize())
 
 
     #   Set State Name and Icon
@@ -336,11 +310,11 @@ class Synth_AddShotClass(object):
             except Exception as e:
                 name = text
 
-        #   Set the name for the State list
+        #   Set the Name for the State list
         self.e_name.setText(name)
         self.state.setText(0, name)
 
-        #   Add icon to State name
+        #   Add Icon to State name
         self.state.setIcon(0, QIcon(STATE_ICON))
 
         self.stateManager.saveImports()
@@ -480,11 +454,8 @@ class Synth_AddShotClass(object):
    
     
     #########################
-    #                       #
     #          UI           #
-    #                       #
     #########################
-
 
     @err_catcher(name=__name__)
     def setToolTips(self):
@@ -505,11 +476,24 @@ class Synth_AddShotClass(object):
         self.l_camName.setToolTip(tip)
         self.e_camName.setToolTip(tip)
 
+        tip = ("The IFL File saved to disk that SynthEyes uses\n"
+               "to configure the Survey Shot")
+        self.l_iflPath.setToolTip(tip)
+
+        tip = "Open the Survey Image Editor to configure the images."
+        self.b_editIFL.setToolTip(tip)
+
+        tip = ("The listing of the Survey Images used for the\n"
+               "Survey Shot.  Use the 'Edit' button to open\n"
+               "the Survey Image Editor to configure")
+        self.l_surveyImages.setToolTip(tip)
+        self.lw_surveyImages.setToolTip(tip)
+
 
     #   Opens the Custom MediaBrowser window to choose import
     @err_catcher(name=__name__)
     def callMediaWindow(self, itemData=None):
-        #   Sets objects
+        #   Sets Objects
         self.mediaBrowser = self.mediaChooser.w_browser
         self.mediaPlayer = self.mediaBrowser.w_preview.mediaPlayer
 
@@ -630,70 +614,119 @@ class Synth_AddShotClass(object):
         self.stateManager.tw_import.repaint()
 
 
+    #   Returns Elided Text for a Given Width
+    @err_catcher(name=__name__)
+    def getElidedText(self, text:str, width:int, font=None) -> str:
+        '''Returns Elided Text for a Given Width'''
+
+        if font is None:
+            font = self.font()
+        metrics = QFontMetrics(font)
+
+        return metrics.elidedText(text, Qt.ElideMiddle, width)
+
+
+    #   Updates the Elided Text when Resizing
+    @err_catcher(name=__name__)
+    def updateSurveyEliding(self):
+        if self.stateMode == "survey" and hasattr(self, 'iflPath'):
+            #   Update IFL Path Eliding
+            elided_ifl = self.getElidedText(self.iflPath, self.le_iflPath.width() - 10, self.le_iflPath.font())
+            self.le_iflPath.setText(elided_ifl)
+
+            # Update Survey Images Eliding
+            for i in range(self.lw_surveyImages.count()):
+                item = self.lw_surveyImages.item(i)
+                original_text = item.toolTip() if item.toolTip() else item.text()
+                elided_img = self.getElidedText(original_text, self.lw_surveyImages.width() - 20, self.lw_surveyImages.font())
+                item.setText(elided_img)
+
+
     @err_catcher(name=__name__)
     def updateUi(self):
         self.updateCamName()
 
-        versions = self.checkLatestVersion()
+        #   For Survey Shot Mode
+        if self.stateMode == "survey":
+            self.gb_version.setVisible(False)
 
-        if not versions:
-            logger.debug("Skipped setting Latest Version Status")
-            return
+            self.le_iflPath.setText(self.iflPath)
+            self.le_iflPath.setToolTip(self.iflPath)
 
-        if versions:
-            curVersion, latestVersion = versions
+            #   Populate Survey Images List
+            self.lw_surveyImages.clear()
+            ifl_images = self.readIflImageList(self.iflPath)
+            for img_path in ifl_images:
+                item = QListWidgetItem(img_path)
+                item.setToolTip(img_path)
+                self.lw_surveyImages.addItem(item)
+
+            #   Defer Eliding until after Resize
+            QTimer.singleShot(0, self.updateSurveyEliding)
+
+        #   For Scene and Shot Modes
         else:
-            curVersion = latestVersion = ""
+            self.gb_surveyOptions.setVisible(False)
 
-        if curVersion.get("version") == "master":
-            filepath = self.getImportPath()
-            curVersionName = self.getMasterVersionLabel(filepath)
-        else:
-            curVersionName = curVersion.get("version")
+            versions = self.checkLatestVersion()
+            if not versions:
+                logger.debug("Skipped setting Latest Version Status")
+                return
 
-        if latestVersion.get("version") == "master":
-            filepath = latestVersion["path"]
-            latestVersionName = self.getMasterVersionLabel(filepath)
-        else:
-            latestVersionName = latestVersion.get("version")
-
-        self.l_curVersion.setText(curVersionName or "-")
-        self.l_latestVersion.setText(latestVersionName or "-")
-
-        self.stateStatus = "error"
-
-        if self.chb_autoUpdate.isChecked():
-            if curVersionName and latestVersionName and curVersionName != latestVersionName:
-                self.importLatest(refreshUi=False, selectedStates=False)
-
-            if latestVersionName:
-                self.stateStatus = "ok"
-        else:
-            useSS = getattr(self.core.appPlugin, "colorButtonWithStyleSheet", False)
-
-            if (
-                curVersionName
-                and latestVersionName
-                and curVersionName != latestVersionName
-                and not curVersionName.startswith("master")
-            ):
-                self.stateStatus = "warning"
-                if useSS:
-                    self.b_importLatest.setStyleSheet(
-                        "QPushButton { background-color: rgb(200,100,0); }"
-                    )
-                else:
-                    self.b_importLatest.setPalette(self.updatePalette)
+            if versions:
+                curVersion, latestVersion = versions
             else:
-                if curVersionName and latestVersionName:
-                    self.stateStatus = "ok"
+                curVersion = latestVersion = ""
 
-                if useSS:
-                    self.b_importLatest.setStyleSheet(
-                        "QPushButton { background-color: rgb(0, 130, 0); }"
-                    )
+            if curVersion.get("version") == "master":
+                filepath = self.getImportPath()
+                curVersionName = self.getMasterVersionLabel(filepath)
+            else:
+                curVersionName = curVersion.get("version")
+
+            if latestVersion.get("version") == "master":
+                filepath = latestVersion["path"]
+                latestVersionName = self.getMasterVersionLabel(filepath)
+            else:
+                latestVersionName = latestVersion.get("version")
+
+            self.l_curVersion.setText(curVersionName or "-")
+            self.l_latestVersion.setText(latestVersionName or "-")
+
+            self.stateStatus = "error"
+
+            if self.chb_autoUpdate.isChecked():
+                if curVersionName and latestVersionName and curVersionName != latestVersionName:
+                    self.importLatest(refreshUi=False, selectedStates=False)
+
+                if latestVersionName:
+                    self.stateStatus = "ok"
+            else:
+                useSS = getattr(self.core.appPlugin, "colorButtonWithStyleSheet", False)
+
+                if (
+                    curVersionName
+                    and latestVersionName
+                    and curVersionName != latestVersionName
+                    and not curVersionName.startswith("master")
+                ):
+                    self.stateStatus = "warning"
+                    if useSS:
+                        self.b_importLatest.setStyleSheet(
+                            "QPushButton { background-color: rgb(200,100,0); }"
+                        )
+                    else:
+                        self.b_importLatest.setPalette(self.updatePalette)
                 else:
-                    self.b_importLatest.setPalette(self.oldPalette)
+                    if curVersionName and latestVersionName:
+                        self.stateStatus = "ok"
+
+                    if useSS:
+                        self.b_importLatest.setStyleSheet(
+                            "QPushButton { background-color: rgb(0, 130, 0); }"
+                        )
+                    else:
+                        self.b_importLatest.setPalette(self.oldPalette)
 
         self.nameChanged()
         self.setStateColor(self.stateStatus)
@@ -706,11 +739,8 @@ class Synth_AddShotClass(object):
 
 
     #########################
-    #                       #
     #         DATA          #
-    #                       #
     #########################
-
 
     @err_catcher(name=__name__)
     def loadData(self, data):
@@ -737,7 +767,23 @@ class Synth_AddShotClass(object):
             )(data["filepath"])
             self.setImportPath(data["filepath"])
 
+        if "iflPath" in data:
+            self.iflPath = data["iflPath"]
+
         self.core.callback("onStateSettingsLoaded", self, data)
+
+
+    @err_catcher(name=__name__)
+    def getStateProps(self):
+        self.importData["statename"] = self.e_name.text()
+        self.importData["statemode"] = self.stateMode
+        self.importData["shotUID"] = self.shotUUID
+        self.importData["filepath"] = self.getImportPath()
+        self.importData["autoUpdate"] = str(self.chb_autoUpdate.isChecked())
+        self.importData["taskname"] = self.taskName
+        self.importData["iflPath"] = self.iflPath
+
+        return self.importData
 
 
     @err_catcher(name=__name__)
@@ -773,67 +819,109 @@ class Synth_AddShotClass(object):
             return None
 
 
-    @err_catcher(name=__name__)
-    def preDelete(self, item):
-        self.core.popup("NOTE: At this time, Shots cannot be deleted from SynthEyes")
+    #########################
+    #        SHOTS          #
+    #########################
 
-        # if not self.core.uiAvailable:
-        #     action = "Yes"
-        # else:
-        #     action = "No"
-          
-        # text = "Do you want to Delete the Shot?"
-        # action = self.core.popupQuestion(text, title="Delete Shot", parent=self.stateManager)
-
-        # if action == "Yes":
-        #     self.synthEyes.Begin()
-
-        #     shots = self.synthEyes.Shots()
-
-        #     self.core.popup(f"shots:  {shots}")							#	TESTING
-
-        #     #   Delete each tool
-        #     for shot in shots:
-
-        #         self.core.popup(f"STATE ID:  {str(self.shotUUID)}\n"
-        #                         f"SHOT ID: {str(shot.UniqID())}")							#	TESTING
-        #         self.core.popup(f"match:  :  {str(self.shotUUID) == str(shot.UniqID())}")							#	TESTING
-
-        #         if shot.uniqueID == self.shotUUID:
-        #             self.synthEyes.Delete(shot)
-
-        #     self.synthEyes.Accept("Delete Shot")
-               
-
-    @err_catcher(name=__name__)
-    def getStateProps(self):
-        self.importData["statename"] = self.e_name.text()
-        self.importData["statemode"] = self.stateMode
-        self.importData["shotUID"] = self.shotUUID
-        self.importData["filepath"] = self.getImportPath()
-        self.importData["autoUpdate"] = str(self.chb_autoUpdate.isChecked())
-        self.importData["taskname"] = self.taskName
-
-        return self.importData
-    
-
+    #   Create a 'Normal SynthEyes Shot
     @err_catcher(name=__name__)
     def addShot(self, imagePath, versionData):
         mode = self.synthFuncts.addShot_mode
-
-        if mode == "survey":
-            imagePath = self.createSurveyIFL(imagePath, versionData)
-            if not imagePath:
-                logger.warning("ERROR: Unable to Import Survey Shot")
-                return False
-
         result = self.synthFuncts.sm_addShot(self, mode, imagePath, versionData)
 
         return result
     
 
+    #   Create Survey Shot
     @err_catcher(name=__name__)
-    def createSurveyIFL(self, imagePath, vData):
+    def addSurvey(self, imagePath, versionData):
+        #   Get Image Sequence from Selected Path
+        surveySeq = self.getSurveySeqFromPath(imagePath)
+
+        #   Load Survey Viewer with the Selected Sequence
+        self.surveyViewer.load(None, surveySeq)
+
+        #   If Accepted, Get Custom Ordered List
+        if self.surveyViewer.exec_() == QDialog.Accepted:
+            orderedFiles = self.surveyViewer.getOrderedFiles()
+
+            if len(orderedFiles) < 4:
+                abortText = ("It appears the selected files are not an Image\n"
+                            "Sequence.  Please make sure there are at minimum\n"
+                            "4 Images Files in the survey Sequence.")
+                
+                self.core.popup(abortText)
+                return False
+
+            self.surveyImageList = orderedFiles
+        
+        else:
+            return False
+
+        #   Create and Save IFL File to Disk
+        self.iflPath = self.createSurveyIFL(self.surveyImageList, vData=versionData)
+        if not self.iflPath:
+            logger.warning("ERROR: Unable to Import Survey Shot")
+            return False
+
+        #   Call to Add Survey Shot to SynthEyes
+        result = self.synthFuncts.sm_addShot(self, "survey", self.iflPath, versionData)
+
+        return result
+    
+
+    #   Update Survey Shot
+    @err_catcher(name=__name__)
+    def editSurvey(self):
+        if not self.iflPath:
+            return
+
+        #   Load Images from Saved IFL File into Viewer
+        self.surveyViewer.load(self.iflPath, self.readIflImageList(self.iflPath))
+        
+        #   If Accepted, Get Custom Ordered List
+        if self.surveyViewer.exec_() == QDialog.Accepted:
+            orderedFiles = self.surveyViewer.getOrderedFiles()
+
+            if len(orderedFiles) < 4:
+                abortText = ("It appears the selected files are not an Image\n"
+                            "Sequence.  Please make sure there are at minimum\n"
+                            "4 Images Files in the survey Sequence.")
+                
+                self.core.popup(abortText)
+                return False
+
+            self.surveyImageList = orderedFiles
+        
+        else:
+            return False
+        
+        #   Create and Save IFL File to Disk
+        self.createSurveyIFL(self.surveyImageList, iflPath=self.iflPath)
+
+        #   Get SynthEyes Scene Object
+        scene = self.synthEyes.Scene()
+        #   Get Survey Shot Object
+        shot = self.synthFuncts.getObjByUUID("shot", self.shotUUID)
+
+        #   Update the Framerange with Number of Images
+        with self.synthFuncts.UNDO_BLOCK("Update Framerange"):
+            self.synthFuncts.setFrameRange(self, 1, len(self.surveyImageList), shot)
+            scene.Call("ResetTimeBar")
+
+        self.synthEyes.FlushShot(shot)
+
+        if not self.iflPath:
+            logger.warning("ERROR: Unable to Import Survey Shot")
+            return False
+
+        self.updateUi()
+
+
+    #   Resolve Image Sequence in Selected Dir
+    @err_catcher(name=__name__)
+    def getSurveySeqFromPath(self, imagePath):
+        #   Create Image File Type List
         video_set = {ext.lower() for ext in self.core.media.videoFormats}
         imageFormats = {
             ext.lower()
@@ -841,9 +929,19 @@ class Synth_AddShotClass(object):
             if ext.lower() not in video_set
         }
 
-        imageDir, _ = os.path.split(imagePath)
-
+        try:
+            imageDir, _ = os.path.split(imagePath)
+            if not os.path.isdir(imageDir):
+                raise Exception
+            
+        except Exception as e:
+            logger.warning(f"ERROR: Survey Sequence path is not valid: {e}")
+            return []
+            
+        seqFiles = None
         imagesFiles = []
+
+        #   Iterate Image Dir and Find Image Files
         for file in os.listdir(imageDir):
             filePath = os.path.join(imageDir, file)
 
@@ -858,25 +956,19 @@ class Synth_AddShotClass(object):
 
             imagesFiles.append(filePath)
 
-        #   Message Text for Non-Sequences
-        abortText = ("It appears the selected files are not an Image\n"
-                    "Sequence.  Please make sure the files are consecutively\n"
-                    "numbered (example: .0001, .0002, .0003)")
+        #   Attempt to Find Sequence
+        if len(imagesFiles) > 1:
+            seqFiles = self.core.media.detectSequence(imagesFiles, baseFile=imagePath)
+    
+        if seqFiles:
+            return [os.path.normpath(f) for f in seqFiles]
+        
+        else:
+            return imagesFiles
 
-        #   Abort if Not Multiple Files
-        if len(imagesFiles) < 2:
-            self.core.popup(abortText)
-            return False
 
-        #   Detect Image Sequence
-        seqFiles = self.core.media.detectSequence(imagesFiles, baseFile=imagePath)
-
-        #   Abort If Not Image Sequence
-        if not seqFiles or len(seqFiles) < 2:
-            self.core.popup(abortText)
-            return False
-
-        #   Make IFL Filename
+    @err_catcher(name=__name__)
+    def createIflName(self, vData:dict) -> str:
         try:
             baseName = vData.get("identifier", None)
             if baseName:
@@ -884,20 +976,45 @@ class Synth_AddShotClass(object):
             else:
                 ifl_name = "SURVEY.ifl"
 
+            return ifl_name
+
         except Exception as e:
             logger.warning(f"ERROR: Unable to Create Survey IFL Name: {e}")
             ifl_name = "SURVEY.ifl"
 
-        ifl_path = os.path.join(imageDir, ifl_name)
+
+    #   Write IFL File to Disk
+    @err_catcher(name=__name__)
+    def createSurveyIFL(self, imageList:list, iflPath:str=None, vData:dict=None) -> str:
+        imageDir = os.path.dirname(imageList[0])
+
+        if not iflPath:
+            #   Make IFL Filename
+            ifl_name = self.createIflName(vData)
+            iflPath = os.path.join(imageDir, ifl_name)
 
         #   Write Sequence Filepaths to IFL
-        with open(ifl_path, "w") as f:
-            for file in seqFiles:
+        with open(iflPath, "w") as f:
+            for file in self.surveyImageList:
                 f.write(file + "\n")
 
-        return ifl_path
-    
+        return iflPath
 
+
+    #   Read IFL and Return Image List
+    @err_catcher(name=__name__)
+    def readIflImageList(self, iflPath:str) -> list:
+        if not os.path.exists(iflPath):
+            return []
+        try:
+            with open(iflPath, 'r') as f:
+                return [line.strip() for line in f if line.strip()]
+        except Exception as e:
+            logger.warning(f"Error reading IFL file {iflPath}: {e}")
+            return []
+
+    
+    #   Update Shot's Images in SynthEyes
     @err_catcher(name=__name__)
     def changeShotImages(self, baseFile, versionData):
         baseName, extension = os.path.splitext(baseFile)
@@ -930,26 +1047,76 @@ class Synth_AddShotClass(object):
         result = self.synthFuncts.sm_changeShotImages(self, shot, baseFile, verStr, frameCount)
 
         return result
+    
+
+    @err_catcher(name=__name__)
+    def preDelete(self, item):
+        if self.stateMode == "scene":
+            text = ("Scene cameras cannot be deleted from SynthEyes.<br><br>"
+                    "This will delete the State from the State Manager,<br>"
+                    "but the camera will not be deleted from SynthEyes.")
+            self.core.popup(text)
+            return
+
+        if not self.core.uiAvailable:
+            action = "Yes"
+
+        else:
+            action = "No"
+          
+        if self.stateMode == "shot":
+            text = "Do you want to Delete the Shot?"
+
+        if self.stateMode == "survey":
+            text = "Do you want to Delete the Survey Shot?"
+
+        action = self.core.popupQuestion(text, title="Delete Shot", parent=self.stateManager)
+
+        if action == "Yes":
+            #   Get the Delete Shot Camera Name
+            deleteCam = self.synthFuncts.getCamFromShotUUID(self.shotUUID)
+            deleteCamName = deleteCam.Name()
+
+            #   Get the Active Camera Name
+            activeHost = self.synthEyes.Active()
+            activeCam = activeHost.cam
+            activeCamName = activeCam.Name()
+
+            #   If Shot is Active, Switch to Another Camera before Deleting
+            if deleteCamName == activeCamName:
+                shots = self.synthEyes.Shots()
+                for shot in shots:
+                    shotCam = shot.cam
+                    shotCamName = shotCam.Name()
+
+                    if shotCamName != deleteCamName:
+                        otherCam = shotCam
+                        break
+                
+                #   Set Active Shot (Tracker Host)
+                with self.synthFuncts.UNDO_BLOCK("Set Active Shot"):
+                    self.synthEyes.SetActive(otherCam)
+
+            #   Delete Camera
+            with self.synthFuncts.UNDO_BLOCK("Delete Shot"):
+                self.synthEyes.Delete(deleteCam)
+                self.synthEyes.ReloadAll()
 
 
 
-    #########################
-    #                       #
-    #        CLASSES        #
-    #                       #
-    #########################
-
-
+#########################################################
+##   Custom MediaBrowser to Choose Images to Import    ##
 class ReadMediaDialog(QDialog):
+    '''Custom MediaBrowser to Choose Images to Import.'''
 
     mediaSelected = Signal(object)
 
     def __init__(self, state, core):
         super(ReadMediaDialog, self).__init__()
-        self.state = state
-        self.stateManager = self.state.stateManager
-        self.synthFuncts = self.state.synthFuncts
-        self.core = core
+        self.state:QTreeWidgetItem = state
+        self.stateManager:StateManager = self.state.stateManager
+        self.synthFuncts:Prism_SynthEyes_Functions = self.state.synthFuncts
+        self.core:PrismCore = core
 
         self.isValid = False
         self.setupUi()
@@ -966,7 +1133,7 @@ class ReadMediaDialog(QDialog):
         self.w_browser.headerHeightSet = True
 
         ##   Disconnect native function of showing versionInfo, and connect to import the version
-        #   This is disabled unless the main code gets something connected to the ID table list widget
+        ##   This is disabled unless the main code gets something connected to the ID table list widget
         # self.w_browser.tw_identifier.itemDoubleClicked.disconnect()
         self.w_browser.tw_identifier.itemDoubleClicked.connect(self.ident_dblClk)
         self.w_browser.lw_version.itemDoubleClicked.disconnect()
@@ -1022,18 +1189,22 @@ class ReadMediaDialog(QDialog):
 
     #   Handles clicked buttons
     @err_catcher(name=__name__)
-    def buttonClicked(self, button):
+    def buttonClicked(self, button:QPushButton):
         if button == "select" or button.text() == "Import Selected":
             self.handelImportButton()
+
         elif button.text() == "Import Custom":
             self.core.popup("Not Yet Implemented")                                      #    TESTING
+
         elif button.text() == "Open Project Browser":                                   #   TODO
             self.reject()
             self.openProjectBrowser()
+
         elif button.text() == "Cancel":
-            self.reject()  # Close the dialog with no selection
+            self.reject()
+
         else:
-            self.reject()  # Close the dialog with no selection
+            self.reject()
 
 
     #   Handles if the Import Selected button clicked
@@ -1086,7 +1257,7 @@ class ReadMediaDialog(QDialog):
 
     #   Sends data back to the main code to import the latest version
     @err_catcher(name=__name__)
-    def ident_dblClk(self, item, column=None):
+    def ident_dblClk(self, item:QListWidgetItem, column:int=None):
         #   Get Item Data
         data = item.data(0, Qt.UserRole)
 
@@ -1102,7 +1273,7 @@ class ReadMediaDialog(QDialog):
 
     #   Sends data back to main code to populate the version
     @err_catcher(name=__name__)
-    def ver_dblClk(self, item):
+    def ver_dblClk(self, item:QListWidgetItem, column:int=None) -> None:
         data = self.w_browser.getCurrentSource()
 
         if not data:
@@ -1129,3 +1300,937 @@ class ReadMediaDialog(QDialog):
         if self.core.pb:
             self.core.pb.showTab("Libraries")
 
+
+
+###############################################
+##   Image Viewer for Survey Shots Editing   ##
+class SurveyImageViewer(QDialog):
+    '''Image Viewer for Survey Shots Editing'''
+
+    def __init__(self, state, synthFuncts, imageFiles:list=None, parent=None):
+        super(SurveyImageViewer, self).__init__(parent or state)
+
+        self.state:QTreeWidgetItem = state
+        self.synthFuncts:Prism_SynthEyes_Functions = synthFuncts
+        self.core:PrismCore = synthFuncts.core
+        self.iconDir:str = os.path.join(self.core.prismRoot, "Scripts", "UserInterfacesPrism")
+
+        #   Set Default Playback Speed
+        self.fps = 2
+        
+        #   Timer for Window Resize
+        self.resizeTimer = QTimer(self)
+        self.resizeTimer.setSingleShot(True)
+        self.resizeTimer.timeout.connect(self.doResizeUpdate)
+
+        #   Set Initial Image List
+        self.imageFiles = imageFiles[:] if imageFiles else []
+        #   Cached Pixmap List
+        self.pixmapCache = []
+        self.currentIndex = 0
+
+        self.setupUi()
+        self.connectEvents()
+        self.loadImageRows()
+
+
+    ##########################
+    ##          UI          ##
+    ##########################
+
+    @err_catcher(name=__name__)
+    def setupUi(self):
+        self.setWindowTitle("Survey Image Viewer")
+        self.core.parentWindow(self)
+
+        #   Set Initial Window Size
+        self.resize(650, 900)
+
+        #   Create Splitter for Viewer and Image List Panels
+        splitter = QSplitter(Qt.Vertical)
+
+        ###   Main Layout    ###
+        mainLayout = QVBoxLayout(self)
+        mainLayout.addWidget(splitter)
+
+        ###    Top Panel - Image Viewer    ###
+        topWidget = QWidget()
+        topLayout = QVBoxLayout(topWidget)
+        topLayout.setContentsMargins(0, 0, 0, 10)
+
+        #   Container for Image Viewer
+        imageContainer = QWidget()
+        imageContainer.setStyleSheet("background-color: #1a1a1a;")
+        imageLayout = QVBoxLayout(imageContainer)
+        imageLayout.setContentsMargins(0, 0, 0, 0)
+        
+        #   Image Viewer Label Object
+        self.imageLabel = QLabel()
+        self.imageLabel.setAlignment(Qt.AlignCenter)
+        self.imageLabel.setMinimumSize(400, 300)
+        self.imageLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.imageLabel.setStyleSheet("border: 1px solid #ccc;")
+        imageLayout.addWidget(self.imageLabel)
+        topLayout.addWidget(imageContainer)
+
+        #   Playback Controls
+        self.w_timeslider = QWidget()
+        self.lo_timeslider = QHBoxLayout(self.w_timeslider)
+        self.lo_timeslider.setContentsMargins(0, 0, 0, 0)
+        self.l_start = QLabel("1")
+        self.l_end = QLabel(str(max(1, len(self.imageFiles))))
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setRange(0, max(0, len(self.imageFiles) - 1))
+        self.slider.setSingleStep(1)
+        self.slider.setPageStep(1)
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.slider.setSizePolicy(sizePolicy)
+        self.slider.setObjectName("slider")
+        self.sp_current = QSpinBox()
+        self.sp_current.setStyleSheet("min-width: 30px;")
+        self.sp_current.setButtonSymbols(QAbstractSpinBox.NoButtons)
+        self.sp_current.setRange(1, max(1, len(self.imageFiles)))
+        self.sp_current.setValue(1 if self.imageFiles else 1)
+        self.lo_timeslider.addWidget(self.l_start)
+        self.lo_timeslider.addWidget(self.slider)
+        self.lo_timeslider.addWidget(self.l_end)
+        self.lo_timeslider.addWidget(self.sp_current)
+        topLayout.addWidget(self.w_timeslider)
+
+        self.w_playerCtrls = QWidget()
+        self.lo_playerCtrls = QHBoxLayout(self.w_playerCtrls)
+        self.lo_playerCtrls.setContentsMargins(0, 0, 0, 0)
+        self.b_first = QToolButton()
+        self.b_prev = QToolButton()
+        self.b_play = QToolButton()
+        self.b_next = QToolButton()
+        self.b_last = QToolButton()
+        self.lo_playerCtrls.addWidget(self.b_first)
+        self.lo_playerCtrls.addStretch()
+        self.lo_playerCtrls.addWidget(self.b_prev)
+        self.lo_playerCtrls.addWidget(self.b_play)
+        self.lo_playerCtrls.addWidget(self.b_next)
+        self.lo_playerCtrls.addStretch()
+        self.lo_playerCtrls.addWidget(self.b_last)
+        topLayout.addWidget(self.w_playerCtrls)
+
+        #   Set Button Icons
+        firstPath = os.path.join(self.iconDir, "first.png")
+        if os.path.exists(firstPath):
+            icon = self.core.media.getColoredIcon(firstPath)
+            self.b_first.setIcon(icon)
+        self.b_first.setToolTip("Go to First Frame")
+
+        prevPath = os.path.join(self.iconDir, "prev.png")
+        if os.path.exists(prevPath):
+            icon = self.core.media.getColoredIcon(prevPath)
+            self.b_prev.setIcon(icon)
+        self.b_prev.setToolTip("Go to Previous Frame")
+
+        playPath = os.path.join(self.iconDir, "play.png")
+        if os.path.exists(playPath):
+            icon = self.core.media.getColoredIcon(playPath)
+            self.b_play.setIcon(icon)
+        self.b_play.setToolTip("Start Playback")
+        self.b_play.setContextMenuPolicy(Qt.CustomContextMenu)
+
+        nextPath = os.path.join(self.iconDir, "next.png")
+        if os.path.exists(nextPath):
+            icon = self.core.media.getColoredIcon(nextPath)
+            self.b_next.setIcon(icon)
+        self.b_next.setToolTip("Go to Next Frame")
+
+        lastPath = os.path.join(self.iconDir, "last.png")
+        if os.path.exists(lastPath):
+            icon = self.core.media.getColoredIcon(lastPath)
+            self.b_last.setIcon(icon)
+        self.b_last.setToolTip("Go to Last Frame")
+
+        splitter.addWidget(topWidget)
+
+        ###    Bottom Panel - Image List    ###
+        listContainer = QWidget()
+        listLayout = QVBoxLayout(listContainer)
+        listLayout.setContentsMargins(0, 10, 0, 0)
+        self.listWidget = QListWidget()
+        self.listWidget.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.listWidget.setDragDropMode(QAbstractItemView.InternalMove)
+        self.listWidget.setDefaultDropAction(Qt.MoveAction)
+        self.listWidget.setMovement(QListView.Snap)
+        self.listWidget.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.listWidget.setStyleSheet("QListWidget::item { border: 1px solid #465e75; padding: 4px; }")
+        self.listWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        listLayout.addWidget(self.listWidget)
+
+        splitter.addWidget(listContainer)
+
+        #   Setup Initial Splitter Settings
+        splitter.setSizes([460, 440])
+        splitter.setHandleWidth(8)
+        splitter.setStyleSheet(
+            "QSplitter::handle { background-color: #465e75; "
+            "border: 1px solid #1a1a1a; "
+            "background-image: url('" + os.path.join(self.iconDir, "reorder.png").replace("\\", "/") + "'); "
+            "background-repeat: no-repeat; "
+            "background-position: center; } "
+            "QSplitter::handle:hover { background-color: #3a3a3a; }"
+        )
+
+        #   Connect Splitter for Resize
+        splitter.splitterMoved.connect(lambda: self.displayImage(self.currentIndex))
+
+        #   Bottom Buttons
+        buttonLayout = QHBoxLayout()
+        self.addButton = QPushButton("Add Images")
+        self.clearButton = QPushButton("Clear Images")
+        self.okButton = QPushButton("OK")
+        self.cancelButton = QPushButton("Cancel")
+        buttonLayout.addWidget(self.addButton)
+        buttonLayout.addWidget(self.clearButton)
+        buttonLayout.addStretch()
+        buttonLayout.addWidget(self.cancelButton)
+        buttonLayout.addWidget(self.okButton)
+
+        mainLayout.addLayout(buttonLayout)
+
+
+    @err_catcher(name=__name__)
+    def connectEvents(self):
+        self.slider.valueChanged.connect(self.sliderChanged)
+        self.sp_current.valueChanged.connect(self.onCurrentChanged)
+        self.b_first.clicked.connect(self.onFirstClicked)
+        self.b_prev.clicked.connect(self.onPrevClicked)
+        self.b_play.clicked.connect(self.onPlayClicked)
+        self.b_play.customContextMenuRequested.connect(self.showPlayContextMenu)
+        self.b_next.clicked.connect(self.onNextClicked)
+        self.b_last.clicked.connect(self.onLastClicked)
+        self.listWidget.model().rowsMoved.connect(self.onRowsMoved)
+        self.listWidget.customContextMenuRequested.connect(self.showContextMenu)
+        self.addButton.clicked.connect(self.addFiles)
+        self.clearButton.clicked.connect(self.clearFiles)
+        self.okButton.clicked.connect(self.accept)
+        self.cancelButton.clicked.connect(self.reject)
+
+
+    #   Delay Resize Update until Resizing Stops
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.resizeTimer.start(200)  # 200ms delay
+
+
+    #   Update All List Items When Resize is Complete
+    @err_catcher(name=__name__)
+    def doResizeUpdate(self):
+        for i in range(self.listWidget.count()):
+            item = self.listWidget.item(i)
+            filepath = item.data(Qt.UserRole)
+            widget = self.createListItemWidget(filepath, i)
+            item.setSizeHint(widget.sizeHint())
+            self.listWidget.setItemWidget(item, widget)
+
+        self.displayImage(self.currentIndex)
+
+
+    #   List Items RCL Menu
+    @err_catcher(name=__name__)
+    def showContextMenu(self, pos):
+        menu = QMenu(self)
+        removeAction = menu.addAction("Remove Image")
+        removeAction.triggered.connect(self.removeSelectedImages)
+        menu.addSeparator()
+        
+        # New actions
+        invertAction = menu.addAction("Invert Order")
+        invertAction.triggered.connect(self.invertSelection)
+        
+        sortAscAction = menu.addAction("Sort Ascending")
+        sortAscAction.triggered.connect(self.sortSelectionAscending)
+        
+        sortDescAction = menu.addAction("Sort Descending")
+        sortDescAction.triggered.connect(self.sortSelectionDescending)
+        
+        menu.addSeparator()
+        openAction = menu.addAction("Open in Explorer")
+        openAction.triggered.connect(self.openInExplorer)
+        
+        #   Enable/disable based on Selection
+        selectedItems = self.listWidget.selectedItems()
+
+        if selectedItems:
+            removeAction.setEnabled(True)
+            openAction.setEnabled(True)
+        else:
+            removeAction.setEnabled(False)
+            openAction.setEnabled(False)
+
+        if len(selectedItems) > 1:
+            invertAction.setEnabled(True)
+            filepaths = [item.data(Qt.UserRole) for item in selectedItems]
+            seqFiles = self.core.media.detectSequence(filepaths)
+            isSequence = len(seqFiles) > 1
+            sortAscAction.setEnabled(isSequence)
+            sortDescAction.setEnabled(isSequence)
+
+        else:
+            invertAction.setEnabled(False)
+            sortAscAction.setEnabled(False)
+            sortDescAction.setEnabled(False)
+        
+        menu.exec_(self.listWidget.mapToGlobal(pos))
+
+
+    #   Play/Pause Button RCL Menu
+    @err_catcher(name=__name__)
+    def showPlayContextMenu(self, pos):
+        #   Create Small Dialog Popup
+        fpsPopup = QDialog(self)
+        fpsPopup.setWindowTitle("Playback Speed")
+        fpsPopup.setModal(True)
+        lo_fps = QVBoxLayout(fpsPopup)
+        
+        #   Label and Spinbox for FPS
+        l_fps = QLabel("Frames per second:")
+        lo_fps.addWidget(l_fps)
+
+        sp_fps = QSpinBox()
+        sp_fps.setRange(1, 60)
+        sp_fps.setValue(self.fps)
+        lo_fps.addWidget(sp_fps)
+        
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox.accepted.connect(fpsPopup.accept)
+        buttonBox.rejected.connect(fpsPopup.reject)
+        lo_fps.addWidget(buttonBox)
+        
+        if fpsPopup.exec_() == QDialog.Accepted:
+            self.setPlaybackFps(sp_fps.value())
+
+
+    #   Updates FPS Timer
+    @err_catcher(name=__name__)
+    def setPlaybackFps(self, fps:int):
+        self.fps = fps
+        if hasattr(self, 'timer') and self.timer.isActive():
+            interval = max(10, int(1000 / fps))
+            self.timer.setInterval(interval)
+
+
+    ####################################
+    ##            CONTROLS            ##
+    ####################################
+
+    #   Plays Images Based on FPS Timer
+    @err_catcher(name=__name__)
+    def play(self):
+        if not hasattr(self, 'timer'):
+            self.timer = QTimer(self)
+            self.timer.timeout.connect(self.nextFramePlay)
+
+        #   Minimum 10ms to Prevent Overload
+        interval = max(10, int(1000 / self.fps))
+        self.timer.start(interval)
+
+        pausePath = os.path.join(self.iconDir, "pause.png")
+        if os.path.exists(pausePath):
+            icon = self.core.media.getColoredIcon(pausePath)
+            self.b_play.setIcon(icon)
+
+        self.b_play.setToolTip("Pause")
+
+
+    @err_catcher(name=__name__)
+    def pause(self):
+        if hasattr(self, 'timer'):
+            self.timer.stop()
+
+        playPath = os.path.join(self.iconDir, "play.png")
+        if os.path.exists(playPath):
+            icon = self.core.media.getColoredIcon(playPath)
+            self.b_play.setIcon(icon)
+
+        self.b_play.setToolTip("Play")
+
+
+    @err_catcher(name=__name__)
+    def nextFramePlay(self):
+        if not self.imageFiles:
+            self.pause()
+            return
+        
+        self.currentIndex = (self.currentIndex + 1) % len(self.imageFiles)
+        self.slider.setValue(self.currentIndex)
+
+        self.displayImage(self.currentIndex)
+
+
+    @err_catcher(name=__name__)
+    def onFirstClicked(self):
+        if self.imageFiles:
+            self.currentIndex = 0
+            self.slider.setValue(self.currentIndex)
+
+            self.displayImage(self.currentIndex)
+
+
+    @err_catcher(name=__name__)
+    def onLastClicked(self):
+        if self.imageFiles:
+            self.currentIndex = len(self.imageFiles) - 1
+            self.slider.setValue(self.currentIndex)
+
+            self.displayImage(self.currentIndex)
+
+
+    @err_catcher(name=__name__)
+    def onPrevClicked(self):
+        if self.imageFiles:
+            self.currentIndex = max(0, self.currentIndex - 1)
+            self.slider.setValue(self.currentIndex)
+
+            self.displayImage(self.currentIndex)
+
+
+    @err_catcher(name=__name__)
+    def onNextClicked(self):
+        if self.imageFiles:
+            self.currentIndex = min(len(self.imageFiles) - 1, self.currentIndex + 1)
+            self.slider.setValue(self.currentIndex)
+
+            self.displayImage(self.currentIndex)
+
+
+    @err_catcher(name=__name__)
+    def onPlayClicked(self):
+        if hasattr(self, 'timer') and self.timer.isActive():
+            self.pause()
+        else:
+            if self.imageFiles:
+                self.play()
+
+
+    @err_catcher(name=__name__)
+    def onCurrentChanged(self, value):
+        self.currentIndex = value - 1
+        self.slider.setValue(self.currentIndex)
+
+        self.displayImage(self.currentIndex)
+
+
+    @err_catcher(name=__name__)
+    def sliderChanged(self, value):
+        self.currentIndex = value
+
+        self.displayImage(value)
+
+
+    ####################################
+    ##         FILE HANDLING          ##
+    ####################################
+
+    #   Opens File Explorer to Choose Image Files
+    @err_catcher(name=__name__)
+    def addFiles(self) -> None:
+        #   Resolve Initial Dir to Open To
+        existingDir = None
+
+        #   If first Image if it Exists
+        if self.imageFiles:
+            firstFile = self.imageFiles[0]
+            if firstFile and os.path.isfile(firstFile):
+                existingDir = os.path.dirname(firstFile)
+
+        #   Or Use Project Dir
+        if not existingDir:
+            existingDir = self.core.projectPath
+
+        #   Or Fallback
+        if not existingDir:
+            existingDir = os.getcwd()
+
+        fileDialog = QFileDialog(self)
+        fileDialog.setDirectory(existingDir)
+        fileDialog.setFileMode(QFileDialog.ExistingFiles)
+        fileDialog.setNameFilter("Image Files (*.png *.jpg *.jpeg *.tif *.tiff *.exr *.dpx);;All Files (*)")
+
+        if fileDialog.exec_():
+            #   Get Selected Files
+            files = fileDialog.selectedFiles()
+
+            for file in files:
+                #   If File not Already in List, Get Pixmap and Add to Cache
+                if file not in self.imageFiles:
+                    self.imageFiles.append(file)
+                    self.pixmapCache.append(self.loadPixmap(file))
+
+            self.listWidget.clear()
+
+            #   Rebuild List to Update Row Numbers
+            for i, file in enumerate(self.imageFiles):
+                item = QListWidgetItem()
+                item.setData(Qt.UserRole, file)
+                item.setToolTip(file)
+                widget = self.createListItemWidget(file, i)
+                item.setSizeHint(widget.sizeHint())
+                self.listWidget.addItem(item)
+                self.listWidget.setItemWidget(item, widget)
+
+            self.slider.setRange(0, max(0, len(self.imageFiles) - 1))
+            self.sp_current.setRange(1, max(1, len(self.imageFiles)))
+
+            if self.imageFiles:
+                self.displayImage(0)
+            else:
+                self.l_end.setText("1")
+                self.sp_current.setValue(1)
+
+
+    #   Clears the Image List and Resets Player UI
+    @err_catcher(name=__name__)
+    def clearFiles(self):
+        #   Stop Playback before Clearing
+        if hasattr(self, 'timer') and self.timer.isActive():
+            self.pause()
+
+        self.imageFiles.clear()
+        self.pixmapCache.clear()
+        self.listWidget.clear()
+        self.slider.setRange(0, 0)
+        self.currentIndex = 0
+        self.slider.setValue(0)
+        self.sp_current.setValue(1)
+        self.imageLabel.clear()
+        self.l_end.setText("1")
+
+
+    #   Loads the Viewer and Displays
+    @err_catcher(name=__name__)
+    def load(self, iflPath:str, imageFiles:list) -> None:
+        '''Loads the Viewer and Displays'''
+
+        self.iflPath = iflPath
+        self.imageFiles = imageFiles[:] if imageFiles else []
+        self.pixmapCache.clear()
+        self.currentIndex = 0
+
+        if hasattr(self, 'loadTimer') and self.loadTimer.isActive():
+            self.loadTimer.stop()
+
+        self.listWidget.clear()
+        self.slider.setRange(0, max(0, len(self.imageFiles) - 1))
+        self.slider.setValue(0)
+        self.sp_current.setRange(1, max(1, len(self.imageFiles)))
+        self.sp_current.setValue(1)
+        self.l_end.setText(str(max(1, len(self.imageFiles))))
+        self.l_start.setText("1")
+        self.imageLabel.clear()
+
+        self.loadImageRows()
+        self.show()
+
+
+    #   Returns a List of the User-sorted Survey Image Paths
+    @err_catcher(name=__name__)
+    def getOrderedFiles(self) -> list:
+        '''Returns a List of the User-sorted Survey Image Paths'''
+        return self.imageFiles
+
+
+    ####################################
+    ##       RCL MENU ACTIONS         ##
+    ####################################
+
+    #   Opens Item in File Explorer in Separate Process
+    def openInExplorer(self):
+        selectedItems = self.listWidget.selectedItems()
+
+        if not selectedItems:
+            return
+        
+        #   Get the Path of the First Selected Item
+        item = selectedItems[0]
+        filePath = item.data(Qt.UserRole)
+
+        if os.path.isfile(filePath):
+            import subprocess
+
+            try:
+                filePath = os.path.normpath(filePath)
+                subprocess.Popen(['explorer', '/select,', filePath])
+
+            except Exception as e:
+                logger.warning(f"Failed to open Explorer: {e}")
+
+
+    #   Remove the Selected Image Rows from List
+    @err_catcher(name=__name__)
+    def removeSelectedImages(self):
+        selectedItems = self.listWidget.selectedItems()
+        if not selectedItems:
+            return
+        
+        #   Get Indices, Sort Descending to Remove
+        indices = sorted([self.listWidget.row(item) for item in selectedItems], reverse=True)
+
+        #   Remove from List and Cache
+        for idx in indices:
+            del self.imageFiles[idx]
+            del self.pixmapCache[idx]
+
+        self.listWidget.clear()
+
+        #   Rebuild List to Update Row Numbers
+        for i, file in enumerate(self.imageFiles):
+            item = QListWidgetItem()
+            item.setData(Qt.UserRole, file)
+            item.setToolTip(file)
+            widget = self.createListItemWidget(file, i)
+            item.setSizeHint(widget.sizeHint())
+            self.listWidget.addItem(item)
+            self.listWidget.setItemWidget(item, widget)
+
+        #   Update Player UI
+        self.slider.setRange(0, max(0, len(self.imageFiles) - 1))
+        self.sp_current.setRange(1, max(1, len(self.imageFiles)))
+
+        if self.currentIndex >= len(self.imageFiles):
+            self.currentIndex = len(self.imageFiles) - 1 if self.imageFiles else 0
+
+        self.slider.setValue(self.currentIndex)
+
+        self.displayImage(self.currentIndex)
+
+
+    #   Inverts the Selected Rows
+    @err_catcher(name=__name__)
+    def invertSelection(self):
+        selectedItems = self.listWidget.selectedItems()
+        if len(selectedItems) <= 1:
+            return
+        
+        #   Get Selected Indices
+        indices = sorted([self.listWidget.row(item) for item in selectedItems])
+
+        #   Get the Files and Pixmaps from Cache in Order
+        selectedFiles = [self.imageFiles[i] for i in indices]
+        selectedPixmaps = [self.pixmapCache[i] for i in indices]
+
+        #   Reverse the Selected Objects
+        selectedFiles.reverse()
+        selectedPixmaps.reverse()
+
+        # Replace the List Items and Cache
+        for i, idx in enumerate(indices):
+            self.imageFiles[idx] = selectedFiles[i]
+            self.pixmapCache[idx] = selectedPixmaps[i]
+
+        #   Rebuild List
+        self.rebuildList()
+
+
+    #   Calls to Sort the Image List Ascending
+    @err_catcher(name=__name__)
+    def sortSelectionAscending(self):
+        self._sortSelection(reverse=False)
+
+
+    #   Calls to Sort the Image List Descending
+    @err_catcher(name=__name__)
+    def sortSelectionDescending(self):
+        self._sortSelection(reverse=True)
+
+
+    #   Sorts the Selected Items 
+    def _sortSelection(self, reverse:bool=False):
+
+        #   Small Helper from Prism
+        def getFrameNum(file:str) -> int:
+            return self.core.media.getFrameNumberFromFilename(file) or 0
+        
+        #   Get Selected Items
+        selectedItems = self.listWidget.selectedItems()
+        if len(selectedItems) <= 1:
+            return
+        
+        #   Get Indices
+        indices = sorted([self.listWidget.row(item) for item in selectedItems])
+
+        #   Get the Files and Pixmaps in Order
+        selectedFiles = [self.imageFiles[i] for i in indices]
+        selectedPixmaps = [self.pixmapCache[i] for i in indices]
+
+        #   Sort the Items Data Pairs
+        sorted_pairs = sorted(zip(selectedFiles, selectedPixmaps), key=lambda x: getFrameNum(x[0]), reverse=reverse)
+        selectedFiles, selectedPixmaps = zip(*sorted_pairs)
+
+        # Replace the List Items
+        for i, idx in enumerate(indices):
+            self.imageFiles[idx] = selectedFiles[i]
+            self.pixmapCache[idx] = selectedPixmaps[i]
+
+        #   Rebuild Image List
+        self.rebuildList()
+
+
+    ####################################
+    ##           IMAGE ROWS           ##
+    ####################################
+
+    #   Loads the Image File Rows into the Image List
+    @err_catcher(name=__name__)
+    def loadImageRows(self):
+        #   Timer for Deferred Image Loading
+        self.loadTimer = QTimer(self)
+        self.loadTimer.setSingleShot(True)
+
+        #   Called Each Time the Timer Expires
+        self.loadTimer.timeout.connect(self.createImagesRow)
+
+        self.loadIndex = 0
+
+        #   Defer Image Loading to After UI is Displayed
+        self.loadTimer.start(100)
+
+
+    #   Loads Each Image File into Image File List
+    @err_catcher(name=__name__)
+    def createImagesRow(self):
+        #   Will Execute if there are Still Images not yet Loaded
+        if self.loadIndex < len(self.imageFiles):
+            #   Get Pixmap of the File and Add to Cache
+            file = self.imageFiles[self.loadIndex]
+            pixmap = self.loadPixmap(file)
+            self.pixmapCache.append(pixmap)
+            
+            #   Create Image File Item
+            item = QListWidgetItem()
+            item.setData(Qt.UserRole, file)
+            item.setToolTip(file)
+            widget = self.createListItemWidget(file, self.loadIndex)
+            item.setSizeHint(widget.sizeHint())
+
+            #   Add to Image List
+            self.listWidget.addItem(item)
+            self.listWidget.setItemWidget(item, widget)
+            
+            #   Update Player UI
+            self.slider.setRange(0, max(0, len(self.pixmapCache) - 1))
+            self.sp_current.setRange(1, max(1, len(self.pixmapCache)))
+            self.l_end.setText(str(max(1, len(self.pixmapCache))))
+            
+            #   Display First Image
+            if self.loadIndex == 0:
+                self.displayImage(0)
+            
+            #   Schedule Next Image Load (non-blocking)
+            self.loadIndex += 1
+            self.loadTimer.start(50)
+
+
+    #   Update Rows Order Based on List Order
+    @err_catcher(name=__name__)
+    def onRowsMoved(self, *args):
+        old_files = self.imageFiles[:]
+        self.imageFiles = []
+
+        for i in range(self.listWidget.count()):
+            item = self.listWidget.item(i)
+            self.imageFiles.append(item.data(Qt.UserRole))
+
+        #   Reorder Pixmap Cache to Match New Order
+        self.pixmapCache = [self.pixmapCache[old_files.index(f)] for f in self.imageFiles]
+        self.slider.setRange(0, max(0, len(self.imageFiles) - 1))
+
+        if self.currentIndex >= len(self.imageFiles):
+            self.currentIndex = len(self.imageFiles) - 1 if self.imageFiles else 0
+
+        self.slider.setValue(self.currentIndex)
+
+        self.displayImage(self.currentIndex)
+
+
+    #   Rebuilt Image List with Current Items
+    def rebuildList(self):
+        self.listWidget.clear()
+
+        for i, file in enumerate(self.imageFiles):
+            item = QListWidgetItem()
+            item.setData(Qt.UserRole, file)
+            item.setToolTip(file)
+            widget = self.createListItemWidget(file, i)
+            item.setSizeHint(widget.sizeHint())
+            self.listWidget.addItem(item)
+            self.listWidget.setItemWidget(item, widget)
+
+        #   Update Current Index if Needed
+        if self.currentIndex >= len(self.imageFiles):
+            self.currentIndex = len(self.imageFiles) - 1 if self.imageFiles else 0
+        self.slider.setValue(self.currentIndex)
+
+        self.displayImage(self.currentIndex)
+
+
+    @err_catcher(name=__name__)
+    def _getElidedPath(self, filepath:str, maxWidth:int) -> str:
+        """Returns an elided version of the filepath for display."""
+
+        fontMetrics = self.listWidget.fontMetrics()
+        return fontMetrics.elidedText(filepath, Qt.ElideMiddle, maxWidth)
+
+
+    def _calculateItemHeight(self) -> int:
+        """Calculate the proper height for list items."""
+
+        font = QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        fontMetrics = QFontMetrics(font)
+
+        #   Font eight + padding + stylesheet padding
+        return fontMetrics.height() + 10 + 8  
+
+
+    @err_catcher(name=__name__)
+    def createListItemWidget(self, filepath:str, index:int) -> QWidget:
+        """Creates a custom widget for list items with thumbnail and text."""
+
+        itemHeight = self._calculateItemHeight()
+        widget = ListItemWidget(itemHeight)
+        
+        layout = widget.layout()
+        layout.setContentsMargins(2, 0, 2, 0)
+        layout.setSpacing(2)
+
+        #   Frame Number
+        frameLabel = QLabel(str(index + 1))
+        frameLabel.setStyleSheet("font-weight: bold; color: #888;")
+        layout.addWidget(frameLabel)
+
+        layout.addSpacing(6)
+
+        #   Reorder Icon
+        reorderLabel = QLabel()
+        reorderIcon = QIcon(os.path.join(self.iconDir, "reorder.png"))
+        reorderLabel.setPixmap(reorderIcon.pixmap(12, 12))
+        layout.addWidget(reorderLabel)
+
+        layout.addSpacing(6)
+
+        #   File Name in Bold
+        filename = os.path.basename(filepath)
+        filenameLabel = QLabel(filename)
+        filenameLabel.setStyleSheet("font-weight: bold; font-size: 12px;")
+        layout.addWidget(filenameLabel)
+
+        layout.addSpacing(16)
+
+        # Full Filepath
+        fontMetrics = self.listWidget.fontMetrics()
+        filenameWidth = fontMetrics.horizontalAdvance(filename)
+        usedWidth = 50 + 6 + 16 + 6 + filenameWidth + 16 + 10
+        availablePathWidth = max(self.listWidget.width() - usedWidth, 100)
+        
+        elidedPath = self._getElidedPath(filepath, availablePathWidth)
+        pathLabel = QLabel(f"({elidedPath})")
+        pathLabel.setStyleSheet("color: #a3a2a2; font-size: 11px;")
+        pathLabel.setMaximumWidth(availablePathWidth)
+        layout.addWidget(pathLabel)
+
+        layout.addStretch()
+
+        return widget
+
+
+    ####################################
+    ##         VIEWER DISPLAY         ##
+    ####################################
+
+    #   Gets Pixmap from Prism Media
+    def loadPixmap(self, filepath:str) -> QPixmap:
+        try:
+            pixmap = self.core.media.getPixmapFromPath(filepath)
+
+        except Exception as e:
+            logger.warning(f"Failed to load {filepath} with OpenImageIO: {e}")
+            #   Create Null Oixmap
+            pixmap = QPixmap()
+        
+        return pixmap
+
+
+    #   Displays the Current Image in the Viewer and Updates UI
+    @err_catcher(name=__name__)
+    def displayImage(self, index:int):
+        if self.pixmapCache and 0 <= index < len(self.pixmapCache):
+            pixmap = self.pixmapCache[index]
+
+            if not pixmap.isNull():
+                #   Scale Pixmap and Set to Viewer Label
+                scaledPixmap = pixmap.scaled(self.imageLabel.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.imageLabel.setPixmap(scaledPixmap)
+
+            else:
+                #   Display Error Message if Pixmap Failed to Load
+                self.imageLabel.clear()
+                self.imageLabel.setStyleSheet("font-weight: bold; color: #e0e0e0;")
+                self.imageLabel.setText("Unable to load image")
+
+            self.sp_current.setValue(index + 1)
+
+        else:
+            self.imageLabel.clear()
+            self.sp_current.setValue(1)
+
+        #   Update Player UI
+        self.l_end.setText(str(max(1, len(self.imageFiles))))
+        self.sp_current.setRange(1, max(1, len(self.imageFiles)))
+
+        #   Highlight Current Item in List
+        self.listWidget.blockSignals(True)
+
+        for i in range(self.listWidget.count()):
+            self.listWidget.item(i).setSelected(i == index)
+
+        self.listWidget.blockSignals(False)
+
+
+        if 0 <= index < self.listWidget.count():
+            self.listWidget.scrollToItem(self.listWidget.item(index))
+
+
+
+###################################
+##    Custom List Widget Item    ##
+class ListItemWidget(QWidget):
+    '''Custom List Widget Item '''
+
+    def __init__(self, height, parent=None):
+        super(ListItemWidget, self).__init__(parent)
+        self.itemHeight:int = height
+        self.mainLayout = QHBoxLayout(self)
+        self.mainLayout.setContentsMargins(0, 0, 0, 0)
+        self.mainLayout.setSpacing(0)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    
+    def sizeHint(self):
+        # Return Min Width with Fixed Height
+        return QSize(0, self.itemHeight)
+    
+    def layout(self):
+        """Return the main layout for adding widgets."""
+        return self.mainLayout
+    
+
+
+###################################
+##      Custom Resize Filter     ##
+class _StateResizeFilter(QObject):
+    """Event filter installed on sa_stateSettings to trigger re-eliding on resize."""
+
+    def __init__(self, callback):
+        super().__init__()
+        self._callback = callback
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Resize:
+            self._callback()
+        return False
