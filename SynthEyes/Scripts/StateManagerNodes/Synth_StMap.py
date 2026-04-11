@@ -1004,11 +1004,11 @@ class Synth_StMapClass(object):
         currentCam = self.cb_cam.currentText()
         rangeType = self.cb_rangeType.currentText()
         frames = self.getFrameRange(rangeType)
-        startFrame = frames[0]
-        endFrame = frames[1]
 
         if frames is None or frames == [] or frames[0] is None:
             return [self.state.text(0) + ": error - Framerange is invalid"]
+        
+        startFrame, endFrame = frames
 
         if rangeType == "Single Frame":
             endFrame = startFrame
@@ -1020,13 +1020,14 @@ class Synth_StMapClass(object):
         idfs = {}
         if self.chb_undistort.isChecked():
             #   Get Default and Create Name
-            default_unDistortName = self.synthFuncts.synthSettings["unDistortSuffix"]
+            default_unDistortName = self.synthFuncts.synthSettings.get("unDistortSuffix") or "undistort"
             idfs["undistort"] = f"{ident_base}_{default_unDistortName}"
 
         if self.chb_redistort.isChecked():
             #   Get Default and Create Name
-            default_reDistortName = self.synthFuncts.synthSettings["reDistortSuffix"]
+            default_reDistortName = self.synthFuncts.synthSettings.get("reDistortSuffix") or "redistort"
             idfs["redistort"] = f"{ident_base}_{default_reDistortName}"
+
 
         if len(idfs) < 1:
             self.core.popup("There are No STMAP Types Checked.")

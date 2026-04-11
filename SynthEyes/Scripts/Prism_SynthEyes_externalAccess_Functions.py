@@ -219,12 +219,14 @@ class Prism_SynthEyes_externalAccess_Functions(object):
         origin.le_surveyCam.setToolTip(tip)
 
         tip = ("This is the suffix that will be automatically added to\n"
-               "the STMap Un-Distort file.")
+               "the STMap Un-Distort file.\n\n"
+               "If left blank, '_undistort' will be used.")
         l_unDistort.setToolTip(tip)
         origin.le_unDistort.setToolTip(tip)
 
         tip = ("This is the suffix that will be automatically added to\n"
-               "the STMap Re-Distort file.")
+               "the STMap Re-Distort file.\n\n"
+               "If left blank, '_redistort' will be used.")
         l_reDistort.setToolTip(tip)
         origin.le_reDistort.setToolTip(tip)
 

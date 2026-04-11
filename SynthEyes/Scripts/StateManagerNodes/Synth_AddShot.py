@@ -140,6 +140,7 @@ class Synth_AddShotClass(object):
         self.updatePalette.setColor(QPalette.Button, COLOR_ORANGE)
         self.updatePalette.setColor(QPalette.ButtonText, COLOR_WHITE)
 
+        #   Make Version labels Bold
         font = self.l_curVersion.font()
         font.setBold(True)
         self.l_curVersion.setFont(font)

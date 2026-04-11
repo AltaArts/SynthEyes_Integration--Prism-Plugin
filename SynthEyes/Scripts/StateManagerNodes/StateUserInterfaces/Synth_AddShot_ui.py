@@ -197,6 +197,7 @@ class Ui_wg_Synth_AddShot(object):
 
         self.b_editIFL = QPushButton(self.gb_surveyOptions)
         self.b_editIFL.setObjectName(u"b_editIFL")
+        self.b_editIFL.setMinimumSize(QSize(100, 0))
 
         self.lo_iflPathLabel.addWidget(self.b_editIFL)
 
