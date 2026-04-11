@@ -1062,45 +1062,73 @@ class Synth_AddShotClass(object):
             action = "Yes"
 
         else:
-            action = "No"
-          
-        if self.stateMode == "shot":
-            text = "Do you want to Delete the Shot?"
+            if self.stateMode == "shot":
+                text = "Do you want to Delete the Shot?"
 
-        if self.stateMode == "survey":
-            text = "Do you want to Delete the Survey Shot?"
+            elif self.stateMode == "survey":
+                text = "Do you want to Delete the Survey Shot?"
 
-        action = self.core.popupQuestion(text, title="Delete Shot", parent=self.stateManager)
+            else:
+                return
+
+            action = self.core.popupQuestion(text, title="Delete Shot", parent=self.stateManager)
 
         if action == "Yes":
-            #   Get the Delete Shot Camera Name
-            deleteCam = self.synthFuncts.getCamFromShotUUID(self.shotUUID)
-            deleteCamName = deleteCam.Name()
+            try:
+                #   Get the Delete Shot Camera Name
+                deleteCam = self.synthFuncts.getCamFromShotUUID(self.shotUUID)
+                deleteCamName = deleteCam.Name()
 
-            #   Get the Active Camera Name
-            activeHost = self.synthEyes.Active()
-            activeCam = activeHost.cam
-            activeCamName = activeCam.Name()
+                #   Get the Active Camera Name
+                activeHost = self.synthEyes.Active()
+                activeCam = activeHost.cam
+                activeCamName = activeCam.Name()
 
-            #   If Shot is Active, Switch to Another Camera before Deleting
-            if deleteCamName == activeCamName:
-                shots = self.synthEyes.Shots()
-                for shot in shots:
-                    shotCam = shot.cam
-                    shotCamName = shotCam.Name()
+                #   If Shot is Active, Switch to Another Camera before Deleting
+                if deleteCamName == activeCamName:
+                    shots = self.synthEyes.Shots()
 
-                    if shotCamName != deleteCamName:
-                        otherCam = shotCam
-                        break
-                
-                #   Set Active Shot (Tracker Host)
-                with self.synthFuncts.UNDO_BLOCK("Set Active Shot"):
-                    self.synthEyes.SetActive(otherCam)
+                    otherCam = None
 
-            #   Delete Camera
-            with self.synthFuncts.UNDO_BLOCK("Delete Shot"):
-                self.synthEyes.Delete(deleteCam)
-                self.synthEyes.ReloadAll()
+                    for shot in shots:
+                        shotCam = shot.cam
+                        shotCamName = shotCam.Name()
+
+                        if shotCamName != deleteCamName:
+                            otherCam = shotCam
+                            break
+
+                    if not otherCam:
+                        logger.warning("ERROR: Unable to Delete Shot. There are no other Shots in the scene.")
+                        return False
+                    
+                    #   Set Active Shot (Tracker Host)
+                    with self.synthFuncts.UNDO_BLOCK("Set Active Shot"):
+                        self.synthEyes.SetActive(otherCam)
+
+                #   Delete Camera
+                with self.synthFuncts.UNDO_BLOCK("Delete Shot"):
+                    self.synthEyes.Delete(deleteCam)
+                    self.synthEyes.ReloadAll()
+
+            except Exception as e:
+                logger.warning(f"ERROR: Unable to Delete Shot: {e}")
+                return False
+            
+            if self.stateMode == "survey":
+                text = "Would you like to also Delete the Survey IFL file?"
+                action = self.core.popupQuestion(text, "Delete IFL File")
+
+                if action == "Yes":
+                    try:
+                        os.remove(self.iflPath)
+
+                    except FileNotFoundError:
+                        logger.warning("ERROR: Unable to Delete, IFL file is not found.")
+                    except OSError:
+                        logger.warning("ERROR: Unable to Delete IFL file, OS Error.")
+                    except Exception as e:
+                        logger.warning(f"ERROR: Unable to Delete IFL file: {e}")
 
 
 

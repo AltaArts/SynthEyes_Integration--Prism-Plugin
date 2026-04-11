@@ -196,18 +196,24 @@ class Prism_SynthEyes_externalAccess_Functions(object):
 
         tip = ("This is the prefix that will be automatically added to\n"
                "new Scene Camera names.\n\n"
+               "If left blank, the default SynthEyes camera name\n"
+               "will be used.\n\n"
                "The name can be manually edited in the AddShot state.")
         l_sceneCam.setToolTip(tip)
         origin.le_sceneCam.setToolTip(tip)
 
         tip = ("This is the prefix that will be automatically added to\n"
                "new additional Shot Camera names.\n\n"
+               "If left blank, the default SynthEyes camera name\n"
+               "will be used.\n\n"
                "The name can be manually edited in the AddShot state.")
         l_shotCam.setToolTip(tip)
         origin.le_shotCam.setToolTip(tip)
 
         tip = ("This is the prefix that will be automatically added to\n"
                "new additional Survey Camera names.\n\n"
+               "If left blank, the default SynthEyes camera name\n"
+               "will be used.\n\n"
                "The name can be manually edited in the AddShot state.")
         l_surveyCam.setToolTip(tip)
         origin.le_surveyCam.setToolTip(tip)
