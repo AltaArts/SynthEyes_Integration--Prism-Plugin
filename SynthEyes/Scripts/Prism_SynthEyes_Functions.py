@@ -284,7 +284,7 @@ class Prism_SynthEyes_Functions(object):
         prismScriptMenu = scriptMenu.SubMenuByName("Prism")
 
         if not prismScriptMenu:
-            logger.warning(f"ERROR: Prism script menu not found")
+            logger.warning("ERROR: Prism script menu not found")
             self.core.popup("ERROR:\n\n"
                             "Prism is unable to start.\n"
                             "The Prism Script menu cannot be found in\n"

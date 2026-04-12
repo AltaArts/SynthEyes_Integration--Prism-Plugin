@@ -75,6 +75,9 @@ class Prism_SynthEyes_Variables(object):
             "surveyCamPrefix": "CAM_SURVEY-",
             "unDistortSuffix": "_UnDistort-Rec709Lin",
             "reDistortSuffix": "_ReDistort-Rec709Lin",
+            "iflLocs": ["Next to images",
+                        "Subdir in Images",
+                        "Project Pipeline dir"]
         }
 
         self.synthStates = [

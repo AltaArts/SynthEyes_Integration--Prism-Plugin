@@ -55,11 +55,15 @@ from qtpy.QtWidgets import *
 from PrismUtils.Decorators import err_catcher_plugin as err_catcher
 
 
+if TYPE_CHECKING:
+    from PrismCore import PrismCore
+    from PrismSettings import UserSettings
+
 logger = logging.getLogger(__name__)
 
 
 class Prism_SynthEyes_externalAccess_Functions(object):
-    def __init__(self, core, plugin):
+    def __init__(self, core:"PrismCore", plugin):
         self.core = core
         self.plugin = plugin
 
@@ -72,7 +76,7 @@ class Prism_SynthEyes_externalAccess_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def userSettings_loadUI(self, origin, tab):
+    def userSettings_loadUI(self, origin:"UserSettings"):
         #   Options Groupbox
         origin.gb_synthOptions = QGroupBox("Options")
         origin.gb_synthOptions.setCheckable(False)
@@ -156,6 +160,14 @@ class Prism_SynthEyes_externalAccess_Functions(object):
         lo_synthDefaults.addWidget(l_reDistort, 4, 0)
         lo_synthDefaults.addWidget(origin.le_reDistort, 4, 1)
 
+        #   Survey IFL Location Combo
+        l_iflLoc = QLabel("Survey Shot IFL Location:")
+        l_iflLoc.setFixedWidth(280)
+        origin.cb_iflLoc = QComboBox()
+        origin.cb_iflLoc.addItems(self.synthDefaults["iflLocs"])
+        lo_synthDefaults.addWidget(l_iflLoc, 5, 0)
+        lo_synthDefaults.addWidget(origin.cb_iflLoc, 5, 1)
+
         #   Override Line Edit Style for Full Width
         style = """
         QLineEdit#synth_LineEdit_Wide {
@@ -230,9 +242,19 @@ class Prism_SynthEyes_externalAccess_Functions(object):
         l_reDistort.setToolTip(tip)
         origin.le_reDistort.setToolTip(tip)
 
+        tip = ("<p>Sets the location where a Survey Shot's IFL file will be saved.</p>"
+             "<p>&nbsp;</p>"
+               "<table>"
+               "<tr><td style='padding-right:8px'><b>Next to images:</b></td><td>Save the IFL in the same dir as the source images</td></tr>"
+               "<tr><td style='padding-right:8px'><b>Subdir in Images:</b></td><td>Save to '_ifl' subdir in source images</td></tr>"
+               "<tr><td style='padding-right:8px'><b>Project Pipeline dir:</b></td><td>Save to IFL dir in the Project's Pipeline dir.</td></tr>"
+               "</table>")
+        l_iflLoc.setToolTip(tip)
+        origin.cb_iflLoc.setToolTip(tip)
+
 
     @err_catcher(name=__name__)
-    def userSettings_saveSettings(self, origin, settings):
+    def userSettings_saveSettings(self, origin:"UserSettings", settings:dict):
         if "SynthEyes" not in settings:
             settings["SynthEyes"] = {}
 
@@ -254,9 +276,12 @@ class Prism_SynthEyes_externalAccess_Functions(object):
         if hasattr(origin, "le_reDistort"):
             settings["SynthEyes"]["reDistortSuffix"] = origin.le_reDistort.text()
 
+        if hasattr(origin, "cb_iflLoc"):
+            settings["SynthEyes"]["iflLoc"] = origin.cb_iflLoc.currentText()
+
 
     @err_catcher(name=__name__)
-    def userSettings_loadSettings(self, origin, settings):
+    def userSettings_loadSettings(self, origin:"UserSettings", settings:dict):
         #   Get Synth Settings from User Settings
         if "SynthEyes" in settings:
             sData = settings["SynthEyes"]
@@ -283,9 +308,14 @@ class Prism_SynthEyes_externalAccess_Functions(object):
         if "reDistortSuffix" in sData:
             origin.le_reDistort.setText(sData["reDistortSuffix"])
 
+        if "iflLoc" in sData:
+            idx = origin.cb_iflLoc.findText(sData["iflLoc"])
+            if idx != -1:
+                origin.cb_iflLoc.setCurrentIndex(idx)
+
 
     @err_catcher(name=__name__)
-    def getPresetScenes(self, presetScenes):
+    def getPresetScenes(self, presetScenes:list):
         if os.getenv("PRISM_SHOW_DEFAULT_SCENEFILE_PRESETS", "1") != "1":
             return
 
@@ -296,7 +326,7 @@ class Prism_SynthEyes_externalAccess_Functions(object):
 
     #   Sets the Executable Override for the Autostart
     @err_catcher(name=__name__)
-    def onAutostartClicked(self, chb_ovr, le_ovr):
+    def onAutostartClicked(self, chb_ovr:QCheckBox, le_ovr:QLineEdit):
         #   Get SynthEyes Integration
         integrations = self.core.integration.getIntegrations()
         synthData = integrations.get("SynthEyes")

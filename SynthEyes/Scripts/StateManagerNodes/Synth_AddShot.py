@@ -62,7 +62,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from PrismCore import PrismCore
     from StateManager import StateManager
-    from Prism_SynthEyes_Functions import *
+    from Prism_SynthEyes_Functions import Prism_SynthEyes_Functions
 
 #   Global Colors
 COLOR_GREEN = QColor(0, 130, 0)
@@ -984,15 +984,50 @@ class Synth_AddShotClass(object):
             ifl_name = "SURVEY.ifl"
 
 
-    #   Write IFL File to Disk
+    #   Write IFL File to Disk based on User Setting
     @err_catcher(name=__name__)
     def createSurveyIFL(self, imageList:list, iflPath:str=None, vData:dict=None) -> str:
-        imageDir = os.path.dirname(imageList[0])
-
         if not iflPath:
+            try:
+                iflLocMode = self.synthFuncts.synthSettings.get("iflLoc", None)
+                imageDir = os.path.dirname(imageList[0])
+
+                #   Create IFL Dir in Images Dir
+                if iflLocMode == "Subdir in Images":
+                    saveDir = os.path.join(imageDir, "_ifl")
+
+                #   Create Synth IFL Dir in Pipeline Dir
+                elif iflLocMode == "Project Pipeline dir":
+                    prjDir = self.core.projects.getPipelineFolder()
+                    iflDir = os.path.join(prjDir, "SynthEyes", "IFL")
+
+                    sceneFile = self.synthFuncts.getCurrentFileName(self)
+                    sceneFileData = self.core.entities.getScenefileData(sceneFile)
+                    enityType = sceneFileData.get("type", None)
+
+                    if enityType == "shot":
+                        entityDir = sceneFileData.get("shot", "")
+
+                    elif enityType == "asset":
+                        entityDir = sceneFileData.get("asset", "")
+
+                    saveDir = os.path.join(iflDir, entityDir)
+
+                #   Save in Images Dir
+                else:
+                    saveDir = imageDir
+
+            except Exception as e:
+                logger.warning(f"ERROR: Uanble to Create IFL Dir. Falling back to Images dir.: {e}")
+                saveDir = imageDir
+
+
+            if not os.path.exists(saveDir):
+                os.makedirs(saveDir)
+
             #   Make IFL Filename
             ifl_name = self.createIflName(vData)
-            iflPath = os.path.join(imageDir, ifl_name)
+            iflPath = os.path.join(saveDir, ifl_name)
 
         #   Write Sequence Filepaths to IFL
         with open(iflPath, "w") as f:
@@ -1116,13 +1151,19 @@ class Synth_AddShotClass(object):
                 logger.warning(f"ERROR: Unable to Delete Shot: {e}")
                 return False
             
+            #   Delete IFL File
             if self.stateMode == "survey":
                 text = "Would you like to also Delete the Survey IFL file?"
                 action = self.core.popupQuestion(text, "Delete IFL File")
 
                 if action == "Yes":
                     try:
+                        #   Delete the File
                         os.remove(self.iflPath)
+                        #   Delete Dir if it is from 'Subdir in Images' Mode
+                        subDir = os.path.dirname(self.iflPath)
+                        if os.path.basename(subDir) == "_ifl":
+                            os.rmdir(subDir)
 
                     except FileNotFoundError:
                         logger.warning("ERROR: Unable to Delete, IFL file is not found.")
