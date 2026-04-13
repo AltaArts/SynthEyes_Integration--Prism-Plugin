@@ -119,7 +119,7 @@ class Prism_SynthEyes_Functions(object):
         self.plugin = plugin
 
         self.synthEyes = None
-        self.synthPath = None
+        self.synthPath:str = None
         self.initSyPy3()
         self.loadSettings()
 

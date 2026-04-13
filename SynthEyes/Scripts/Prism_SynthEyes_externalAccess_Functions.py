@@ -76,7 +76,7 @@ class Prism_SynthEyes_externalAccess_Functions(object):
 
 
     @err_catcher(name=__name__)
-    def userSettings_loadUI(self, origin:"UserSettings"):
+    def userSettings_loadUI(self, origin:"UserSettings", tab:QWidget):
         #   Options Groupbox
         origin.gb_synthOptions = QGroupBox("Options")
         origin.gb_synthOptions.setCheckable(False)
