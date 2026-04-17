@@ -49,6 +49,7 @@ import os
 import time
 import platform
 import logging
+from typing import TYPE_CHECKING
 
 from qtpy.QtCore import *
 from qtpy.QtGui import *
@@ -66,6 +67,12 @@ from Synth_Formats import (SynthExrCompress,
 
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from PrismCore import PrismCore
+    from StateManager import StateManager
+    from Prism_SynthEyes_Functions import Prism_SynthEyes_Functions
+
+
 
 class Synth_RenderShotClass(object):
     className = "RenderShot"
@@ -74,11 +81,17 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def setup(self, state, core, stateManager, node=None, stateData=None):
+    def setup(self,
+              state,
+              core:"PrismCore",
+              stateManager:"StateManager",
+              node=None,
+              stateData:dict=None):
+        
         self.state = state
         self.core = core
         self.stateManager = stateManager
-        self.synthFuncts = self.core.appPlugin
+        self.synthFuncts:Prism_SynthEyes_Functions = self.core.appPlugin
 
         self.canSetVersion = True
         self.customContext = None
@@ -222,7 +235,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def loadData(self, data):
+    def loadData(self, data:dict):
         if "contextType" in data:
             self.setContextType(data["contextType"])
         if "customContext" in data:
@@ -372,7 +385,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def getLastPathOptions(self):
+    def getLastPathOptions(self) -> list:
         path = self.l_pathLast.text()
         if path == "None":
             return
@@ -406,7 +419,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def openInMediaBrowser(self, path):
+    def openInMediaBrowser(self, path:str):
         self.core.projectBrowser()
         self.core.pb.showTab("Media")
         data = self.core.paths.getRenderProductData(path)
@@ -423,7 +436,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def setCustomContext(self, context):
+    def setCustomContext(self, context:dict):
         self.customContext = context
         self.refreshContext()
         self.stateManager.saveStatesToScene()
@@ -458,7 +471,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def nameChanged(self, text):
+    def nameChanged(self, text:str):
         text = self.e_name.text()
         context = {}
         context["identifier"] = self.getIdentifier() or "None"
@@ -492,12 +505,12 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def getFormat(self):
+    def getFormat(self) -> str:
         return self.cb_format.currentText()
 
 
     @err_catcher(name=__name__)
-    def setFormat(self, fmt):
+    def setFormat(self, fmt:str) -> bool:
         idx = self.cb_format.findText(fmt)
         if idx != -1:
             self.cb_format.setCurrentIndex(idx)
@@ -573,7 +586,7 @@ class Synth_RenderShotClass(object):
     
     #   Returns Dict of format Options Based on Selected format
     @err_catcher(name=__name__)
-    def getFormatOptions(self):
+    def getFormatOptions(self) -> dict:
         fmt = self.getFormat().lower()
 
         if fmt == ".exr":
@@ -590,7 +603,7 @@ class Synth_RenderShotClass(object):
         
 
     @err_catcher(name=__name__)
-    def onScaleOvrChanged(self, checked=None):
+    def onScaleOvrChanged(self, checked:bool=None):
         enabled = self.chb_scaleOverride.isChecked()
 
         self.cb_renderScale.setEnabled(enabled)
@@ -600,13 +613,13 @@ class Synth_RenderShotClass(object):
         
 
     @err_catcher(name=__name__)
-    def getContextType(self):
+    def getContextType(self) -> str:
         contextType = self.cb_context.currentText()
         return contextType
 
 
     @err_catcher(name=__name__)
-    def setContextType(self, contextType):
+    def setContextType(self, contextType:str) -> bool:
         idx = self.cb_context.findText(contextType)
         if idx != -1:
             self.cb_context.setCurrentIndex(idx)
@@ -617,36 +630,37 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def getIdentifier(self):
+    def getIdentifier(self) -> str:
         identifier = self.l_taskName.text()
         return identifier
 
 
     @err_catcher(name=__name__)
-    def getTaskname(self):
+    def getTaskname(self) -> str:
         return self.getIdentifier()
 
 
     @err_catcher(name=__name__)
-    def setIdentifier(self, identifier):
+    def setIdentifier(self, identifier:str):
         self.l_taskName.setText(identifier)
         self.setTaskWarn(not bool(identifier))
         self.updateUi()
 
 
     @err_catcher(name=__name__)
-    def setTaskname(self, taskname):
+    def setTaskname(self, taskname:str):
         self.setIdentifier(taskname)
 
 
     @err_catcher(name=__name__)
-    def getSortKey(self):
+    def getSortKey(self) -> str:
         return self.getIdentifier()
 
 
     @err_catcher(name=__name__)
     def changeTask(self):
         from PrismUtils import PrismWidgets
+
         self.nameWin = PrismWidgets.CreateItem(
             startText=self.getIdentifier(),
             showTasks=True,
@@ -667,7 +681,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def onVersionOverrideChanged(self, checked):
+    def onVersionOverrideChanged(self, checked:bool):
         self.sp_version.setEnabled(checked)
         self.sp_version.lineEdit().setHidden(not checked)
         self.b_version.setEnabled(checked)
@@ -707,12 +721,12 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def getRangeType(self):
+    def getRangeType(self) -> str:
         return self.cb_rangeType.currentText()
 
 
     @err_catcher(name=__name__)
-    def setRangeType(self, rangeType):
+    def setRangeType(self, rangeType:str) -> bool:
         idx = self.cb_rangeType.findText(rangeType)
         if idx != -1:
             self.cb_rangeType.setCurrentIndex(idx)
@@ -723,7 +737,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def getResolution(self, resolution):
+    def getResolution(self, resolution:str) -> list:
         res = None
         if resolution == "Get from rendersettings":
             if hasattr(self.core.appPlugin, "getResolution"):
@@ -747,12 +761,12 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def getMasterVersion(self):
+    def getMasterVersion(self) -> str:
         return self.cb_master.currentText()
 
 
     @err_catcher(name=__name__)
-    def setMasterVersion(self, master):
+    def setMasterVersion(self, master:str) -> bool:
         idx = self.cb_master.findText(master)
         if idx != -1:
             self.cb_master.setCurrentIndex(idx)
@@ -763,12 +777,12 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def getLocation(self):
+    def getLocation(self) -> str:
         return self.cb_outPath.currentText()
 
 
     @err_catcher(name=__name__)
-    def setLocation(self, location):
+    def setLocation(self, location:str) -> bool:
         idx = self.cb_outPath.findText(location)
         if idx != -1:
             self.cb_outPath.setCurrentIndex(idx)
@@ -779,7 +793,7 @@ class Synth_RenderShotClass(object):
     
 
     @err_catcher(name=__name__)
-    def setCam(self, cameraIdx): 
+    def setCam(self, cameraIdx:int): 
         self.curCam = self.cb_cam.currentText()
 
         self.refreshCameras()
@@ -811,7 +825,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def updateUi(self):
+    def updateUi(self) -> bool:
         self.w_context.setHidden(not self.allowCustomContext)
         self.w_comment.setHidden(not self.stateManager.useStateComments())
  
@@ -836,7 +850,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def getCurrentContext(self):
+    def getCurrentContext(self) -> dict:
         context = None
         if self.allowCustomContext:
             ctype = self.getContextType()
@@ -875,7 +889,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def getFrameRange(self, rangeType):
+    def getFrameRange(self, rangeType:str) -> list:
         startFrame = None
         endFrame = None
         if rangeType == "Scene":
@@ -927,7 +941,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def getContextStrFromEntity(self, entity):
+    def getContextStrFromEntity(self, entity:dict) -> str:
         if not entity:
             return ""
 
@@ -944,7 +958,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def preExecuteState(self):
+    def preExecuteState(self) -> list:
         warnings = []
 
         self.updateUi()
@@ -964,7 +978,7 @@ class Synth_RenderShotClass(object):
     
 
     @err_catcher(name=__name__)
-    def getOutputName(self, useVersion="next", identifier=None):
+    def getOutputName(self, useVersion:str="next", identifier:str=None) -> str:
         if self.tasknameRequired and not identifier:
             return
 
@@ -1010,7 +1024,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def getComment(self):
+    def getComment(self) -> str:
         if self.stateManager.useStateComments():
             comment = self.e_comment.text() or self.stateManager.publishComment
         else:
@@ -1020,7 +1034,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def executeState(self, parent, useVersion="next"):
+    def executeState(self, parent, useVersion:str="next") -> list:
         rangeType = self.cb_rangeType.currentText()
         frames = self.getFrameRange(rangeType)
         startFrame = frames[0]
@@ -1161,7 +1175,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def expandvars(self, path):
+    def expandvars(self, path:str) -> str:
         if hasattr(self.core.appPlugin, "expandEnvVarsInFilepath"):
             expandedPath = self.core.appPlugin.expandEnvVarsInFilepath(path)
         else:
@@ -1171,7 +1185,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def isUsingMasterVersion(self):
+    def isUsingMasterVersion(self) -> bool:
         useMaster = self.core.mediaProducts.getUseMaster()
         if not useMaster:
             return False
@@ -1184,7 +1198,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def handleMasterVersion(self, outputName, context):
+    def handleMasterVersion(self, outputName:str, context:dict):
         if not self.isUsingMasterVersion():
             return
 
@@ -1196,7 +1210,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def setTaskWarn(self, warn):
+    def setTaskWarn(self, warn:bool):
         useSS = getattr(self.core.appPlugin, "colorButtonWithStyleSheet", False)
         if warn and self.f_taskname.isEnabled():
             if useSS:
@@ -1213,7 +1227,7 @@ class Synth_RenderShotClass(object):
 
 
     @err_catcher(name=__name__)
-    def getStateProps(self):
+    def getStateProps(self) -> dict:
         stateProps = {
             "stateName": self.e_name.text(),
             "contextType": self.getContextType(),

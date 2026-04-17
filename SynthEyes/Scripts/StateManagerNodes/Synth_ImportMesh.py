@@ -47,6 +47,7 @@
 
 import os
 import logging
+from typing import TYPE_CHECKING
 
 from qtpy.QtCore import *
 from qtpy.QtGui import *
@@ -56,6 +57,11 @@ from PrismUtils.Decorators import err_catcher
 
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from PrismCore import PrismCore
+    from StateManager import StateManager
+    from Prism_SynthEyes_Functions import Prism_SynthEyes_Functions
 
 #   Icon to be used for State
 scriptDir = os.path.dirname(os.path.dirname(__file__))
@@ -70,27 +76,25 @@ class Synth_ImportMeshClass(object):
     def setup(
         self,
         state,
-        core,
-        stateManager,
+        core: "PrismCore",
+        stateManager: "StateManager",
         node=None,
-        importPath=None,
-        stateData=None,
-        openProductsBrowser=True,
-        settings=None,
+        importPath:str=None,
+        stateData:dict=None,
+        openProductsBrowser:bool=True,
+        settings:dict=None,
     ):
         
         #   Checks if the ATTR Already Exists and Assigns if Not
         self.core = getattr(self, "core", core)
         self.state = getattr(self, "state", state)
         self.stateManager = getattr(self, "stateManager", stateManager)
-        self.synthFuncts = getattr(self, "synthFuncts", self.core.appPlugin)
+        self.synthFuncts:Prism_SynthEyes_Functions = getattr(self, "synthFuncts", self.core.appPlugin)
         self.synthEyes = self.synthFuncts.synthEyes
 
         self.state = state
         self.stateMode = "ImportMesh"
 
-        self.core = core
-        self.stateManager = stateManager
         self.taskName = ""
         self.setName = ""
         self.meshUUID = None
@@ -152,13 +156,13 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
-    def setStateMode(self, stateMode):
+    def setStateMode(self, stateMode:str):
         self.stateMode = stateMode
         self.l_class.setText(stateMode)
 
 
     @err_catcher(name=__name__)
-    def requestImportPaths(self):
+    def requestImportPaths(self) -> list:
         #   Call 'Fancy' Browser if Avail (I believe it is from Libraries plugin)
         result = self.core.callback("requestImportPath", self.stateManager)
         for res in result:
@@ -176,7 +180,7 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
-    def loadData(self, data):
+    def loadData(self, data:dict):
         if "statename" in data:
             self.e_name.setText(data["statename"])
         if "statemode" in data:
@@ -214,7 +218,7 @@ class Synth_ImportMeshClass(object):
 
     #   Set State Name and Icon
     @err_catcher(name=__name__)
-    def nameChanged(self, text=None):
+    def nameChanged(self, text:str=None):
         name = self.e_name.text()
 
         if text:
@@ -256,7 +260,7 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
-    def getSortKey(self):
+    def getSortKey(self) -> str:
         cacheData = self.core.paths.getCachePathData(self.getImportPath())
         return cacheData.get("product")
 
@@ -287,7 +291,7 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
-    def getImportPath(self):
+    def getImportPath(self) -> str:
         path = getattr(self, "importPath", "")
         if path:
             path = os.path.normpath(path)
@@ -296,7 +300,7 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
-    def setImportPath(self, path):
+    def setImportPath(self, path:str):
         self.importPath = path
         self.w_currentVersion.setToolTip(path)
         self.stateManager.saveImports()
@@ -305,14 +309,14 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
-    def isShotCam(self, path=None):
+    def isShotCam(self, path:str=None) -> bool:
         if not path:
             path = self.getImportPath()
         return path.endswith(".abc") and "/_ShotCam/" in path
 
 
     @err_catcher(name=__name__)
-    def autoUpdateChanged(self, checked):
+    def autoUpdateChanged(self, checked:bool):
         self.w_latestVersion.setVisible(not checked)
         self.w_importLatest.setVisible(not checked)
 
@@ -326,7 +330,7 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
-    def autoNameSpaceChanged(self, checked):
+    def autoNameSpaceChanged(self, checked:bool):
         self.b_nameSpaces.setEnabled(not checked)
         if not self.stateManager.standalone:
             self.core.appPlugin.sm_import_removeNameSpaces(self)
@@ -334,7 +338,7 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
-    def runSanityChecks(self, cachePath, settings=None):
+    def runSanityChecks(self, cachePath:str, settings:dict=None) -> bool:
         result = True
 
         if getattr(self.core.appPlugin, "hasFrameRange", True):
@@ -347,7 +351,7 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
-    def checkFrameRange(self, cachePath, settings=None):
+    def checkFrameRange(self, cachePath:str, settings:dict=None) -> bool:
         versionInfoPath = self.core.getVersioninfoPath(
             self.core.products.getVersionInfoPathFromProductFilepath(cachePath)
         )
@@ -380,7 +384,7 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
-    def importObject(self, update=False, path=None, settings=None):
+    def importObject(self, update:bool=False, path:str=None, settings:dict=None) -> bool:
         result = True
 
         if self.stateManager.standalone:
@@ -463,7 +467,7 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
-    def importLatest(self, refreshUi=True, selectedStates=True):
+    def importLatest(self, refreshUi:bool=True, selectedStates:bool=True) -> bool:
         if refreshUi:
             self.updateUi()
 
@@ -493,7 +497,7 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
-    def checkLatestVersion(self):
+    def checkLatestVersion(self) -> tuple:
         path = self.getImportPath()
         curVersionName = self.core.products.getVersionFromFilepath(path) or ""
         curVersionData = {"version": curVersionName, "path": path}
@@ -517,7 +521,7 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
-    def updateMeshName(self, meshName=None):
+    def updateMeshName(self, meshName:str=None):
         #   Get Shot Camera Object
         meshObj = self.synthFuncts.getObjByUUID("mesh", self.meshUUID)
 
@@ -535,7 +539,7 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
-    def setStateColor(self, status):
+    def setStateColor(self, status:str):
         if status == "ok":
             statusColor = QColor(0, 130, 0)
         elif status == "warning":
@@ -644,7 +648,7 @@ class Synth_ImportMeshClass(object):
     def preDelete(
         self,
         item=None,
-        baseText="Do you also want to delete the SynthEyes Mesh?\n\n",
+        baseText:str="Do you also want to delete the SynthEyes Mesh?\n\n",
     ):
 
         if not self.core.uiAvailable:
@@ -665,7 +669,7 @@ class Synth_ImportMeshClass(object):
 
 
     @err_catcher(name=__name__)
-    def getStateProps(self):
+    def getStateProps(self) -> dict:
         return {
             "statename": self.e_name.text(),
             "statemode": self.stateMode,

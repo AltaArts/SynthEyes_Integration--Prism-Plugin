@@ -52,6 +52,7 @@ import traceback
 import platform
 import logging
 import json
+from typing import TYPE_CHECKING
 
 from qtpy.QtCore import *
 from qtpy.QtGui import *
@@ -61,8 +62,12 @@ from PrismUtils.Decorators import err_catcher
 
 from Synth_Formats import SynthFormatNames
 
-
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from PrismCore import PrismCore
+    from StateManager import StateManager
+    from Prism_SynthEyes_Functions import Prism_SynthEyes_Functions
 
 
 class Synth_SceneExportClass(object):
@@ -71,11 +76,17 @@ class Synth_SceneExportClass(object):
     stateCategories = {"Export": [{"label": className, "stateType": className}]}
 
     @err_catcher(name=__name__)
-    def setup(self, state, core, stateManager, node=None, stateData=None):
+    def setup(self,
+              state,
+              core:"PrismCore",
+              stateManager:"StateManager",
+              node=None,
+              stateData:dict=None):
+        
         self.state = state
         self.core = core
         self.stateManager = stateManager
-        self.synthFuncts = self.core.appPlugin
+        self.synthFuncts:Prism_SynthEyes_Functions = self.core.appPlugin
 
         self.canSetVersion = True
         self.customContext = None
@@ -193,7 +204,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def loadData(self, data):
+    def loadData(self, data:dict):
         self._isLoading = True
 
         try:
@@ -314,7 +325,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def getLastPathOptions(self):
+    def getLastPathOptions(self) -> list:
         path = self.l_pathLast.text()
         if path == "None":
             return
@@ -349,7 +360,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def openInProductBrowser(self, path):
+    def openInProductBrowser(self, path:str):
         self.core.projectBrowser()
         self.core.pb.showTab("Products")
         data = self.core.paths.getCachePathData(path)
@@ -366,7 +377,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def setCustomContext(self, context):
+    def setCustomContext(self, context:dict):
         self.customContext = context
         self.refreshContext()
         self.stateManager.saveStatesToScene()
@@ -391,7 +402,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def nameChanged(self, text):
+    def nameChanged(self, text:str):
         text = self.e_name.text()
         context = {}
         if self.getOutputType() == "ShotCam":
@@ -429,12 +440,12 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def getRangeType(self):
+    def getRangeType(self) -> str:
         return self.cb_rangeType.currentText()
 
 
     @err_catcher(name=__name__)
-    def setRangeType(self, rangeType):
+    def setRangeType(self, rangeType:str) -> bool:
         idx = self.cb_rangeType.findText(rangeType)
         if idx != -1:
             self.cb_rangeType.setCurrentIndex(idx)
@@ -445,29 +456,29 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def getUpdateMasterVersion(self):
+    def getUpdateMasterVersion(self) -> bool:
         return self.chb_master.isChecked()
 
 
     @err_catcher(name=__name__)
-    def setUpdateMasterVersion(self, master):
+    def setUpdateMasterVersion(self, master:bool):
         self.chb_master.setChecked(master)
 
 
     @err_catcher(name=__name__)
-    def getOutputType(self):
+    def getOutputType(self) -> str:
         return self.cb_outType.currentText()
 
 
     @err_catcher(name=__name__)
-    def setOutputType(self, outType):
+    def setOutputType(self, outType:str):
         idx = self.cb_outType.findText(outType)
         if idx != -1:
             self.cb_outType.setCurrentIndex(idx)
 
 
     @err_catcher(name=__name__)
-    def getOutputExt(self):
+    def getOutputExt(self) -> str:
         try:
             outputType = self.getOutputType()
             return SynthFormatNames[outputType]["format"]
@@ -476,13 +487,13 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def getContextType(self):
+    def getContextType(self) -> str:
         contextType = self.cb_context.currentText()
         return contextType
 
 
     @err_catcher(name=__name__)
-    def setContextType(self, contextType):
+    def setContextType(self, contextType:str) -> bool:
         idx = self.cb_context.findText(contextType)
         if idx != -1:
             self.cb_context.setCurrentIndex(idx)
@@ -493,7 +504,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def getProductname(self):
+    def getProductname(self) -> str:
         if self.getOutputType() == "ShotCam":
             productName = "_ShotCam"
         else:
@@ -508,7 +519,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def setProductname(self, productname):
+    def setProductname(self, productname:str) -> str:
         prevProductName = self.getProductname()
         default_func = lambda x1, x2, newTaskName: productname
         productname = getattr(self.core.appPlugin, "sm_export_setTaskText", default_func)(
@@ -520,18 +531,19 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def setTaskname(self, taskname):
+    def setTaskname(self, taskname:str) -> str:
         return self.setProductname(taskname)
 
 
     @err_catcher(name=__name__)
-    def getSortKey(self):
+    def getSortKey(self) -> str:
         return self.getProductname()
 
 
     @err_catcher(name=__name__)
     def changeTask(self):
         from PrismUtils import PrismWidgets
+
         self.nameWin = PrismWidgets.CreateItem(
             startText=self.getProductname(),
             showTasks=True,
@@ -572,7 +584,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def onProductNameChanged(self, text=None):
+    def onProductNameChanged(self, text:str=None):
         product = self.nameWin.e_item.text()
         ctx = self.getCurrentContext().copy()
         ctx["product"] = product
@@ -594,7 +606,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def toggleTag(self, tag):
+    def toggleTag(self, tag:str):
         tags = [t.strip() for t in self.nameWin.e_tags.text().split(",")]
         if tag in tags:
             tags = [t for t in tags if t != tag]
@@ -673,7 +685,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def updateExportUI(self, checked=None):
+    def updateExportUI(self, checked:bool=None):
         if checked is None:
             checked = self.chb_customExport.isChecked()
 
@@ -685,7 +697,7 @@ class Synth_SceneExportClass(object):
 
     #   Toggles Sections Open/Closed
     @err_catcher(name=__name__)
-    def onSectionToggled(self, section, checked):
+    def onSectionToggled(self, section:str, checked:bool):
         if section == "exportSettings":
             widget =  self.w_exportSettings
 
@@ -707,7 +719,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def getCurrentContext(self):
+    def getCurrentContext(self) -> dict:
         context = {}
         if self.allowCustomContext:
             ctype = self.getContextType()
@@ -757,7 +769,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def getFrameRange(self, rangeType):
+    def getFrameRange(self, rangeType:str) -> tuple:
         startFrame = None
         endFrame = None
         if rangeType == "Scene":
@@ -805,7 +817,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def typeChanged(self, idx):
+    def typeChanged(self, idx:str):
         if self._isLoading:
             return
         
@@ -822,7 +834,7 @@ class Synth_SceneExportClass(object):
 
     #   Creates the Exporter Settings Based on Type
     @err_catcher(name=__name__)
-    def setupExportSettings(self, exportSettings=None):
+    def setupExportSettings(self, exportSettings:dict=None):
         exportType = self.cb_outType.currentText()
         settingsWindow = self.w_exportSettings
         layout = settingsWindow.layout()
@@ -847,7 +859,7 @@ class Synth_SceneExportClass(object):
 
     #   Removes All Widgets from Layout
     @err_catcher(name=__name__)
-    def clearLayout(self, layout):
+    def clearLayout(self, layout:QLayout):
         while layout.count():
             item = layout.takeAt(0)
 
@@ -863,7 +875,7 @@ class Synth_SceneExportClass(object):
 
     #   Creates Widget Row Based on Settings in Format File
     @err_catcher(name=__name__)
-    def createSettingWidget(self, key, setting, parent):
+    def createSettingWidget(self, key:str, setting:dict, parent) -> QWidget:
         widgetType = setting["widgetType"]
         name = setting["name"]
         tooltip = setting.get("toolTip", "")
@@ -966,7 +978,7 @@ class Synth_SceneExportClass(object):
     
     #   Loads Saved Settings into the UI
     @err_catcher(name=__name__)
-    def applyExportSettings(self, exportSettings):
+    def applyExportSettings(self, exportSettings:dict):
         if not exportSettings:
             return
 
@@ -1030,7 +1042,7 @@ class Synth_SceneExportClass(object):
 
     #   Gets Exporter Settings from UI
     @err_catcher(name=__name__)
-    def getExportSettings(self):
+    def getExportSettings(self) -> dict:
         #   Get Settings Format from Format File
         exportTypeUI = self.cb_outType.currentText()
         formatData = SynthFormatNames.get(exportTypeUI, {})
@@ -1110,7 +1122,7 @@ class Synth_SceneExportClass(object):
 
     #   Loads the Export Table Based on Passed List Type
     @err_catcher(name=__name__)
-    def loadExportList(self, listType: str):
+    def loadExportList(self, listType:str):
         #   Assign Vars based on Type
         if listType == "shots":
             listWidget = self.lw_shots
@@ -1155,7 +1167,7 @@ class Synth_SceneExportClass(object):
 
     #   Builds Export Items from List Items
     @err_catcher(name=__name__)
-    def getExportItems(self):
+    def getExportItems(self) -> dict:
         ##  Camera List
         camExportData = []
         #   Iterate Camera List and Build Dict of Check States
@@ -1210,7 +1222,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def getContextStrFromEntity(self, entity):
+    def getContextStrFromEntity(self, entity:dict) -> str:
         if not entity:
             return ""
 
@@ -1227,7 +1239,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def preExecuteState(self):
+    def preExecuteState(self) -> list:
         warnings = []
 
         rangeType = self.cb_rangeType.currentText()
@@ -1250,7 +1262,7 @@ class Synth_SceneExportClass(object):
     
 
     @err_catcher(name=__name__)
-    def getOutputName(self, useVersion="next"):
+    def getOutputName(self, useVersion:str="next") -> tuple:
         context = self.getCurrentContext()
         location = self.cb_outPath.currentText()
         version = useVersion if useVersion != "next" else None
@@ -1299,7 +1311,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def isUsingMasterVersion(self):
+    def isUsingMasterVersion(self) -> bool:
         useMaster = self.core.products.getUseMaster()
         if not useMaster:
             return False
@@ -1308,7 +1320,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def handleMasterVersion(self, outputName):
+    def handleMasterVersion(self, outputName:str):
         if not self.isUsingMasterVersion():
             return
 
@@ -1316,7 +1328,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def getComment(self):
+    def getComment(self) -> str:
         if self.stateManager.useStateComments():
             comment = self.e_comment.text() or self.stateManager.publishComment
         else:
@@ -1326,7 +1338,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def executeState(self, parent, useVersion="next"):
+    def executeState(self, parent, useVersion:str="next") -> list:
         rangeType = self.cb_rangeType.currentText()
         startFrame, endFrame = self.getFrameRange(rangeType)
         if startFrame is None:
@@ -1610,7 +1622,7 @@ class Synth_SceneExportClass(object):
 
 
     @err_catcher(name=__name__)
-    def getStateProps(self):
+    def getStateProps(self) -> dict:
         stateProps = {}
 
         stateProps.update(
@@ -1650,7 +1662,7 @@ class AdditionalSettingsDialog(QDialog):
     def __init__(self, state):
         super(AdditionalSettingsDialog, self).__init__()
         self.state = state
-        self.core = self.state.core
+        self.core:"PrismCore" = self.state.core
         self.core.parentWindow(self, parent=self.state)
         self.widgets = []
         self.loadLayout()
@@ -1728,7 +1740,7 @@ class AdditionalSettingsDialog(QDialog):
 
 
     @err_catcher(name=__name__)
-    def getValueFromWidget(self, widget):
+    def getValueFromWidget(self, widget) -> bool | str | int:
         if widget["type"] == "checkbox":
             return widget["checkbox"].isChecked()
         elif widget["type"] == "combobox":

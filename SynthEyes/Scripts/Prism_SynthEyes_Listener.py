@@ -57,10 +57,15 @@ import socket
 import threading
 import logging
 import json
+from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QObject, Signal
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from PrismCore import PrismCore
+    from Prism_SynthEyes_Functions import Prism_SynthEyes_Functions
 
 
 #   Signals for Prism_SynthEyes_Functions to Receive
@@ -72,11 +77,11 @@ class PrismSignalBridge(QObject):
 #   Listener Thread
 class PrismCommsListener:
     def __init__(self, origin, host, port):
-        self.synthFucnts = origin
-        self.core = origin.core
+        self.synthFucnts:Prism_SynthEyes_Functions = origin
+        self.core:PrismCore = origin.core
 
-        self.host = host
-        self.port = port
+        self.host:str = host
+        self.port:int = port
         self.bridge = PrismSignalBridge()
 
 
