@@ -17,6 +17,7 @@ https://prism-pipeline.com/
 
 - Standard Prism DCC Integration.
 - Scene/Shot creation through the Prism State Manager.
+- Survey Shot handling via custom State.
 - 3d Mesh Importing through the Prism State Manager.
 - Scene Exporting to many formats.
 - Shot and Playblast rendering.
